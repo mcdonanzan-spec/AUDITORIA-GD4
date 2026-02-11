@@ -15,7 +15,7 @@ const App: React.FC = () => {
   const [currentPage, setCurrentPage] = React.useState('dashboard');
   const [audits, setAudits] = React.useState<Audit[]>([]);
   const [obras, setObras] = React.useState<Obra[]>([]);
-  const [lastResult, setLastResult] = React.useState<{ audit: Audit; report: AIAnalysisResult } | null>(null);
+  const [viewingAudit, setViewingAudit] = React.useState<{ audit: Audit; report: AIAnalysisResult } | null>(null);
   const [loading, setLoading] = React.useState(true);
 
   const fetchData = async () => {
@@ -36,7 +36,6 @@ const App: React.FC = () => {
   }, []);
 
   const handleLogin = (email: string) => {
-    // Mock de perfis conforme solicitado
     let perfil: any = 'auditor';
     if (email.includes('admin')) perfil = 'admin';
     if (email.includes('diretoria')) perfil = 'diretoria';
@@ -53,12 +52,29 @@ const App: React.FC = () => {
   const handleLogout = () => {
     setUser(null);
     setCurrentPage('dashboard');
+    setViewingAudit(null);
   };
 
   const handleAuditComplete = async (audit: Audit, report: AIAnalysisResult) => {
     const saved = await saveAudit(audit);
     setAudits(prev => [saved, ...prev]);
-    setLastResult({ audit: saved, report });
+    setViewingAudit({ audit: saved, report });
+    setCurrentPage('result');
+  };
+
+  const handleViewAudit = (audit: Audit) => {
+    // Para auditorias antigas sem o objeto report da IA, simulamos um básico ou apenas mostramos o score
+    // Em um sistema real, o report seria buscado no banco. Aqui passamos um mock compatível.
+    const mockReport: AIAnalysisResult = {
+      indiceGeral: audit.indice_geral || 0,
+      classificacao: audit.classificacao || 'N/A',
+      riscoJuridico: audit.risco_juridico || 'N/A',
+      naoConformidades: ["Histórico de auditoria carregado."],
+      impactoJuridico: "Análise histórica consolidada.",
+      recomendacoes: ["Revisar pontos críticos da última medição."],
+      conclusaoExecutiva: "Esta é uma visualização de histórico. Os detalhes completos estão arquivados no GD4."
+    };
+    setViewingAudit({ audit, report: mockReport });
     setCurrentPage('result');
   };
 
@@ -73,8 +89,8 @@ const App: React.FC = () => {
   if (loading) {
     return (
       <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center">
-        <div className="w-12 h-12 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin"></div>
-        <p className="mt-4 text-slate-500 font-bold uppercase tracking-widest text-xs">Iniciando Governança...</p>
+        <div className="w-12 h-12 border-4 border-orange-500 border-t-transparent rounded-full animate-spin"></div>
+        <p className="mt-4 text-slate-500 font-bold uppercase tracking-widest text-xs">Iniciando Governança Unità...</p>
       </div>
     );
   }
@@ -86,17 +102,17 @@ const App: React.FC = () => {
       case 'new-audit':
         return <AuditWizard obras={obras} currentUser={user} onAuditComplete={handleAuditComplete} />;
       case 'obras':
-        return <ObrasManagement obras={obras} onObraAdded={handleObraAdded} />;
+        return <ObrasManagement obras={obras} audits={audits} onObraAdded={handleObraAdded} onSelectAudit={handleViewAudit} />;
       case 'result':
-        return lastResult ? (
+        return viewingAudit ? (
           <AuditResult 
-            audit={lastResult.audit} 
-            report={lastResult.report} 
+            audit={viewingAudit.audit} 
+            report={viewingAudit.report} 
             onClose={() => setCurrentPage('dashboard')} 
           />
         ) : <Dashboard audits={audits} obras={obras} onNavigate={setCurrentPage} />;
       case 'history':
-        return <AuditHistory audits={audits} obras={obras} />;
+        return <AuditHistory audits={audits} obras={obras} onSelectAudit={handleViewAudit} />;
       default:
         return <Dashboard audits={audits} obras={obras} onNavigate={setCurrentPage} />;
     }
