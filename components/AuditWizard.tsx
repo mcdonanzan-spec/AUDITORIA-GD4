@@ -80,7 +80,6 @@ const AuditWizard: React.FC<AuditWizardProps> = ({ obras, currentUser, onAuditCo
         
         let totalScore = 0;
         if (b === 'B') {
-           // Lógica especial para o Bloco B conforme solicitado
            const divergencia = Math.abs(Number(equipeCampo) - Number(equipeGd4));
            const scoreEquipe = divergencia === 0 ? 100 : divergencia < 5 ? 50 : 0;
            const scoreSub = subcontratacao === false ? 100 : 0;
@@ -108,7 +107,7 @@ const AuditWizard: React.FC<AuditWizardProps> = ({ obras, currentUser, onAuditCo
           subcontratacao_irregular: subcontratacao
         },
         ocorrencias_graves: ocorrencias.split('\n').filter(s => s.trim()),
-        observacoes_gerais: "Auditoria gerada via plataforma AuditRisk."
+        observacoes_gerais: "Auditoria de Compliance e Governança Digital de Terceiros."
       };
 
       const result = await generateAuditReport(auditPayload);
@@ -143,17 +142,17 @@ const AuditWizard: React.FC<AuditWizardProps> = ({ obras, currentUser, onAuditCo
     return (
       <div className="max-w-2xl mx-auto space-y-6">
         <header>
-          <h2 className="text-2xl font-bold text-slate-800 text-center">Configuração da Auditoria</h2>
-          <p className="text-slate-500 text-center text-sm">Inicie o fluxo técnico de verificação estruturada.</p>
+          <h2 className="text-2xl font-bold text-slate-900 text-center">Configuração da Auditoria GD4</h2>
+          <p className="text-slate-600 text-center text-sm font-medium">Mitigação de risco jurídico e controle de terceiros.</p>
         </header>
 
-        <div className="bg-white p-8 rounded-3xl shadow-sm border border-slate-200 space-y-6">
+        <div className="bg-white p-8 rounded-3xl shadow-sm border border-slate-300 space-y-6">
           <div className="space-y-2">
-            <label className="text-xs font-bold text-slate-400 uppercase tracking-widest block">Selecione a Unidade</label>
+            <label className="text-xs font-bold text-slate-500 uppercase tracking-widest block">Selecione a Unidade</label>
             <div className="relative">
               <Building2 className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
               <select 
-                className="w-full bg-slate-50 border border-slate-200 rounded-2xl pl-12 pr-4 py-4 appearance-none focus:ring-2 focus:ring-emerald-500 focus:outline-none transition-all font-medium text-slate-700"
+                className="w-full bg-slate-50 border border-slate-300 rounded-2xl pl-12 pr-4 py-4 appearance-none focus:ring-2 focus:ring-emerald-500 focus:outline-none transition-all font-bold text-slate-900"
                 value={selectedObra}
                 onChange={(e) => setSelectedObra(e.target.value)}
               >
@@ -165,9 +164,9 @@ const AuditWizard: React.FC<AuditWizardProps> = ({ obras, currentUser, onAuditCo
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <label className="text-xs font-bold text-slate-400 uppercase tracking-widest block">Tipo</label>
+              <label className="text-xs font-bold text-slate-500 uppercase tracking-widest block">Tipo</label>
               <select 
-                className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-4 py-4 focus:ring-2 focus:ring-emerald-500 focus:outline-none transition-all font-medium text-slate-700"
+                className="w-full bg-slate-50 border border-slate-300 rounded-2xl px-4 py-4 focus:ring-2 focus:ring-emerald-500 focus:outline-none transition-all font-bold text-slate-900"
                 value={auditType}
                 onChange={(e) => setAuditType(e.target.value as any)}
               >
@@ -176,9 +175,9 @@ const AuditWizard: React.FC<AuditWizardProps> = ({ obras, currentUser, onAuditCo
               </select>
             </div>
             <div className="space-y-2">
-              <label className="text-xs font-bold text-slate-400 uppercase tracking-widest block">Auditor</label>
-              <div className="bg-slate-50 border border-slate-200 rounded-2xl px-4 py-4 text-slate-600 flex items-center gap-2 font-medium">
-                <UserIcon size={18} className="text-slate-400" />
+              <label className="text-xs font-bold text-slate-500 uppercase tracking-widest block">Auditor</label>
+              <div className="bg-slate-50 border border-slate-300 rounded-2xl px-4 py-4 text-slate-900 flex items-center gap-2 font-bold">
+                <UserIcon size={18} className="text-slate-500" />
                 {currentUser.nome}
               </div>
             </div>
@@ -189,7 +188,7 @@ const AuditWizard: React.FC<AuditWizardProps> = ({ obras, currentUser, onAuditCo
             onClick={() => setStep('questions')}
             className="w-full bg-slate-900 text-white py-5 rounded-2xl font-bold hover:bg-slate-800 disabled:opacity-50 transition-all flex items-center justify-center gap-2 shadow-xl"
           >
-            Iniciar Fluxo Técnico
+            Iniciar Auditoria de Governança
             <ChevronRight size={20} />
           </button>
         </div>
@@ -201,15 +200,14 @@ const AuditWizard: React.FC<AuditWizardProps> = ({ obras, currentUser, onAuditCo
     return (
       <div className="min-h-[400px] flex flex-col items-center justify-center text-center space-y-6">
         <div className="relative">
-          <div className="w-24 h-24 border-8 border-emerald-100 border-t-emerald-600 rounded-full animate-spin"></div>
+          <div className="w-24 h-24 border-8 border-slate-200 border-t-emerald-600 rounded-full animate-spin"></div>
           <div className="absolute inset-0 flex items-center justify-center">
-            {/* Added missing ShieldCheck import from lucide-react */}
-            <ShieldCheck className="text-emerald-600/20" size={32} />
+            <ShieldCheck className="text-emerald-600" size={32} />
           </div>
         </div>
         <div className="space-y-2">
-          <h2 className="text-2xl font-bold text-slate-800">Scoring por Inteligência Artificial</h2>
-          <p className="text-slate-500 max-w-sm mx-auto">Analisando divergências de equipe, acessos e evidências de segurança para classificar o risco jurídico.</p>
+          <h2 className="text-2xl font-bold text-slate-900">Cruzamento de Dados GD4</h2>
+          <p className="text-slate-600 font-bold max-w-sm mx-auto uppercase text-xs tracking-widest">Calculando Scoring de Risco Jurídico...</p>
         </div>
       </div>
     );
@@ -219,52 +217,51 @@ const AuditWizard: React.FC<AuditWizardProps> = ({ obras, currentUser, onAuditCo
     <div className="max-w-4xl mx-auto space-y-6 animate-in slide-in-from-right duration-500">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
-          <div className="w-12 h-12 bg-emerald-600 text-white rounded-2xl flex items-center justify-center font-bold text-xl shadow-lg">
+          <div className="w-12 h-12 bg-slate-900 text-white rounded-2xl flex items-center justify-center font-bold text-xl shadow-lg">
             {currentBlockKey}
           </div>
           <div>
-            <h2 className="text-xl font-bold text-slate-800">{BLOCKS[currentBlockKey]}</h2>
+            <h2 className="text-xl font-bold text-slate-900">{BLOCKS[currentBlockKey]}</h2>
             <div className="flex gap-1 mt-1">
               {blockKeys.map((_, idx) => (
                 <div 
                   key={idx} 
-                  className={`h-1 w-8 rounded-full transition-all ${idx <= currentBlockIdx ? 'bg-emerald-500' : 'bg-slate-200'}`}
+                  className={`h-1.5 w-8 rounded-full transition-all ${idx <= currentBlockIdx ? 'bg-emerald-500' : 'bg-slate-300'}`}
                 />
               ))}
             </div>
           </div>
         </div>
         <div className="text-right">
-          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Etapa {currentBlockIdx + 1} de {blockKeys.length}</span>
-          <p className="text-xs font-bold text-slate-400">{obras.find(o => o.id === selectedObra)?.nome}</p>
+          <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Etapa {currentBlockIdx + 1} de {blockKeys.length}</span>
+          <p className="text-sm font-black text-slate-900">{obras.find(o => o.id === selectedObra)?.nome}</p>
         </div>
       </div>
 
       <div className="space-y-4">
-        {/* Lógica Especial do Bloco B conforme requisitado */}
         {currentBlockKey === 'B' ? (
           <div className="space-y-6">
-            <div className="bg-white p-8 rounded-3xl border border-slate-200 shadow-sm space-y-6">
+            <div className="bg-white p-8 rounded-3xl border border-slate-300 shadow-sm space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
-                  <label className="text-xs font-bold text-slate-500 uppercase tracking-widest flex items-center gap-2">
-                    <Users size={14} /> Nº Equipe em Campo
+                  <label className="text-xs font-bold text-slate-600 uppercase tracking-widest flex items-center gap-2">
+                    <Users size={14} /> Efetivo em Campo (Contagem Real)
                   </label>
                   <input 
                     type="number" 
-                    className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-5 py-4 focus:ring-2 focus:ring-emerald-500 focus:outline-none font-bold text-lg"
+                    className="w-full bg-slate-50 border border-slate-300 rounded-2xl px-5 py-4 focus:ring-2 focus:ring-emerald-500 focus:outline-none font-bold text-2xl text-slate-900"
                     placeholder="0"
                     value={equipeCampo}
                     onChange={e => setEquipeCampo(e.target.value)}
                   />
                 </div>
                 <div className="space-y-2">
-                  <label className="text-xs font-bold text-slate-500 uppercase tracking-widest flex items-center gap-2">
-                    <Database size={14} /> Nº Equipe no GD4
+                  <label className="text-xs font-bold text-slate-600 uppercase tracking-widest flex items-center gap-2">
+                    <Database size={14} /> Efetivo no GD4 (Sistema)
                   </label>
                   <input 
                     type="number" 
-                    className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-5 py-4 focus:ring-2 focus:ring-emerald-500 focus:outline-none font-bold text-lg"
+                    className="w-full bg-slate-50 border border-slate-300 rounded-2xl px-5 py-4 focus:ring-2 focus:ring-emerald-500 focus:outline-none font-bold text-2xl text-slate-900"
                     placeholder="0"
                     value={equipeGd4}
                     onChange={e => setEquipeGd4(e.target.value)}
@@ -273,30 +270,30 @@ const AuditWizard: React.FC<AuditWizardProps> = ({ obras, currentUser, onAuditCo
               </div>
 
               {equipeCampo && equipeGd4 && (
-                <div className={`p-4 rounded-2xl border flex items-center justify-between ${Number(equipeCampo) !== Number(equipeGd4) ? 'bg-rose-50 border-rose-100 text-rose-700' : 'bg-emerald-50 border-emerald-100 text-emerald-700'}`}>
+                <div className={`p-4 rounded-2xl border flex items-center justify-between ${Number(equipeCampo) !== Number(equipeGd4) ? 'bg-rose-50 border-rose-300 text-rose-900' : 'bg-emerald-50 border-emerald-300 text-emerald-900'}`}>
                    <div className="flex items-center gap-3">
                      <AlertCircle size={20} />
-                     <span className="text-sm font-bold uppercase">Divergência de Efetivo:</span>
+                     <span className="text-sm font-black uppercase">Divergência de Equipe:</span>
                    </div>
-                   <span className="text-xl font-bold">{Math.abs(Number(equipeCampo) - Number(equipeGd4))}</span>
+                   <span className="text-3xl font-black">{Math.abs(Number(equipeCampo) - Number(equipeGd4))}</span>
                 </div>
               )}
 
               <div className="space-y-4">
-                <label className="text-xs font-bold text-slate-500 uppercase tracking-widest block">Subcontratação Identificada?</label>
+                <label className="text-xs font-bold text-slate-600 uppercase tracking-widest block">Evidência de Quarteirização Irregular?</label>
                 <div className="flex gap-4">
                   {[true, false].map((val) => (
                     <button
                       key={val ? 'sim' : 'nao'}
                       onClick={() => setSubcontratacao(val)}
                       className={`
-                        flex-1 py-4 rounded-2xl font-bold text-sm uppercase transition-all border
+                        flex-1 py-4 rounded-2xl font-bold text-sm uppercase transition-all border-2
                         ${subcontratacao === val 
-                          ? (val ? 'bg-rose-600 text-white border-rose-600 shadow-lg shadow-rose-200' : 'bg-emerald-600 text-white border-emerald-600 shadow-lg shadow-emerald-200')
-                          : 'bg-white text-slate-400 border-slate-200 hover:bg-slate-50'}
+                          ? (val ? 'bg-rose-700 text-white border-rose-800 shadow-lg' : 'bg-emerald-700 text-white border-emerald-800 shadow-lg')
+                          : 'bg-white text-slate-500 border-slate-200 hover:bg-slate-50'}
                       `}
                     >
-                      {val ? 'Sim (Irregular)' : 'Não'}
+                      {val ? 'Sim (Alerta Crítico)' : 'Não'}
                     </button>
                   ))}
                 </div>
@@ -304,15 +301,14 @@ const AuditWizard: React.FC<AuditWizardProps> = ({ obras, currentUser, onAuditCo
             </div>
           </div>
         ) : (
-          /* Perguntas Regulares Blocos A, C, D, E */
           currentBlockQuestions.map((q) => {
             const resp = respostas.find(r => r.pergunta_id === q.id);
             const needsObs = resp && resp.resposta !== 'sim';
             
             return (
-              <div key={q.id} className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm space-y-4 transition-all hover:border-emerald-200">
+              <div key={q.id} className="bg-white p-6 rounded-3xl border border-slate-300 shadow-sm space-y-4 transition-all hover:border-emerald-500 border-2">
                 <div className="flex items-start justify-between gap-4">
-                  <p className="text-slate-800 font-bold leading-relaxed">{q.texto}</p>
+                  <p className="text-slate-900 font-black leading-relaxed text-base">{q.texto}</p>
                 </div>
                 
                 <div className="flex flex-wrap gap-2">
@@ -321,10 +317,10 @@ const AuditWizard: React.FC<AuditWizardProps> = ({ obras, currentUser, onAuditCo
                       key={val}
                       onClick={() => handleResponseChange(q.id, val)}
                       className={`
-                        px-8 py-3 rounded-xl font-bold text-[11px] uppercase tracking-wider transition-all
+                        px-8 py-3 rounded-xl font-black text-xs uppercase tracking-wider transition-all border-2
                         ${resp?.resposta === val 
-                          ? (val === 'sim' ? 'bg-emerald-600 text-white' : val === 'parcial' ? 'bg-amber-500 text-white' : 'bg-rose-600 text-white')
-                          : 'bg-slate-50 text-slate-400 border border-slate-100 hover:bg-slate-100'}
+                          ? (val === 'sim' ? 'bg-emerald-700 text-white border-emerald-800' : val === 'parcial' ? 'bg-amber-600 text-white border-amber-700' : 'bg-rose-700 text-white border-rose-800')
+                          : 'bg-slate-50 text-slate-500 border-slate-200 hover:bg-slate-100'}
                       `}
                     >
                       {val}
@@ -334,14 +330,14 @@ const AuditWizard: React.FC<AuditWizardProps> = ({ obras, currentUser, onAuditCo
 
                 {needsObs && (
                   <div className="animate-in slide-in-from-top-2 duration-300">
-                    <label className="text-[10px] font-extrabold text-rose-500 uppercase tracking-widest mb-2 block">
-                      Observação de Não Conformidade
+                    <label className="text-[10px] font-black text-rose-700 uppercase tracking-widest mb-2 block">
+                      Observação Obrigatória (Descrição da Não Conformidade)
                     </label>
                     <textarea
                       value={resp.observacao || ''}
                       onChange={(e) => handleObsChange(q.id, e.target.value)}
-                      placeholder="Descreva a irregularidade conforme fluxo de compliance..."
-                      className="w-full bg-rose-50/50 border border-rose-100 rounded-2xl p-4 text-sm focus:ring-1 focus:ring-rose-400 focus:outline-none min-h-[100px]"
+                      placeholder="Descreva o desvio de compliance ou pendência GD4..."
+                      className="w-full bg-rose-50 border-2 border-rose-200 rounded-2xl p-4 text-sm font-bold text-slate-900 focus:ring-2 focus:ring-rose-500 focus:outline-none min-h-[120px]"
                     />
                   </div>
                 )}
@@ -352,17 +348,17 @@ const AuditWizard: React.FC<AuditWizardProps> = ({ obras, currentUser, onAuditCo
       </div>
 
       {currentBlockIdx === blockKeys.length - 1 && (
-        <div className="bg-amber-50 border border-amber-100 p-8 rounded-3xl space-y-4 shadow-sm">
-          <div className="flex items-center gap-2 text-amber-700">
+        <div className="bg-amber-50 border-2 border-amber-300 p-8 rounded-3xl space-y-4 shadow-sm">
+          <div className="flex items-center gap-2 text-amber-900">
             <AlertTriangle size={24} />
-            <h3 className="font-bold text-lg">Eventos Graves / Ocorrências</h3>
+            <h3 className="font-black text-lg uppercase tracking-tight">Ocorrências Graves / Risco Imediato</h3>
           </div>
-          <p className="text-sm text-amber-600 font-medium">Situações extraordinárias que afetam o risco jurídico imediato (ex: interdição, acidente).</p>
+          <p className="text-sm text-amber-800 font-bold">Relate situações de risco jurídico crítico que requerem ação imediata da Diretoria.</p>
           <textarea
             value={ocorrencias}
             onChange={(e) => setOcorrencias(e.target.value)}
-            className="w-full bg-white border border-amber-200 rounded-2xl p-4 text-sm focus:ring-2 focus:ring-amber-500 focus:outline-none min-h-[120px]"
-            placeholder="Relate aqui ocorrências pontuais..."
+            className="w-full bg-white border-2 border-amber-300 rounded-2xl p-4 text-sm font-bold text-slate-900 focus:ring-2 focus:ring-amber-500 focus:outline-none min-h-[150px]"
+            placeholder="Ex: Identificado colaborador sem registro ou empresa bloqueada no sistema..."
           />
         </div>
       )}
@@ -373,25 +369,25 @@ const AuditWizard: React.FC<AuditWizardProps> = ({ obras, currentUser, onAuditCo
             if (currentBlockIdx === 0) setStep('setup');
             else setCurrentBlockIdx(prev => prev - 1);
           }}
-          className="flex items-center gap-2 font-bold text-slate-400 hover:text-slate-800 transition-colors"
+          className="flex items-center gap-2 font-black text-slate-600 hover:text-slate-900 transition-colors uppercase text-xs tracking-widest"
         >
           <ChevronLeft size={20} />
-          Bloco Anterior
+          Voltar
         </button>
 
         {currentBlockIdx === blockKeys.length - 1 ? (
           <button
             disabled={!isBlockComplete()}
             onClick={handleSubmit}
-            className="bg-emerald-600 text-white px-12 py-5 rounded-2xl font-extrabold hover:bg-emerald-700 disabled:opacity-50 transition-all shadow-xl shadow-emerald-600/20 uppercase tracking-widest text-xs"
+            className="bg-emerald-700 text-white px-12 py-5 rounded-2xl font-black hover:bg-emerald-800 disabled:opacity-50 transition-all shadow-xl shadow-emerald-900/20 uppercase tracking-widest text-xs border-2 border-emerald-900"
           >
-            Finalizar e Gerar Report IA
+            Gerar Scoring e Report IA
           </button>
         ) : (
           <button
             disabled={!isBlockComplete()}
             onClick={() => setCurrentBlockIdx(prev => prev + 1)}
-            className="bg-slate-900 text-white px-12 py-5 rounded-2xl font-bold hover:bg-slate-800 disabled:opacity-50 transition-all flex items-center gap-2 shadow-xl"
+            className="bg-slate-900 text-white px-12 py-5 rounded-2xl font-black hover:bg-slate-800 disabled:opacity-50 transition-all flex items-center gap-2 shadow-xl border-2 border-slate-700"
           >
             Próximo Bloco
             <ChevronRight size={20} />
