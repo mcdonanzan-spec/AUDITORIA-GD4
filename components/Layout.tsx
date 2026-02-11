@@ -19,7 +19,7 @@ export const UnitaLogo = ({ className = "h-10", light = false }) => (
         unıt
         <span className="relative inline-block">
           a
-          <div className="absolute -top-1 -right-0.5 w-3 h-3 bg-[#F05A22] transform -skew-x-12 rotate-12 shadow-sm"></div>
+          <div className="absolute -top-1.5 -right-0.5 w-3.5 h-3.5 bg-[#F05A22] transform -skew-x-12 rotate-[15deg] shadow-sm"></div>
         </span>
       </span>
     </div>
@@ -40,11 +40,12 @@ interface LayoutProps {
 const Layout: React.FC<LayoutProps> = ({ children, user, onLogout, currentPage, onPageChange }) => {
   const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false);
 
+  // Garantindo que todos os itens apareçam para Admin e Auditor
   const menuItems = [
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, roles: ['admin', 'auditor', 'diretoria', 'obra'] },
     { id: 'new-audit', label: 'Nova Auditoria', icon: ClipboardCheck, roles: ['admin', 'auditor'] },
     { id: 'obras', label: 'Gestão de Unidades', icon: Building2, roles: ['admin', 'auditor'] },
-    { id: 'history', label: 'Histórico', icon: History, roles: ['admin', 'auditor', 'diretoria'] },
+    { id: 'history', label: 'Histórico Completo', icon: History, roles: ['admin', 'auditor', 'diretoria'] },
   ];
 
   const allowedMenuItems = menuItems.filter(item => item.roles.includes(user.perfil));
@@ -75,7 +76,7 @@ const Layout: React.FC<LayoutProps> = ({ children, user, onLogout, currentPage, 
           <UnitaLogo className="h-12" />
         </div>
 
-        <nav className="flex-1 mt-6 px-6 space-y-3">
+        <nav className="flex-1 mt-6 px-6 space-y-3 overflow-y-auto">
           {allowedMenuItems.map((item) => (
             <button
               key={item.id}

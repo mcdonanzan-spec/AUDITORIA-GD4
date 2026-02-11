@@ -36,6 +36,16 @@ export interface AuditResponse {
   evidencia_url?: string;
 }
 
+export interface EntrevistaAmostral {
+  id: string;
+  funcao: string;
+  respostas: {
+    pergunta_id: string;
+    resposta: ResponseValue;
+    comentario?: string;
+  }[];
+}
+
 export interface Audit {
   id: string;
   obra_id: string;
@@ -46,6 +56,7 @@ export interface Audit {
   classificacao?: string;
   risco_juridico?: string;
   respostas: AuditResponse[];
+  entrevistas?: EntrevistaAmostral[];
   equipe_campo?: number;
   equipe_gd4?: number;
   subcontratacao_identificada?: boolean;
