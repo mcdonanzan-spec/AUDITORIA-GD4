@@ -3,26 +3,25 @@ import { Question } from './types';
 
 export const QUESTIONS: Question[] = [
   // BLOCO A - Controle de Acesso (GD4)
-  { id: 'a1', bloco: 'A', texto: 'Bloqueio automático por pendência documental no GD4 está operando sem liberações manuais?', peso: 25 },
-  { id: 'a2', bloco: 'A', texto: 'Identificação facial/biométrica utilizada por 100% dos terceiros?', peso: 15 },
-  { id: 'a3', bloco: 'A', texto: 'Controle de "esquecimento de cartão/biometria" possui registro fotográfico e justificativa no sistema?', peso: 10 },
+  { id: 'a1', bloco: 'A', texto: 'O bloqueio automático por pendência documental no GD4 está operando sem liberações manuais na catraca?', peso: 25 },
+  { id: 'a2', bloco: 'A', texto: 'A identificação biométrica/facial é utilizada obrigatoriamente por 100% dos terceiros?', peso: 15 },
+  { id: 'a3', bloco: 'A', texto: 'O controle de acessos eventuais (esquecimento/visitante) possui registro fotográfico e justificativa sistêmica?', peso: 10 },
   
   // BLOCO B - Conformidade de Equipe
-  // (Lógica numérica tratada no Wizard, perguntas adicionais abaixo)
-  { id: 'b3', bloco: 'B', texto: 'Relação de funcionários em campo bate com o RE (Registro de Empregados) validado no GD4?', peso: 20 },
-  { id: 'b4', bloco: 'B', texto: 'Ausência de trabalhadores em "status pendente" ou "em integração" circulando na obra?', peso: 30 },
+  { id: 'b3', bloco: 'B', texto: 'O efetivo em campo é integralmente composto por funcionários com RE (Registro de Empregados) validado no GD4?', peso: 20 },
+  { id: 'b4', bloco: 'B', texto: 'A obra está livre de trabalhadores com status "pendente" ou "em integração" circulando nas frentes de serviço?', peso: 30 },
   
   // BLOCO C - Gestão de Subcontratação
-  { id: 'c1', bloco: 'C', texto: 'Identificada "quarteirização" (sub da sub) não autorizada ou sem contrato no GD4?', peso: 30 },
-  { id: 'c2', bloco: 'C', texto: 'Empresas terceiras possuem contrato de prestação de serviços ativo e dentro da vigência?', peso: 20 },
+  { id: 'c1', bloco: 'C', texto: 'Toda subcontratação em campo (quarteirização) possui autorização prévia e contrato ativo devidamente registrado no GD4?', peso: 30 },
+  { id: 'c2', bloco: 'C', texto: 'As empresas terceiras em atividade possuem contrato de prestação de serviços dentro da vigência jurídica?', peso: 20 },
   
-  // BLOCO D - Postura e Identificação
-  { id: 'd1', bloco: 'D', texto: 'Todos os colaboradores portam crachá com QR Code de consulta rápida ao status GD4?', peso: 15 },
-  { id: 'd2', bloco: 'D', texto: 'Uniforme e identificação da empresa em campo coincidem com a contratada original?', peso: 10 },
+  // BLOCO D - Identificação e Postura
+  { id: 'd1', bloco: 'D', texto: 'Todos os colaboradores portam crachá legível com QR Code para consulta imediata de conformidade GD4?', peso: 15 },
+  { id: 'd2', bloco: 'D', texto: 'A identificação (uniforme/crachá) do colaborador coincide exatamente com a empresa contratada no sistema?', peso: 10 },
   
-  // BLOCO E - Auditoria de Vínculo e Medição
-  { id: 'e1', bloco: 'E', texto: 'Documentação mensal (GFIP/FGTS) da empresa está 100% atualizada no sistema?', peso: 25 },
-  { id: 'e2', bloco: 'E', texto: 'Verificada compatibilidade entre função exercida em campo e o CBO registrado no GD4?', peso: 15 },
+  // BLOCO E - Auditoria de Vínculo
+  { id: 'e1', bloco: 'E', texto: 'A documentação mensal obrigatória (GFIP/FGTS/Folha) está 100% atualizada e aprovada no GD4?', peso: 25 },
+  { id: 'e2', bloco: 'E', texto: 'A função exercida em campo pelo colaborador é compatível com o CBO registrado no sistema?', peso: 15 },
 ];
 
 export const BLOCKS = {
