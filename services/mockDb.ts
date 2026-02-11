@@ -1,15 +1,14 @@
 
 import { Obra, Audit, User } from '../types';
 
-// Mock Data
-const MOCK_OBRAS: Obra[] = [
-  { id: '1', nome: 'Residencial Aurora', regional: 'Sul', engenheiro_responsavel: 'Carlos Silva', status: 'ativa' },
-  { id: '2', nome: 'Complexo Empresarial Alpha', regional: 'Sudeste', engenheiro_responsavel: 'Ana Pereira', status: 'ativa' },
-  { id: '3', nome: 'Hospital Central', regional: 'Norte', engenheiro_responsavel: 'Marcos Souza', status: 'suspensa' },
-  { id: '4', nome: 'Condomínio Vista Mar', regional: 'Litoral', engenheiro_responsavel: 'Juliana Lima', status: 'ativa' },
+let MOCK_OBRAS: Obra[] = [
+  { id: '1', nome: 'Residencial Aurora', regional: 'Sul', engenheiro_responsavel: 'Carlos Silva', status: 'ativa', created_at: '2023-01-10T00:00:00Z' },
+  { id: '2', nome: 'Complexo Empresarial Alpha', regional: 'Sudeste', engenheiro_responsavel: 'Ana Pereira', status: 'ativa', created_at: '2023-02-15T00:00:00Z' },
+  { id: '3', nome: 'Hospital Central', regional: 'Norte', engenheiro_responsavel: 'Marcos Souza', status: 'suspensa', created_at: '2023-03-20T00:00:00Z' },
+  { id: '4', nome: 'Condomínio Vista Mar', regional: 'Litoral', engenheiro_responsavel: 'Juliana Lima', status: 'ativa', created_at: '2023-04-05T00:00:00Z' },
 ];
 
-const MOCK_AUDITS: Audit[] = [
+let MOCK_AUDITS: Audit[] = [
   {
     id: 'aud-1',
     obra_id: '1',
@@ -37,14 +36,19 @@ const MOCK_AUDITS: Audit[] = [
 ];
 
 export const getObras = async (): Promise<Obra[]> => {
-  return new Promise((resolve) => setTimeout(() => resolve(MOCK_OBRAS), 500));
+  return new Promise((resolve) => setTimeout(() => resolve([...MOCK_OBRAS]), 300));
+};
+
+export const addObra = async (obra: Obra): Promise<Obra> => {
+  MOCK_OBRAS = [obra, ...MOCK_OBRAS];
+  return obra;
 };
 
 export const getAudits = async (): Promise<Audit[]> => {
-  return new Promise((resolve) => setTimeout(() => resolve(MOCK_AUDITS), 500));
+  return new Promise((resolve) => setTimeout(() => resolve([...MOCK_AUDITS]), 300));
 };
 
 export const saveAudit = async (audit: Audit): Promise<Audit> => {
-  MOCK_AUDITS.unshift(audit);
+  MOCK_AUDITS = [audit, ...MOCK_AUDITS];
   return audit;
 };

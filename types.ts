@@ -15,6 +15,7 @@ export interface Obra {
   regional: string;
   engenheiro_responsavel: string;
   status: 'ativa' | 'concluida' | 'suspensa';
+  created_at: string;
 }
 
 export type AuditType = 'mensal' | 'extraordinaria';
@@ -45,15 +46,12 @@ export interface Audit {
   classificacao?: string;
   risco_juridico?: string;
   respostas: AuditResponse[];
+  // Campos específicos do Bloco B
+  equipe_campo?: number;
+  equipe_gd4?: number;
+  subcontratacao_identificada?: boolean;
   relatorio_ia?: string;
   created_at: string;
-}
-
-export interface AIRanking {
-  obra_id: string;
-  nome: string;
-  indice: number;
-  risco: string;
 }
 
 export interface AIAnalysisResult {

@@ -6,6 +6,7 @@ import Dashboard from './components/Dashboard';
 import AuditWizard from './components/AuditWizard';
 import AuditResult from './components/AuditResult';
 import AuditHistory from './components/AuditHistory';
+import ObrasManagement from './components/ObrasManagement';
 import { User, Audit, Obra, AIAnalysisResult } from './types';
 import { getAudits, getObras, saveAudit } from './services/mockDb';
 
@@ -17,28 +18,35 @@ const App: React.FC = () => {
   const [lastResult, setLastResult] = React.useState<{ audit: Audit; report: AIAnalysisResult } | null>(null);
   const [loading, setLoading] = React.useState(true);
 
+  const fetchData = async () => {
+    try {
+      const [fetchedAudits, fetchedObras] = await Promise.all([
+        getAudits(),
+        getObras()
+      ]);
+      setAudits(fetchedAudits);
+      setObras(fetchedObras);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   React.useEffect(() => {
-    const init = async () => {
-      try {
-        const [fetchedAudits, fetchedObras] = await Promise.all([
-          getAudits(),
-          getObras()
-        ]);
-        setAudits(fetchedAudits);
-        setObras(fetchedObras);
-      } finally {
-        setLoading(false);
-      }
-    };
-    init();
+    fetchData();
   }, []);
 
   const handleLogin = (email: string) => {
+    // Mock de perfis conforme solicitado
+    let perfil: any = 'auditor';
+    if (email.includes('admin')) perfil = 'admin';
+    if (email.includes('diretoria')) perfil = 'diretoria';
+    if (email.includes('obra')) perfil = 'obra';
+
     setUser({
-      id: 'user-1',
-      nome: 'Ricardo Auditor Senior',
+      id: 'user-' + Date.now(),
+      nome: email.split('@')[0].toUpperCase(),
       email: email,
-      perfil: 'admin'
+      perfil: perfil
     });
   };
 
@@ -54,17 +62,19 @@ const App: React.FC = () => {
     setCurrentPage('result');
   };
 
+  const handleObraAdded = (obra: Obra) => {
+    setObras(prev => [obra, ...prev]);
+  };
+
   if (!user) {
     return <Login onLogin={handleLogin} />;
   }
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
-        <div className="text-center space-y-4">
-          <div className="w-12 h-12 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin mx-auto"></div>
-          <p className="text-slate-500 font-medium">Carregando governança...</p>
-        </div>
+      <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center">
+        <div className="w-12 h-12 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin"></div>
+        <p className="mt-4 text-slate-500 font-bold uppercase tracking-widest text-xs">Iniciando Governança...</p>
       </div>
     );
   }
@@ -72,9 +82,11 @@ const App: React.FC = () => {
   const renderContent = () => {
     switch (currentPage) {
       case 'dashboard':
-        return <Dashboard audits={audits} obras={obras} />;
+        return <Dashboard audits={audits} obras={obras} onNavigate={setCurrentPage} />;
       case 'new-audit':
         return <AuditWizard obras={obras} currentUser={user} onAuditComplete={handleAuditComplete} />;
+      case 'obras':
+        return <ObrasManagement obras={obras} onObraAdded={handleObraAdded} />;
       case 'result':
         return lastResult ? (
           <AuditResult 
@@ -82,11 +94,11 @@ const App: React.FC = () => {
             report={lastResult.report} 
             onClose={() => setCurrentPage('dashboard')} 
           />
-        ) : <Dashboard audits={audits} obras={obras} />;
+        ) : <Dashboard audits={audits} obras={obras} onNavigate={setCurrentPage} />;
       case 'history':
         return <AuditHistory audits={audits} obras={obras} />;
       default:
-        return <Dashboard audits={audits} obras={obras} />;
+        return <Dashboard audits={audits} obras={obras} onNavigate={setCurrentPage} />;
     }
   };
 
