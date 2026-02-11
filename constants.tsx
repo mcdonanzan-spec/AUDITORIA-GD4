@@ -25,10 +25,11 @@ export const INTERVIEW_QUESTIONS: Question[] = [
 ];
 
 export const BLOCKS = {
-  A: 'Acesso (GD4)',
-  B: 'Efetivo',
+  A: 'Controle de Acesso',
+  B: 'Conformidade de Efetivo',
   C: 'Subcontratação',
-  D: 'Identificação',
+  D: 'Identificação Visual',
   E: 'Técnico Campo',
-  F: 'Amostragem Comportamental'
+  F: 'Amostragem Comportamental',
+  G: 'Gestão Documental (GD4)'
 };

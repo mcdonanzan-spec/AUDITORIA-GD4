@@ -3,20 +3,18 @@ import React from 'react';
 import { 
   Building2, 
   User as UserIcon, 
-  AlertCircle,
   ChevronLeft,
   ChevronRight,
   ShieldCheck,
   Users,
   Database,
-  AlertTriangle,
   MessageSquareQuote,
-  CheckCircle2,
-  XCircle,
-  HelpCircle,
   Plus,
   Trash2,
-  UserCheck
+  UserCheck,
+  FileWarning,
+  ClipboardList,
+  SearchCheck
 } from 'lucide-react';
 import { Obra, Question, ResponseValue, AuditResponse, Audit, AIAnalysisResult, EntrevistaAmostral } from '../types';
 import { QUESTIONS, INTERVIEW_QUESTIONS, BLOCKS } from '../constants';
@@ -40,6 +38,10 @@ const AuditWizard: React.FC<AuditWizardProps> = ({ obras, currentUser, onAuditCo
   const [equipeGd4, setEquipeGd4] = React.useState<string>('');
   const [subcontratacaoRegular, setSubcontratacaoRegular] = React.useState<boolean | null>(null);
 
+  // Novos estados para o Bloco G
+  const [pendenciasAnalisar, setPendenciasAnalisar] = React.useState<string>('');
+  const [pendenciasEnvio, setPendenciasEnvio] = React.useState<string>('');
+
   const [respostas, setRespostas] = React.useState<AuditResponse[]>([]);
   const [entrevistas, setEntrevistas] = React.useState<EntrevistaAmostral[]>([]);
   const [ocorrencias, setOcorrencias] = React.useState<string>('');
@@ -58,7 +60,6 @@ const AuditWizard: React.FC<AuditWizardProps> = ({ obras, currentUser, onAuditCo
     });
   };
 
-  // Add missing handleObsChange to handle observation/evidence text updates for non-conformities
   const handleObsChange = (questionId: string, val: string) => {
     setRespostas(prev => prev.map(r => r.pergunta_id === questionId ? { ...r, observacao: val } : r));
   };
@@ -95,6 +96,9 @@ const AuditWizard: React.FC<AuditWizardProps> = ({ obras, currentUser, onAuditCo
     if (currentBlockKey === 'F') {
       return entrevistas.length > 0 && entrevistas.every(e => e.funcao !== '');
     }
+    if (currentBlockKey === 'G') {
+      return pendenciasAnalisar !== '' && pendenciasEnvio !== '';
+    }
     return currentBlockQuestions.every(q => respostas.find(r => r.pergunta_id === q.id));
   };
 
@@ -109,10 +113,8 @@ const AuditWizard: React.FC<AuditWizardProps> = ({ obras, currentUser, onAuditCo
 
     try {
       const blockScores = blockKeys.reduce((acc, b) => {
-        const qIds = QUESTIONS.filter(q => q.bloco === b).map(q => q.id);
-        const bResps = respostas.filter(r => qIds.includes(r.pergunta_id));
-        
         let totalScore = 0;
+        
         if (b === 'B') {
            const divergencia = Math.abs(Number(equipeCampo) - Number(equipeGd4));
            const scoreEquipe = divergencia === 0 ? 100 : divergencia < 5 ? 50 : 0;
@@ -124,7 +126,15 @@ const AuditWizard: React.FC<AuditWizardProps> = ({ obras, currentUser, onAuditCo
              const s = r.resposta === 'sim' ? 100 : r.resposta === 'parcial' ? 50 : 0;
              return sum + s;
            }, 0) / (totalResps.length || 1);
+        } else if (b === 'G') {
+           // Lógica de Score para Documentação: Penas por volume de pendência relativo ao efetivo
+           const totalPendencias = Number(pendenciasAnalisar) + Number(pendenciasEnvio);
+           const totalPessoas = Number(equipeCampo) || 1;
+           const proporcao = totalPendencias / totalPessoas;
+           totalScore = proporcao < 0.2 ? 100 : proporcao < 0.5 ? 60 : 20;
         } else {
+           const qIds = QUESTIONS.filter(q => q.bloco === b).map(q => q.id);
+           const bResps = respostas.filter(r => qIds.includes(r.pergunta_id));
            totalScore = bResps.reduce((sum, r) => {
             const score = r.resposta === 'sim' ? 100 : r.resposta === 'parcial' ? 50 : 0;
             return sum + score;
@@ -150,6 +160,11 @@ const AuditWizard: React.FC<AuditWizardProps> = ({ obras, currentUser, onAuditCo
           gd4: Number(equipeGd4),
           subcontratacao_regular: subcontratacaoRegular
         },
+        documental_gd4: {
+          a_analisar: Number(pendenciasAnalisar),
+          pendente_envio: Number(pendenciasEnvio),
+          score_esforço: blockScores['gestão_documental_(gd4)']
+        },
         ocorrencias_graves: ocorrencias.split('\n').filter(s => s.trim()),
       };
 
@@ -168,6 +183,8 @@ const AuditWizard: React.FC<AuditWizardProps> = ({ obras, currentUser, onAuditCo
         entrevistas,
         equipe_campo: Number(equipeCampo),
         equipe_gd4: Number(equipeGd4),
+        pendencias_analisar: Number(pendenciasAnalisar),
+        pendencias_envio: Number(pendenciasEnvio),
         subcontratacao_identificada: !subcontratacaoRegular,
         created_at: new Date().toISOString()
       };
@@ -251,7 +268,7 @@ const AuditWizard: React.FC<AuditWizardProps> = ({ obras, currentUser, onAuditCo
         </div>
         <div className="space-y-3">
           <h2 className="text-3xl font-black text-slate-900 uppercase tracking-tighter">Sincronizando com GD4</h2>
-          <p className="text-slate-600 font-black text-sm uppercase tracking-widest">Calculando Scoring de Amostragem Unità...</p>
+          <p className="text-slate-600 font-black text-sm uppercase tracking-widest">Analisando Esforço de Gestão Documental...</p>
         </div>
       </div>
     );
@@ -276,16 +293,6 @@ const AuditWizard: React.FC<AuditWizardProps> = ({ obras, currentUser, onAuditCo
             </div>
           </div>
         </div>
-        
-        {currentBlockKey === 'F' && (
-          <div className="flex items-center gap-4 bg-white px-6 py-3 rounded-2xl border-4 border-slate-900 shadow-sm">
-             <div className="flex flex-col items-end">
-                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Cobertura Real</span>
-                <span className={`text-xl font-black ${coveragePercent < 10 ? 'text-rose-600' : 'text-emerald-600'}`}>{coveragePercent}% do efetivo</span>
-             </div>
-             <UserCheck size={32} className="text-[#F05A22]" />
-          </div>
-        )}
       </div>
 
       <div className="space-y-6">
@@ -410,15 +417,48 @@ const AuditWizard: React.FC<AuditWizardProps> = ({ obras, currentUser, onAuditCo
                    </div>
                 </div>
               ))}
-              
-              {entrevistas.length === 0 && (
-                <div className="py-20 text-center border-4 border-dashed border-slate-300 rounded-[2.5rem] bg-slate-50">
-                   <div className="w-20 h-20 bg-white rounded-full flex items-center justify-center mx-auto text-slate-300 border-4 border-slate-100 mb-4">
-                      <Users size={40} />
-                   </div>
-                   <p className="text-slate-400 font-black uppercase text-sm tracking-widest">Nenhum entrevistado adicionado.<br/>Mínimo de 1 para prosseguir.</p>
-                </div>
-              )}
+            </div>
+          </div>
+        ) : currentBlockKey === 'G' ? (
+          <div className="bg-white p-10 rounded-[2.5rem] border-4 border-slate-900 shadow-[12px_12px_0px_0px_rgba(15,23,42,1)] space-y-12">
+            <div className="flex items-center gap-4 bg-orange-50 p-6 rounded-3xl border-2 border-orange-200">
+               <FileWarning size={40} className="text-[#F05A22]" />
+               <div>
+                  <h4 className="font-black text-slate-900 uppercase tracking-tight">Análise de Fluxo Documental</h4>
+                  <p className="text-xs text-slate-500 font-bold uppercase">Métricas extraídas diretamente da console de gestão do GD4 para o período atual.</p>
+               </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+               <div className="space-y-4">
+                  <div className="flex items-center gap-3">
+                     <SearchCheck className="text-[#F05A22]" size={24} />
+                     <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Documentos "A Analisar"</label>
+                  </div>
+                  <input 
+                    type="number"
+                    placeholder="0"
+                    className="w-full bg-slate-50 border-4 border-slate-900 rounded-2xl px-8 py-6 focus:outline-none font-black text-5xl text-slate-900 shadow-inner"
+                    value={pendenciasAnalisar}
+                    onChange={e => setPendenciasAnalisar(e.target.value)}
+                  />
+                  <p className="text-[9px] text-slate-400 font-bold uppercase px-2 italic">Gargalo administrativo na aprovação de REs e contratos.</p>
+               </div>
+
+               <div className="space-y-4">
+                  <div className="flex items-center gap-3">
+                     <ClipboardList className="text-[#F05A22]" size={24} />
+                     <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Pendentes de Envio (Terceiros)</label>
+                  </div>
+                  <input 
+                    type="number"
+                    placeholder="0"
+                    className="w-full bg-slate-50 border-4 border-slate-900 rounded-2xl px-8 py-6 focus:outline-none font-black text-5xl text-slate-900 shadow-inner"
+                    value={pendenciasEnvio}
+                    onChange={e => setPendenciasEnvio(e.target.value)}
+                  />
+                  <p className="text-[9px] text-slate-400 font-bold uppercase px-2 italic">Reflete a falta de cobrança operacional sobre os parceiros.</p>
+               </div>
             </div>
           </div>
         ) : (
@@ -429,7 +469,6 @@ const AuditWizard: React.FC<AuditWizardProps> = ({ obras, currentUser, onAuditCo
             return (
               <div key={q.id} className="bg-white p-8 rounded-[2rem] border-4 border-slate-900 shadow-[8px_8px_0px_0px_rgba(15,23,42,1)] space-y-6 transition-all hover:-translate-y-1">
                 <p className="text-slate-900 font-black leading-tight text-2xl">{q.texto}</p>
-                
                 <div className="flex flex-wrap gap-3">
                   {(['sim', 'parcial', 'nao'] as ResponseValue[]).map((val) => (
                     <button
