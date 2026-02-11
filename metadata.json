@@ -1,0 +1,7 @@
+{
+  "name": "AuditRisk - Gestão de Governança de Obras",
+  "description": "Plataforma profissional de auditoria de conformidade e scoring de risco jurídico para construção civil, integrada com inteligência artificial.",
+  "requestFramePermissions": [
+    "camera"
+  ]
+}

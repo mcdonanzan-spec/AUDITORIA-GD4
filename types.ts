@@ -1,0 +1,67 @@
+
+export type UserRole = 'admin' | 'auditor' | 'diretoria' | 'obra';
+
+export interface User {
+  id: string;
+  nome: string;
+  email: string;
+  perfil: UserRole;
+  obra_id?: string;
+}
+
+export interface Obra {
+  id: string;
+  nome: string;
+  regional: string;
+  engenheiro_responsavel: string;
+  status: 'ativa' | 'concluida' | 'suspensa';
+}
+
+export type AuditType = 'mensal' | 'extraordinaria';
+
+export interface Question {
+  id: string;
+  bloco: 'A' | 'B' | 'C' | 'D' | 'E';
+  texto: string;
+  peso: number;
+}
+
+export type ResponseValue = 'sim' | 'parcial' | 'nao';
+
+export interface AuditResponse {
+  pergunta_id: string;
+  resposta: ResponseValue;
+  observacao?: string;
+  evidencia_url?: string;
+}
+
+export interface Audit {
+  id: string;
+  obra_id: string;
+  auditor_id: string;
+  data: string;
+  tipo: AuditType;
+  indice_geral?: number;
+  classificacao?: string;
+  risco_juridico?: string;
+  respostas: AuditResponse[];
+  relatorio_ia?: string;
+  created_at: string;
+}
+
+export interface AIRanking {
+  obra_id: string;
+  nome: string;
+  indice: number;
+  risco: string;
+}
+
+export interface AIAnalysisResult {
+  indiceGeral: number;
+  classificacao: string;
+  riscoJuridico: string;
+  naoConformidades: string[];
+  impactoJuridico: string;
+  recomendacoes: string[];
+  conclusaoExecutiva: string;
+}
