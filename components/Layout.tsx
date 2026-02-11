@@ -6,11 +6,28 @@ import {
   History, 
   LogOut, 
   Building2,
-  ShieldCheck,
   Menu,
-  X
+  X,
+  ArrowUpRight
 } from 'lucide-react';
 import { User } from '../types';
+
+export const UnitaLogo = ({ className = "h-10", light = false }) => (
+  <div className={`flex flex-col ${className} justify-center select-none`}>
+    <div className="flex items-baseline leading-none">
+      <span className={`${light ? 'text-white' : 'text-black'} font-[900] text-4xl tracking-tighter flex items-center relative`} style={{ fontFamily: 'system-ui, -apple-system, sans-serif' }}>
+        unıt
+        <span className="relative inline-block">
+          a
+          <div className="absolute -top-1 -right-0.5 w-3 h-3 bg-[#F05A22] transform -skew-x-12 rotate-12 shadow-sm"></div>
+        </span>
+      </span>
+    </div>
+    <div className={`${light ? 'text-white/80' : 'text-black/70'} text-[8px] font-black tracking-[0.55em] mt-1 ml-0.5 uppercase`}>
+      ENGENHARIA
+    </div>
+  </div>
+);
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -40,12 +57,9 @@ const Layout: React.FC<LayoutProps> = ({ children, user, onLogout, currentPage, 
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col md:flex-row">
       {/* Mobile Header */}
-      <div className="md:hidden bg-white text-slate-900 p-4 flex justify-between items-center sticky top-0 z-50 border-b-4 border-orange-500">
-        <div className="flex items-center gap-2">
-          <img src="https://media.licdn.com/dms/image/v2/C4D0BAQG0xY-vG-vG-A/company-logo_200_200/company-logo_200_200/0/1630571618367/unit_engenharia_logo?e=2147483647&v=beta&t=4Y6l9B7x8z5P0m1_z4Y6l9B7x8z5P0m1_z" alt="Unità" className="h-10" />
-          <span className="font-black uppercase tracking-tighter text-slate-900">AuditRisk</span>
-        </div>
-        <button onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>
+      <div className="md:hidden bg-white text-slate-900 p-4 flex justify-between items-center sticky top-0 z-50 border-b-4 border-[#F05A22]">
+        <UnitaLogo className="h-10 scale-75 origin-left" />
+        <button onClick={() => setMobileMenuOpen(!mobileMenuOpen)} className="p-2 bg-slate-100 rounded-xl">
           {mobileMenuOpen ? <X /> : <Menu />}
         </button>
       </div>
@@ -53,53 +67,45 @@ const Layout: React.FC<LayoutProps> = ({ children, user, onLogout, currentPage, 
       {/* Sidebar */}
       <aside className={`
         fixed md:sticky top-0 inset-y-0 left-0 z-40
-        w-72 bg-slate-900 text-white transform transition-transform duration-300 ease-in-out
+        w-72 bg-white text-slate-900 transform transition-transform duration-300 ease-in-out
         ${mobileMenuOpen ? 'translate-x-0' : '-translate-x-full'} 
-        md:translate-x-0 flex flex-col h-screen border-r-4 border-orange-600
+        md:translate-x-0 flex flex-col h-screen border-r-4 border-slate-900
       `}>
-        <div className="p-8 hidden md:block">
-          <img 
-            src="https://media.licdn.com/dms/image/v2/C4D0BAQG0xY-vG-vG-A/company-logo_200_200/company-logo_200_200/0/1630571618367/unit_engenharia_logo?e=2147483647&v=beta&t=4Y6l9B7x8z5P0m1_z4Y6l9B7x8z5P0m1_z" 
-            alt="Unità Engenharia" 
-            className="h-16 mb-4 filter brightness-0 invert" 
-          />
-          <div className="flex flex-col border-l-4 border-orange-500 pl-4 mt-6">
-            <span className="font-black text-2xl tracking-tighter leading-none uppercase">AuditRisk</span>
-            <span className="text-[10px] text-orange-400 font-black uppercase tracking-[0.2em] mt-2">Governança Unità</span>
-          </div>
+        <div className="p-8 hidden md:block border-b-4 border-slate-100">
+          <UnitaLogo className="h-12" />
         </div>
 
-        <nav className="flex-1 mt-6 px-6 space-y-2">
+        <nav className="flex-1 mt-6 px-6 space-y-3">
           {allowedMenuItems.map((item) => (
             <button
               key={item.id}
               onClick={() => handleNav(item.id)}
               className={`
-                w-full flex items-center gap-4 px-5 py-4 rounded-2xl transition-all font-black uppercase text-xs tracking-widest
+                w-full flex items-center gap-4 px-5 py-4 rounded-2xl transition-all font-black uppercase text-xs tracking-widest border-2
                 ${currentPage === item.id 
-                  ? 'bg-orange-600 text-white shadow-xl shadow-orange-900/40 translate-x-2' 
-                  : 'text-slate-400 hover:bg-slate-800 hover:text-white'}
+                  ? 'bg-slate-900 text-white border-slate-900 shadow-[4px_4px_0px_0px_rgba(240,90,34,1)] translate-x-1' 
+                  : 'text-slate-500 bg-white border-transparent hover:bg-slate-50 hover:text-slate-900'}
               `}
             >
-              <item.icon size={20} className={currentPage === item.id ? 'text-white' : 'text-orange-500'} />
+              <item.icon size={20} className={currentPage === item.id ? 'text-[#F05A22]' : 'text-slate-400'} />
               <span>{item.label}</span>
             </button>
           ))}
         </nav>
 
-        <div className="p-6 bg-slate-950">
+        <div className="p-6 bg-slate-50 border-t-4 border-slate-100">
           <div className="flex items-center gap-4 mb-6 px-2">
-            <div className="w-12 h-12 rounded-2xl bg-orange-600 flex items-center justify-center font-black text-white shadow-lg border-2 border-orange-400">
+            <div className="w-12 h-12 rounded-2xl bg-[#F05A22] flex items-center justify-center font-black text-white shadow-lg border-2 border-slate-900">
               {user.nome.charAt(0)}
             </div>
             <div className="flex flex-col overflow-hidden">
-              <span className="text-sm font-black truncate text-white uppercase tracking-tight">{user.nome}</span>
-              <span className="text-[10px] text-orange-500 font-black uppercase tracking-widest">{user.perfil}</span>
+              <span className="text-sm font-black truncate text-slate-900 uppercase tracking-tight">{user.nome}</span>
+              <span className="text-[10px] text-[#F05A22] font-black uppercase tracking-widest">{user.perfil}</span>
             </div>
           </div>
           <button 
             onClick={onLogout}
-            className="w-full flex items-center gap-3 px-5 py-3 text-slate-400 hover:text-white hover:bg-rose-600/20 rounded-xl transition-all font-black uppercase text-[10px] tracking-widest border border-slate-800"
+            className="w-full flex items-center gap-3 px-5 py-3 text-slate-500 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-all font-black uppercase text-[10px] tracking-widest border-2 border-slate-200"
           >
             <LogOut size={16} />
             Desconectar
