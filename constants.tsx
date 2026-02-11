@@ -16,8 +16,8 @@ export const QUESTIONS: Question[] = [
   { id: 'c2', bloco: 'C', texto: 'As empresas terceiras em atividade possuem contrato de prestação de serviços dentro da vigência jurídica?', peso: 20 },
   
   // BLOCO D - Identificação e Postura
-  { id: 'd1', bloco: 'D', texto: 'Todos os colaboradores portam crachá legível com QR Code para consulta imediata de conformidade GD4?', peso: 15 },
-  { id: 'd2', bloco: 'D', texto: 'A identificação (uniforme/crachá) do colaborador coincide exatamente com a empresa contratada no sistema?', peso: 10 },
+  { id: 'd1', bloco: 'D', texto: 'Todos os colaboradores em campo utilizam uniforme padrão com a logomarca visível da empresa contratada?', peso: 15 },
+  { id: 'd2', bloco: 'D', texto: 'A empresa identificada no uniforme do colaborador coincide exatamente com a Razão Social cadastrada no sistema GD4?', peso: 10 },
   
   // BLOCO E - Auditoria de Vínculo
   { id: 'e1', bloco: 'E', texto: 'A documentação mensal obrigatória (GFIP/FGTS/Folha) está 100% atualizada e aprovada no GD4?', peso: 25 },
