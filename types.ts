@@ -22,7 +22,7 @@ export type AuditType = 'mensal' | 'extraordinaria';
 
 export interface Question {
   id: string;
-  bloco: 'A' | 'B' | 'C' | 'D' | 'E';
+  bloco: 'A' | 'B' | 'C' | 'D' | 'E' | 'F';
   texto: string;
   peso: number;
 }
@@ -46,7 +46,6 @@ export interface Audit {
   classificacao?: string;
   risco_juridico?: string;
   respostas: AuditResponse[];
-  // Campos específicos do Bloco B
   equipe_campo?: number;
   equipe_gd4?: number;
   subcontratacao_identificada?: boolean;

@@ -5,19 +5,23 @@ import { AIAnalysisResult } from "../types";
 export const generateAuditReport = async (auditData: any): Promise<AIAnalysisResult> => {
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
   
-  const prompt = `Você é um sistema de avaliação de risco jurídico e operacional em obras de construção civil. Analise os seguintes dados e gere um scoring e relatório executivo.
+  const prompt = `Você é um sistema de governança e compliance de alto nível da Unità Engenharia.
+  Sua função é analisar uma auditoria de campo em canteiro de obras e determinar o risco jurídico e operacional.
   
   Dados da Auditoria:
   ${JSON.stringify(auditData, null, 2)}
   
-  Regras de Negócio:
-  1. Falha em controle de acesso = risco mínimo MÉDIO.
-  2. Colaborador irregular identificado = risco mínimo ALTO.
-  3. Subcontratação irregular = risco CRÍTICO.
-  4. Documento mensal pendente = risco mínimo MÉDIO.
-  5. Liberação manual paralela à catraca = risco ALTO automático.
-  6. Desvio de função com exposição a NR = risco ALTO.
-  7. Se houver ocorrência grave, priorizar análise qualitativa acima da média numérica.`;
+  CRITÉRIOS DE ANÁLISE (IMPORTANTE):
+  1. BLOCOS TÉCNICOS: Avalie a conformidade sistêmica (GD4).
+  2. BLOCO DE ENTREVISTAS (BLOCO F): Se houver contradição na fala do colaborador sobre PAGAMENTOS, BENEFÍCIOS ou ALOJAMENTO, o risco Jurídico deve ser elevado para ALTO ou CRÍTICO imediatamente, mesmo que o scoring numérico seja alto. Isso indica fraude documental.
+  3. DIVERGÊNCIA DE EFETIVO: Se o número em campo for maior que no GD4, há risco de trabalho informal.
+  
+  REGRAS DE CLASSIFICAÇÃO:
+  - REGULAR: Score > 80% e nenhuma contradição em entrevista.
+  - ATENÇÃO: Score 60-80% ou inconsistências leves em entrevistas.
+  - CRÍTICA: Score < 60% ou contradição grave em pagamentos/alojamento.
+  
+  Gere um relatório estruturado em JSON para a diretoria da Unità Engenharia.`;
 
   const response = await ai.models.generateContent({
     model: "gemini-3-flash-preview",

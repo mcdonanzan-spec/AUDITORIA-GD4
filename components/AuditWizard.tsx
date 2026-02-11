@@ -2,18 +2,18 @@
 import React from 'react';
 import { 
   Building2, 
-  Calendar, 
   User as UserIcon, 
-  CheckCircle2, 
   AlertCircle,
   ChevronLeft,
   ChevronRight,
-  Camera,
-  Loader2,
-  AlertTriangle,
+  ShieldCheck,
   Users,
   Database,
-  ShieldCheck
+  AlertTriangle,
+  MessageSquareQuote,
+  CheckCircle2,
+  XCircle,
+  HelpCircle
 } from 'lucide-react';
 import { Obra, Question, ResponseValue, AuditResponse, Audit, AIAnalysisResult } from '../types';
 import { QUESTIONS, BLOCKS } from '../constants';
@@ -30,16 +30,13 @@ const AuditWizard: React.FC<AuditWizardProps> = ({ obras, currentUser, onAuditCo
   const [currentBlockIdx, setCurrentBlockIdx] = React.useState(0);
   const [loading, setLoading] = React.useState(false);
   
-  // Setup State
   const [selectedObra, setSelectedObra] = React.useState<string>('');
   const [auditType, setAuditType] = React.useState<'mensal' | 'extraordinaria'>('mensal');
   
-  // Custom Block B State
   const [equipeCampo, setEquipeCampo] = React.useState<string>('');
   const [equipeGd4, setEquipeGd4] = React.useState<string>('');
   const [subcontratacaoRegular, setSubcontratacaoRegular] = React.useState<boolean | null>(null);
 
-  // Responses State
   const [respostas, setRespostas] = React.useState<AuditResponse[]>([]);
   const [ocorrencias, setOcorrencias] = React.useState<string>('');
 
@@ -106,7 +103,7 @@ const AuditWizard: React.FC<AuditWizardProps> = ({ obras, currentUser, onAuditCo
           subcontratacao_regular: subcontratacaoRegular
         },
         ocorrencias_graves: ocorrencias.split('\n').filter(s => s.trim()),
-        observacoes_gerais: "Auditoria focada em Identificação de Terceiros e Governança de Subcontratação."
+        observacoes_gerais: "Foco em Auditoria de Entrevistas Amostrais e Conformidade GRD Unità."
       };
 
       const result = await generateAuditReport(auditPayload);
@@ -140,43 +137,43 @@ const AuditWizard: React.FC<AuditWizardProps> = ({ obras, currentUser, onAuditCo
   if (step === 'setup') {
     return (
       <div className="max-w-2xl mx-auto space-y-6">
-        <header>
-          <h2 className="text-2xl font-black text-slate-900 text-center uppercase tracking-tight">Nova Auditoria GD4</h2>
-          <p className="text-slate-700 text-center text-sm font-black">Mitigação de risco e controle de terceiros.</p>
+        <header className="text-center">
+          <h2 className="text-3xl font-black text-slate-900 uppercase tracking-tighter">Início de Inspeção</h2>
+          <p className="text-orange-600 font-black text-xs uppercase tracking-[0.2em] mt-2">Protocolo Unità Engenharia</p>
         </header>
 
-        <div className="bg-white p-8 rounded-3xl shadow-sm border-2 border-slate-400 space-y-6">
-          <div className="space-y-2">
-            <label className="text-xs font-black text-slate-800 uppercase tracking-widest block">Selecione a Unidade</label>
+        <div className="bg-white p-8 rounded-[2.5rem] shadow-[12px_12px_0px_0px_rgba(15,23,42,1)] border-4 border-slate-900 space-y-8">
+          <div className="space-y-3">
+            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block">Local da Inspeção</label>
             <div className="relative">
-              <Building2 className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500" size={20} />
+              <Building2 className="absolute left-4 top-1/2 -translate-y-1/2 text-orange-600" size={24} />
               <select 
-                className="w-full bg-slate-50 border-2 border-slate-300 rounded-2xl pl-12 pr-4 py-4 appearance-none focus:ring-2 focus:ring-emerald-500 focus:outline-none transition-all font-black text-slate-900"
+                className="w-full bg-slate-50 border-4 border-slate-900 rounded-2xl pl-12 pr-4 py-5 appearance-none focus:ring-4 focus:ring-orange-500/20 focus:outline-none transition-all font-black text-lg text-slate-900"
                 value={selectedObra}
                 onChange={(e) => setSelectedObra(e.target.value)}
               >
-                <option value="">Escolha uma obra...</option>
+                <option value="">Selecione o Canteiro...</option>
                 {obras.map(o => <option key={o.id} value={o.id}>{o.nome}</option>)}
               </select>
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <label className="text-xs font-black text-slate-800 uppercase tracking-widest block">Tipo</label>
+          <div className="grid grid-cols-2 gap-6">
+            <div className="space-y-3">
+              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block">Modalidade</label>
               <select 
-                className="w-full bg-slate-50 border-2 border-slate-300 rounded-2xl px-4 py-4 focus:ring-2 focus:ring-emerald-500 focus:outline-none transition-all font-black text-slate-900"
+                className="w-full bg-slate-50 border-4 border-slate-900 rounded-2xl px-5 py-5 focus:ring-4 focus:ring-orange-500/20 focus:outline-none transition-all font-black text-slate-900 appearance-none"
                 value={auditType}
                 onChange={(e) => setAuditType(e.target.value as any)}
               >
-                <option value="mensal">Mensal</option>
-                <option value="extraordinaria">Extraordinária</option>
+                <option value="mensal">CHECK MENSAL</option>
+                <option value="extraordinaria">EXTRAORDINÁRIA</option>
               </select>
             </div>
-            <div className="space-y-2">
-              <label className="text-xs font-black text-slate-800 uppercase tracking-widest block">Auditor</label>
-              <div className="bg-slate-50 border-2 border-slate-300 rounded-2xl px-4 py-4 text-slate-900 flex items-center gap-2 font-black">
-                <UserIcon size={18} className="text-slate-600" />
+            <div className="space-y-3">
+              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block">Inspetor Responsável</label>
+              <div className="bg-slate-50 border-4 border-slate-900 rounded-2xl px-5 py-5 text-slate-900 flex items-center gap-3 font-black">
+                <UserIcon size={20} className="text-orange-600" />
                 {currentUser.nome}
               </div>
             </div>
@@ -185,10 +182,10 @@ const AuditWizard: React.FC<AuditWizardProps> = ({ obras, currentUser, onAuditCo
           <button
             disabled={!selectedObra}
             onClick={() => setStep('questions')}
-            className="w-full bg-slate-900 text-white py-5 rounded-2xl font-black hover:bg-slate-800 disabled:opacity-50 transition-all flex items-center justify-center gap-2 shadow-xl border-2 border-slate-700"
+            className="w-full bg-orange-600 text-white py-6 rounded-2xl font-black text-lg hover:bg-orange-700 disabled:opacity-50 transition-all flex items-center justify-center gap-3 shadow-[0_8px_0_0_rgb(154,52,18)] border-4 border-slate-900 active:translate-y-1 active:shadow-none"
           >
-            INICIAR VERIFICAÇÃO TÉCNICA
-            <ChevronRight size={20} />
+            CONFIRMAR ENTRADA EM CAMPO
+            <ChevronRight size={24} />
           </button>
         </div>
       </div>
@@ -197,107 +194,155 @@ const AuditWizard: React.FC<AuditWizardProps> = ({ obras, currentUser, onAuditCo
 
   if (step === 'processing') {
     return (
-      <div className="min-h-[400px] flex flex-col items-center justify-center text-center space-y-6">
+      <div className="min-h-[500px] flex flex-col items-center justify-center text-center space-y-8 animate-pulse">
         <div className="relative">
-          <div className="w-24 h-24 border-8 border-slate-300 border-t-emerald-600 rounded-full animate-spin"></div>
+          <div className="w-32 h-32 border-[12px] border-slate-200 border-t-orange-600 rounded-full animate-spin"></div>
           <div className="absolute inset-0 flex items-center justify-center">
-            <ShieldCheck className="text-emerald-600" size={40} />
+            <ShieldCheck className="text-orange-600" size={56} />
           </div>
         </div>
-        <div className="space-y-2">
-          <h2 className="text-2xl font-black text-slate-900 uppercase">Processando Scoring GD4</h2>
-          <p className="text-slate-700 font-black max-w-sm mx-auto uppercase text-xs tracking-widest">Calculando Riscos Jurídicos...</p>
+        <div className="space-y-3">
+          <h2 className="text-3xl font-black text-slate-900 uppercase tracking-tighter">Sincronizando com GD4</h2>
+          <p className="text-slate-600 font-black text-sm uppercase tracking-widest">Validando evidências e calculando scoring Unità...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6 animate-in slide-in-from-right duration-500">
+    <div className="max-w-4xl mx-auto space-y-8 animate-in slide-in-from-right duration-500 pb-20">
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <div className="w-14 h-14 bg-slate-900 text-white rounded-2xl flex items-center justify-center font-black text-2xl shadow-lg border-2 border-slate-700">
+        <div className="flex items-center gap-6">
+          <div className="w-16 h-16 bg-slate-900 text-white rounded-[1.25rem] flex items-center justify-center font-black text-3xl shadow-xl border-4 border-orange-600">
             {currentBlockKey}
           </div>
           <div>
-            <h2 className="text-xl font-black text-slate-900 uppercase tracking-tight">{BLOCKS[currentBlockKey]}</h2>
-            <div className="flex gap-1.5 mt-2">
+            <h2 className="text-2xl font-black text-slate-900 uppercase tracking-tighter leading-none">{BLOCKS[currentBlockKey]}</h2>
+            <div className="flex gap-2 mt-3">
               {blockKeys.map((_, idx) => (
                 <div 
                   key={idx} 
-                  className={`h-2.5 w-12 rounded-full transition-all ${idx <= currentBlockIdx ? 'bg-emerald-600 shadow-[0_0_10px_rgba(5,150,105,0.4)]' : 'bg-slate-300'}`}
+                  className={`h-3 w-10 rounded-full transition-all border-2 border-slate-900 ${idx <= currentBlockIdx ? 'bg-orange-600' : 'bg-slate-200'}`}
                 />
               ))}
             </div>
           </div>
         </div>
-        <div className="text-right">
-          <span className="text-[11px] font-black text-slate-700 uppercase tracking-widest bg-slate-200 px-2 py-1 rounded">Etapa {currentBlockIdx + 1} de {blockKeys.length}</span>
-          <p className="text-base font-black text-slate-900 mt-2">{obras.find(o => o.id === selectedObra)?.nome}</p>
+        <div className="text-right hidden sm:block">
+          <span className="text-[10px] font-black text-white bg-slate-900 px-3 py-1.5 rounded-full uppercase tracking-widest">Etapa {currentBlockIdx + 1} de {blockKeys.length}</span>
+          <p className="text-lg font-black text-slate-900 mt-2 uppercase">{obras.find(o => o.id === selectedObra)?.nome}</p>
         </div>
       </div>
 
-      <div className="space-y-4">
+      <div className="space-y-6">
         {currentBlockKey === 'B' ? (
-          <div className="space-y-6">
-            <div className="bg-white p-8 rounded-3xl border-2 border-slate-400 shadow-sm space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-2">
-                  <label className="text-xs font-black text-slate-800 uppercase tracking-widest flex items-center gap-2">
-                    <Users size={16} /> Efetivo em Campo (Real)
-                  </label>
-                  <input 
-                    type="number" 
-                    className="w-full bg-slate-50 border-2 border-slate-300 rounded-2xl px-5 py-4 focus:ring-2 focus:ring-emerald-500 focus:outline-none font-black text-3xl text-slate-900"
-                    placeholder="0"
-                    value={equipeCampo}
-                    onChange={e => setEquipeCampo(e.target.value)}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <label className="text-xs font-black text-slate-800 uppercase tracking-widest flex items-center gap-2">
-                    <Database size={16} /> Efetivo no GD4 (Sistema)
-                  </label>
-                  <input 
-                    type="number" 
-                    className="w-full bg-slate-50 border-2 border-slate-300 rounded-2xl px-5 py-4 focus:ring-2 focus:ring-emerald-500 focus:outline-none font-black text-3xl text-slate-900"
-                    placeholder="0"
-                    value={equipeGd4}
-                    onChange={e => setEquipeGd4(e.target.value)}
-                  />
-                </div>
+          <div className="bg-white p-8 rounded-[2.5rem] border-4 border-slate-900 shadow-[8px_8px_0px_0px_rgba(15,23,42,1)] space-y-10">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              <div className="space-y-3">
+                <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest flex items-center gap-2">
+                  <Users size={16} className="text-orange-600" /> Efetivo Real (Campo)
+                </label>
+                <input 
+                  type="number" 
+                  className="w-full bg-slate-50 border-4 border-slate-900 rounded-2xl px-6 py-5 focus:ring-4 focus:ring-orange-500/20 focus:outline-none font-black text-4xl text-slate-900"
+                  placeholder="0"
+                  value={equipeCampo}
+                  onChange={e => setEquipeCampo(e.target.value)}
+                />
               </div>
-
-              {equipeCampo && equipeGd4 && (
-                <div className={`p-6 rounded-2xl border-4 flex items-center justify-between ${Number(equipeCampo) !== Number(equipeGd4) ? 'bg-rose-50 border-rose-600 text-rose-950' : 'bg-emerald-50 border-emerald-600 text-emerald-950'}`}>
-                   <div className="flex items-center gap-4">
-                     <AlertCircle size={32} />
-                     <span className="text-lg font-black uppercase tracking-tight">Divergência Detectada:</span>
-                   </div>
-                   <span className="text-5xl font-black">{Math.abs(Number(equipeCampo) - Number(equipeGd4))}</span>
-                </div>
-              )}
-
-              <div className="space-y-4">
-                <label className="text-xs font-black text-slate-800 uppercase tracking-widest block">Toda subcontratação em campo está autorizada?</label>
-                <div className="flex gap-4">
-                  {[true, false].map((val) => (
-                    <button
-                      key={val ? 'sim' : 'nao'}
-                      onClick={() => setSubcontratacaoRegular(val)}
-                      className={`
-                        flex-1 py-6 rounded-2xl font-black text-sm uppercase transition-all border-4
-                        ${subcontratacaoRegular === val 
-                          ? (val ? 'bg-emerald-700 text-white border-emerald-900 shadow-xl' : 'bg-rose-700 text-white border-rose-900 shadow-xl')
-                          : 'bg-slate-100 text-slate-700 border-slate-300 hover:bg-slate-200'}
-                      `}
-                    >
-                      {val ? 'SIM (CONFORME)' : 'NÃO (IRREGULAR)'}
-                    </button>
-                  ))}
-                </div>
+              <div className="space-y-3">
+                <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest flex items-center gap-2">
+                  <Database size={16} className="text-orange-600" /> Efetivo GD4 (Sistema)
+                </label>
+                <input 
+                  type="number" 
+                  className="w-full bg-slate-50 border-4 border-slate-900 rounded-2xl px-6 py-5 focus:ring-4 focus:ring-orange-500/20 focus:outline-none font-black text-4xl text-slate-900"
+                  placeholder="0"
+                  value={equipeGd4}
+                  onChange={e => setEquipeGd4(e.target.value)}
+                />
               </div>
             </div>
+
+            {equipeCampo && equipeGd4 && Number(equipeCampo) !== Number(equipeGd4) && (
+              <div className="bg-rose-50 border-4 border-rose-600 p-6 rounded-2xl flex items-center justify-between shadow-lg">
+                 <div className="flex items-center gap-4 text-rose-950">
+                   <AlertCircle size={40} className="text-rose-600" />
+                   <span className="text-xl font-black uppercase leading-tight">Divergência Crítica de Efetivo!</span>
+                 </div>
+                 <span className="text-5xl font-black text-rose-600">{Math.abs(Number(equipeCampo) - Number(equipeGd4))}</span>
+              </div>
+            )}
+
+            <div className="space-y-4">
+              <label className="text-sm font-black text-slate-900 uppercase tracking-tight block">Toda subcontratação em campo está autorizada pela Unità?</label>
+              <div className="flex gap-4">
+                {[true, false].map((val) => (
+                  <button
+                    key={val ? 'sim' : 'nao'}
+                    onClick={() => setSubcontratacaoRegular(val)}
+                    className={`
+                      flex-1 py-6 rounded-2xl font-black text-sm uppercase transition-all border-4
+                      ${subcontratacaoRegular === val 
+                        ? (val ? 'bg-emerald-600 text-white border-slate-900 shadow-[0_6px_0_0_rgb(6,95,70)]' : 'bg-rose-600 text-white border-slate-900 shadow-[0_6px_0_0_rgb(159,18,57)]')
+                        : 'bg-slate-50 text-slate-400 border-slate-300 hover:bg-slate-100'}
+                    `}
+                  >
+                    {val ? 'SIM (CONFORME)' : 'NÃO (IRREGULAR)'}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+        ) : currentBlockKey === 'F' ? (
+          // NOVO DESIGN PARA ENTREVISTAS (BLOCO F)
+          <div className="space-y-6">
+            <div className="bg-orange-50 border-4 border-orange-600 p-6 rounded-3xl flex items-start gap-4 shadow-sm">
+               <MessageSquareQuote size={32} className="text-orange-600 shrink-0" />
+               <div>
+                  <h4 className="font-black text-orange-950 uppercase text-lg">Validação Comportamental</h4>
+                  <p className="text-orange-900 text-sm font-bold">Realize entrevistas rápidas com colaboradores de diferentes frentes para validar a veracidade dos documentos da GRD.</p>
+               </div>
+            </div>
+            {currentBlockQuestions.map((q) => {
+               const resp = respostas.find(r => r.pergunta_id === q.id);
+               return (
+                 <div key={q.id} className="bg-white p-8 rounded-[2rem] border-4 border-slate-900 shadow-[8px_8px_0px_0px_rgba(15,23,42,1)] space-y-6">
+                    <p className="text-slate-900 font-black text-xl leading-tight border-l-8 border-orange-600 pl-4">{q.texto}</p>
+                    <div className="grid grid-cols-3 gap-4">
+                       <button 
+                          onClick={() => handleResponseChange(q.id, 'sim')}
+                          className={`flex flex-col items-center gap-2 py-5 rounded-2xl border-4 transition-all ${resp?.resposta === 'sim' ? 'bg-emerald-600 text-white border-slate-900 shadow-[0_5px_0_0_rgb(6,95,70)]' : 'bg-slate-50 text-slate-400 border-slate-200'}`}
+                       >
+                          <CheckCircle2 size={32} />
+                          <span className="text-[10px] font-black uppercase">Validado</span>
+                       </button>
+                       <button 
+                          onClick={() => handleResponseChange(q.id, 'parcial')}
+                          className={`flex flex-col items-center gap-2 py-5 rounded-2xl border-4 transition-all ${resp?.resposta === 'parcial' ? 'bg-amber-500 text-white border-slate-900 shadow-[0_5px_0_0_rgb(180,83,9)]' : 'bg-slate-50 text-slate-400 border-slate-200'}`}
+                       >
+                          <HelpCircle size={32} />
+                          <span className="text-[10px] font-black uppercase">Inconsistente</span>
+                       </button>
+                       <button 
+                          onClick={() => handleResponseChange(q.id, 'nao')}
+                          className={`flex flex-col items-center gap-2 py-5 rounded-2xl border-4 transition-all ${resp?.resposta === 'nao' ? 'bg-rose-600 text-white border-slate-900 shadow-[0_5px_0_0_rgb(159,18,57)]' : 'bg-slate-50 text-slate-400 border-slate-200'}`}
+                       >
+                          <XCircle size={32} />
+                          <span className="text-[10px] font-black uppercase">Contradição</span>
+                       </button>
+                    </div>
+                    {resp && resp.resposta !== 'sim' && (
+                       <textarea
+                         value={resp.observacao || ''}
+                         onChange={(e) => handleObsChange(q.id, e.target.value)}
+                         placeholder="Descreva a inconsistência relatada pelo colaborador..."
+                         className="w-full bg-rose-50 border-4 border-rose-200 rounded-2xl p-5 text-lg font-black text-slate-900 focus:ring-4 focus:ring-rose-600/20 focus:outline-none min-h-[120px]"
+                       />
+                    )}
+                 </div>
+               );
+            })}
           </div>
         ) : (
           currentBlockQuestions.map((q) => {
@@ -305,21 +350,19 @@ const AuditWizard: React.FC<AuditWizardProps> = ({ obras, currentUser, onAuditCo
             const needsObs = resp && resp.resposta !== 'sim';
             
             return (
-              <div key={q.id} className="bg-white p-7 rounded-3xl border-2 border-slate-400 shadow-sm space-y-5 transition-all hover:border-slate-600">
-                <div className="flex items-start justify-between gap-4">
-                  <p className="text-slate-900 font-black leading-tight text-xl">{q.texto}</p>
-                </div>
+              <div key={q.id} className="bg-white p-8 rounded-[2rem] border-4 border-slate-900 shadow-[8px_8px_0px_0px_rgba(15,23,42,1)] space-y-6 transition-all hover:-translate-y-1">
+                <p className="text-slate-900 font-black leading-tight text-2xl">{q.texto}</p>
                 
-                <div className="flex flex-wrap gap-4">
+                <div className="flex flex-wrap gap-3">
                   {(['sim', 'parcial', 'nao'] as ResponseValue[]).map((val) => (
                     <button
                       key={val}
                       onClick={() => handleResponseChange(q.id, val)}
                       className={`
-                        px-12 py-5 rounded-xl font-black text-xs uppercase tracking-widest transition-all border-4
+                        flex-1 py-5 rounded-2xl font-black text-xs uppercase tracking-widest transition-all border-4
                         ${resp?.resposta === val 
-                          ? (val === 'sim' ? 'bg-emerald-700 text-white border-emerald-900 shadow-md' : val === 'parcial' ? 'bg-amber-600 text-white border-amber-800 shadow-md' : 'bg-rose-700 text-white border-rose-800 shadow-md')
-                          : 'bg-slate-100 text-slate-700 border-slate-300 hover:bg-slate-200'}
+                          ? (val === 'sim' ? 'bg-emerald-600 text-white border-slate-900 shadow-[0_5px_0_0_rgb(6,95,70)]' : val === 'parcial' ? 'bg-amber-500 text-white border-slate-900 shadow-[0_5px_0_0_rgb(180,83,9)]' : 'bg-rose-600 text-white border-slate-900 shadow-[0_5px_0_0_rgb(159,18,57)]')
+                          : 'bg-slate-50 text-slate-400 border-slate-200 hover:bg-slate-100'}
                       `}
                     >
                       {val}
@@ -329,14 +372,12 @@ const AuditWizard: React.FC<AuditWizardProps> = ({ obras, currentUser, onAuditCo
 
                 {needsObs && (
                   <div className="animate-in slide-in-from-top-3 duration-300">
-                    <label className="text-xs font-black text-rose-900 uppercase tracking-widest mb-2 block">
-                      Descrição da Não Conformidade (Obrigatório)
-                    </label>
+                    <label className="text-[10px] font-black text-rose-700 uppercase tracking-widest mb-2 block">Evidência / Observação Crítica</label>
                     <textarea
                       value={resp.observacao || ''}
                       onChange={(e) => handleObsChange(q.id, e.target.value)}
-                      placeholder="Relate aqui o desvio de empresa ou falta de uniforme..."
-                      className="w-full bg-rose-50 border-2 border-rose-400 rounded-2xl p-5 text-lg font-black text-slate-900 focus:ring-2 focus:ring-rose-600 focus:outline-none min-h-[140px]"
+                      placeholder="Relate o desvio técnico encontrado..."
+                      className="w-full bg-rose-50 border-4 border-rose-200 rounded-2xl p-5 text-lg font-black text-slate-900 focus:ring-4 focus:ring-rose-600/20 focus:outline-none min-h-[120px]"
                     />
                   </div>
                 )}
@@ -347,49 +388,49 @@ const AuditWizard: React.FC<AuditWizardProps> = ({ obras, currentUser, onAuditCo
       </div>
 
       {currentBlockIdx === blockKeys.length - 1 && (
-        <div className="bg-amber-50 border-4 border-amber-500 p-8 rounded-3xl space-y-4 shadow-md">
-          <div className="flex items-center gap-4 text-amber-950">
-            <AlertTriangle size={36} className="text-amber-600" />
-            <h3 className="font-black text-2xl uppercase tracking-tighter">Eventos de Risco Solidário Crítico</h3>
+        <div className="bg-amber-50 border-4 border-amber-600 p-10 rounded-[2.5rem] space-y-6 shadow-xl">
+          <div className="flex items-center gap-5 text-amber-950">
+            <AlertTriangle size={48} className="text-amber-600" />
+            <h3 className="font-black text-3xl uppercase tracking-tighter">Observações de Diretoria</h3>
           </div>
-          <p className="text-base text-amber-950 font-black">Identificou algum colaborador operando totalmente à revelia do GD4 (sem integração/biometria)?</p>
+          <p className="text-lg text-amber-950 font-black leading-tight">Algum evento grave detectado que exija intervenção imediata da Unità?</p>
           <textarea
             value={ocorrencias}
             onChange={(e) => setOcorrencias(e.target.value)}
-            className="w-full bg-white border-4 border-amber-500 rounded-2xl p-5 text-lg font-black text-slate-900 focus:ring-4 focus:ring-amber-600 focus:outline-none min-h-[180px]"
-            placeholder="Ex: Identificado colaborador de empresa X prestando serviço para empresa Y sem registro..."
+            className="w-full bg-white border-4 border-slate-900 rounded-2xl p-6 text-xl font-black text-slate-900 focus:ring-4 focus:ring-orange-600/20 focus:outline-none min-h-[220px]"
+            placeholder="Ex: Identificado trabalho em altura sem treinamento ou alojamento com fiação exposta..."
           />
         </div>
       )}
 
-      <footer className="flex justify-between items-center py-12">
+      <footer className="flex justify-between items-center py-16">
         <button
           onClick={() => {
             if (currentBlockIdx === 0) setStep('setup');
             else setCurrentBlockIdx(prev => prev - 1);
           }}
-          className="flex items-center gap-2 font-black text-slate-800 hover:text-black transition-colors uppercase text-xs tracking-widest"
+          className="flex items-center gap-2 font-black text-slate-900 hover:text-orange-600 transition-colors uppercase text-sm tracking-widest group"
         >
-          <ChevronLeft size={24} />
-          Bloco Anterior
+          <ChevronLeft size={28} className="group-hover:-translate-x-1 transition-transform" />
+          Etapa Anterior
         </button>
 
         {currentBlockIdx === blockKeys.length - 1 ? (
           <button
             disabled={!isBlockComplete()}
             onClick={handleSubmit}
-            className="bg-emerald-800 text-white px-16 py-7 rounded-2xl font-black hover:bg-emerald-950 disabled:opacity-50 transition-all shadow-2xl uppercase tracking-widest text-base border-4 border-emerald-950"
+            className="bg-slate-900 text-white px-16 py-7 rounded-2xl font-black text-xl hover:bg-orange-600 disabled:opacity-50 transition-all shadow-[0_10px_0_0_rgb(0,0,0)] border-4 border-slate-900 active:translate-y-2 active:shadow-none uppercase tracking-widest"
           >
-            PROCESSAR RESULTADO FINAL
+            FINALIZAR AUDITORIA
           </button>
         ) : (
           <button
             disabled={!isBlockComplete()}
             onClick={() => setCurrentBlockIdx(prev => prev + 1)}
-            className="bg-slate-900 text-white px-16 py-7 rounded-2xl font-black hover:bg-black disabled:opacity-50 transition-all flex items-center gap-2 shadow-2xl border-4 border-slate-800"
+            className="bg-orange-600 text-white px-16 py-7 rounded-2xl font-black text-xl hover:bg-slate-900 disabled:opacity-50 transition-all flex items-center gap-3 shadow-[0_10px_0_0_rgb(154,52,18)] border-4 border-slate-900 active:translate-y-2 active:shadow-none uppercase tracking-widest"
           >
-            PRÓXIMO BLOCO
-            <ChevronRight size={28} />
+            PRÓXIMA ETAPA
+            <ChevronRight size={32} />
           </button>
         )}
       </footer>
