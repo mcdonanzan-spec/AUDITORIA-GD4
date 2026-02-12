@@ -16,11 +16,11 @@ export const QUESTIONS: Question[] = [
   { id: 'e1', bloco: 'E', texto: 'O controle de ponto em campo está sendo preenchido em tempo real (Sem horário britânico)?', peso: 25 },
   { id: 'e2', bloco: 'E', texto: 'Os EPIs utilizados (C.A.) coincidem com o registrado na Ficha de EPI?', peso: 15 },
 
-  // BLOCO F - HABILITAÇÃO JURÍDICA (ITEM 01 GRD)
-  { id: 'f_h1', bloco: 'F', texto: 'Todas as empresas presentes possuem Termo de Qualificação/Habilitação Jurídica válido?', peso: 30 },
-  { id: 'f_h2', bloco: 'F', texto: 'A data da qualificação é anterior à mobilização da empresa no canteiro?', peso: 20 },
-  { id: 'f_h3', bloco: 'F', texto: 'As certidões negativas (CND, CRF, CNDT) estão dentro da validade no sistema?', peso: 25 },
-  { id: 'f_h4', bloco: 'F', texto: 'A empresa está livre de sanções ou bloqueios posteriores à qualificação inicial?', peso: 25 },
+  // BLOCO F - GOVERNANÇA GRD (ITENS 01 E 02)
+  { id: 'f_h1', bloco: 'F', texto: 'Todas as empresas presentes possuem Termo de Qualificação/Habilitação Jurídica válido (Item 01 GRD)?', peso: 25 },
+  { id: 'f_h2', bloco: 'F', texto: 'A manutenção da documentação contratual e de segurança da MÃO DE OBRA PRÓPRIA está atualizada no sistema (Item 02 GRD)?', peso: 30 },
+  { id: 'f_h3', bloco: 'F', texto: 'As certidões negativas (CND, CRF, CNDT) das contratadas estão dentro da validade no sistema?', peso: 20 },
+  { id: 'f_h4', bloco: 'F', texto: 'Os treinamentos obrigatórios (NRs) dos funcionários próprios estão com certificados válidos e inseridos no GD4?', peso: 25 },
 ];
 
 export const INTERVIEW_QUESTIONS: Question[] = [
@@ -36,6 +36,6 @@ export const BLOCKS = {
   C: 'Subcontratação',
   D: 'Identificação',
   E: 'Técnico Campo',
-  F: 'Habilitação Jurídica (Item 01 GRD)',
+  F: 'Governança GRD (Itens 01 e 02)',
   G: 'Amostragem Comportamental'
 };
