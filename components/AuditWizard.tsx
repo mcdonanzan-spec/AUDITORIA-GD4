@@ -11,7 +11,9 @@ import {
   MessageSquareQuote,
   Plus,
   Trash2,
-  UserCheck
+  UserCheck,
+  Info,
+  AlertCircle
 } from 'lucide-react';
 import { Obra, Question, ResponseValue, AuditResponse, Audit, AIAnalysisResult, EntrevistaAmostral } from '../types';
 import { QUESTIONS, INTERVIEW_QUESTIONS, BLOCKS } from '../constants';
@@ -97,6 +99,8 @@ const AuditWizard: React.FC<AuditWizardProps> = ({ obras, currentUser, onAuditCo
     return Math.round((entrevistas.length / total) * 100);
   }, [entrevistas.length, equipeCampo]);
 
+  const targetMet = coveragePercent >= 10;
+
   const handleSubmit = async () => {
     setStep('processing');
     setLoading(true);
@@ -137,6 +141,7 @@ const AuditWizard: React.FC<AuditWizardProps> = ({ obras, currentUser, onAuditCo
         amostragem: {
           entrevistados: entrevistas.length,
           cobertura: `${coveragePercent}%`,
+          meta_atingida: targetMet,
           detalhes: entrevistas
         },
         equipe: {
@@ -277,7 +282,7 @@ const AuditWizard: React.FC<AuditWizardProps> = ({ obras, currentUser, onAuditCo
                 <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Cobertura Real</span>
                 <span className={`text-xl font-black ${coveragePercent < 10 ? 'text-rose-600' : 'text-emerald-600'}`}>{coveragePercent}% do efetivo</span>
              </div>
-             <UserCheck size={32} className="text-[#F05A22]" />
+             <UserCheck size={32} className={`transition-colors ${targetMet ? 'text-emerald-500' : 'text-rose-600'}`} />
           </div>
         )}
       </div>
@@ -334,6 +339,36 @@ const AuditWizard: React.FC<AuditWizardProps> = ({ obras, currentUser, onAuditCo
           </div>
         ) : currentBlockKey === 'G' ? (
           <div className="space-y-8">
+            {/* NOVO BANNER DE META ESTATÍSTICA */}
+            <div className={`p-8 rounded-[2.5rem] border-4 border-slate-900 transition-all shadow-[8px_8px_0px_0px_rgba(15,23,42,1)] ${targetMet ? 'bg-emerald-50' : 'bg-rose-50'}`}>
+               <div className="flex items-start gap-6">
+                  <div className={`w-14 h-14 rounded-2xl flex items-center justify-center shrink-0 border-2 ${targetMet ? 'bg-emerald-500 text-white border-emerald-700' : 'bg-rose-500 text-white border-rose-700'}`}>
+                    {targetMet ? <UserCheck size={32} /> : <AlertCircle size={32} />}
+                  </div>
+                  <div className="flex-1 space-y-4">
+                    <div className="flex justify-between items-end">
+                       <div>
+                         <h4 className={`text-xl font-black uppercase tracking-tight ${targetMet ? 'text-emerald-900' : 'text-rose-900'}`}>
+                           {targetMet ? 'Amostragem Validada' : 'Meta Estatística: 10%'}
+                         </h4>
+                         <p className={`text-[10px] font-black uppercase tracking-widest ${targetMet ? 'text-emerald-600' : 'text-rose-600'}`}>
+                           {targetMet 
+                            ? 'O rigor metodológico da Unità foi atingido para este canteiro.' 
+                            : `Faltam ${Math.max(0, Math.ceil(Number(equipeCampo) * 0.1) - entrevistas.length)} entrevistas para validação técnica.`}
+                         </p>
+                       </div>
+                       <span className={`text-2xl font-black ${targetMet ? 'text-emerald-700' : 'text-rose-700'}`}>{coveragePercent}% / 10%</span>
+                    </div>
+                    <div className="h-4 bg-white rounded-full border-2 border-slate-900 overflow-hidden">
+                       <div 
+                        className={`h-full transition-all duration-500 ${targetMet ? 'bg-emerald-500' : 'bg-rose-500'}`} 
+                        style={{ width: `${Math.min(100, (coveragePercent / 10) * 100)}%` }}
+                       />
+                    </div>
+                  </div>
+               </div>
+            </div>
+
             <div className="flex justify-between items-center bg-slate-900 p-6 rounded-3xl border-4 border-slate-900 shadow-xl">
                <div className="flex items-center gap-4 text-white">
                   <MessageSquareQuote size={32} className="text-[#F05A22]" />

@@ -10,7 +10,9 @@ import {
   Share2,
   ChevronRight,
   Users2,
-  Fingerprint
+  Fingerprint,
+  ShieldCheck,
+  AlertOctagon
 } from 'lucide-react';
 import { Audit, AIAnalysisResult } from '../types';
 
@@ -49,6 +51,8 @@ const AuditResult: React.FC<AuditResultProps> = ({ audit, report, onClose }) => 
     const entrevistados = audit.entrevistas?.length || 0;
     return Math.round((entrevistados / total) * 100);
   }, [audit]);
+
+  const isMetodologyValid = coverage >= 10;
 
   return (
     <div className="max-w-4xl mx-auto space-y-8 pb-12 animate-in fade-in duration-500 print:p-0">
@@ -95,14 +99,16 @@ const AuditResult: React.FC<AuditResultProps> = ({ audit, report, onClose }) => 
               </p>
            </div>
         </div>
-        <div className="bg-slate-50 p-6 rounded-[2rem] border-4 border-slate-900 flex items-center gap-5">
-           <div className="w-14 h-14 bg-white rounded-2xl flex items-center justify-center border-2 border-slate-200 shadow-inner">
-              <Fingerprint className="text-[#F05A22]" size={32} />
+        <div className={`p-6 rounded-[2rem] border-4 border-slate-900 flex items-center gap-5 transition-colors ${isMetodologyValid ? 'bg-emerald-50' : 'bg-rose-50'}`}>
+           <div className={`w-14 h-14 rounded-2xl flex items-center justify-center border-2 shadow-inner ${isMetodologyValid ? 'bg-emerald-500 text-white border-emerald-700' : 'bg-rose-500 text-white border-rose-700'}`}>
+              {isMetodologyValid ? <ShieldCheck size={32} /> : <AlertOctagon size={32} />}
            </div>
            <div>
-              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Cobertura Estatística</p>
-              <p className={`text-xl font-black uppercase tracking-tighter ${coverage < 10 ? 'text-rose-600' : 'text-emerald-600'}`}>
-                {coverage}% do Efetivo de Campo
+              <p className={`text-[10px] font-black uppercase tracking-widest ${isMetodologyValid ? 'text-emerald-600' : 'text-rose-600'}`}>
+                {isMetodologyValid ? 'Metodologia Validada' : 'Baixa Amostragem (Meta 10%)'}
+              </p>
+              <p className={`text-xl font-black uppercase tracking-tighter ${isMetodologyValid ? 'text-emerald-900' : 'text-rose-900'}`}>
+                Cobertura de {coverage}%
               </p>
            </div>
         </div>
