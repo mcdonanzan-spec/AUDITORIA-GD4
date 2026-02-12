@@ -12,19 +12,20 @@ export const generateAuditReport = async (auditData: any): Promise<AIAnalysisRes
   ${JSON.stringify(auditData, null, 2)}
   
   CRITÉRIOS DE ANÁLISE MANDATÓRIOS (REGRAS DE NEGÓCIO):
-  1. GOVERNANÇA GRD (BLOCO F): 
-     - Item 01 (Terceiros): Se houver falha na qualificação, risco ALTO.
-     - Item 02 (Próprios): A manutenção da documentação da mão de obra própria é CRÍTICA. Se houver falha na atualização de documentos contratuais ou de segurança (NRs/ASO) de funcionários da Unità, o risco Jurídico deve ser ALTO/CRÍTICO, pois isso gera exposição direta e passivos imediatos.
-  2. AMOSTRAGEM COMPORTAMENTAL (BLOCO G): Contradições sobre pagamentos ou benefícios indicam fraude documental sistêmica. Eleve o risco para CRÍTICO se irregularidades forem relatadas por colaboradores.
-  3. DIVERGÊNCIA DE EFETIVO (BLOCO B): Diferença positiva de pessoas em campo vs GD4 indica trabalho informal/irregular.
+  1. ITENS "N/A" (NÃO SE APLICA): Se uma pergunta foi marcada como "n_a", ela deve ser totalmente ignorada na análise de risco. Não penalize a obra por atividades que não existem no local (ex: se não houver quarteirização).
+  2. GOVERNANÇA GRD (BLOCO F) - FASE DE TRANSIÇÃO:
+     - O Item 01 (Termo de Qualificação) é um processo novo na Unità. Se houver respostas "Parcial" ou "Nao", verifique se há uma justificativa de implantação. Não classifique como "Risco Crítico" imediatamente se for claramente um caso de transição. Em vez disso, sugira um "Cronograma de Saneamento Documental".
+     - Item 02 (Próprios): Continua sendo CRÍTICO. A documentação interna deve estar em dia.
+  3. AMOSTRAGEM COMPORTAMENTAL (BLOCO G): Contradições sobre pagamentos ou benefícios indicam fraude documental sistêmica.
+  4. DIVERGÊNCIA DE EFETIVO (BLOCO B): Diferença positiva de pessoas em campo vs GD4 indica trabalho informal.
   
   ESTRUTURA DE RESPOSTA (JSON):
-  - indiceGeral: Cálculo ponderado (0-100).
+  - indiceGeral: Cálculo ponderado (0-100) ignorando os itens N/A.
   - classificacao: REGULAR, ATENÇÃO ou CRÍTICA.
   - riscoJuridico: BAIXO, MÉDIO, ALTO ou CRÍTICO.
-  - naoConformidades: Lista de desvios detectados.
-  - impactoJuridico: Descrição técnica do passivo potencial (ex: multa do MTE, interdição, passivo trabalhista).
-  - recomendacoes: Ações corretivas imediatas.
+  - naoConformidades: Lista de desvios detectados (ignore os N/A).
+  - impactoJuridico: Descrição técnica do passivo potencial.
+  - recomendacoes: Ações corretivas imediatas e cronogramas de transição para processos novos.
   - conclusaoExecutiva: Texto formal direcionado à diretoria da Unità Engenharia.
   
   Retorne APENAS o JSON.`;

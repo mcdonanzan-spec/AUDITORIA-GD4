@@ -27,7 +27,7 @@ export interface Question {
   peso: number;
 }
 
-export type ResponseValue = 'sim' | 'parcial' | 'nao';
+export type ResponseValue = 'sim' | 'parcial' | 'nao' | 'n_a';
 
 export interface AuditResponse {
   pergunta_id: string;

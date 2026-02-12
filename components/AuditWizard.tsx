@@ -3,18 +3,17 @@ import React from 'react';
 import { 
   Building2, 
   User as UserIcon, 
-  ChevronLeft,
-  ChevronRight,
-  ShieldCheck,
-  Users,
-  Database,
-  MessageSquareQuote,
-  Plus,
-  Trash2,
-  UserCheck,
-  Info,
-  AlertCircle,
-  LayoutDashboard
+  ChevronLeft, 
+  ChevronRight, 
+  ShieldCheck, 
+  Users, 
+  Database, 
+  MessageSquareQuote, 
+  Plus, 
+  Trash2, 
+  UserCheck, 
+  AlertCircle, 
+  LayoutDashboard 
 } from 'lucide-react';
 import { Obra, Question, ResponseValue, AuditResponse, Audit, AIAnalysisResult, EntrevistaAmostral } from '../types';
 import { QUESTIONS, INTERVIEW_QUESTIONS, BLOCKS } from '../constants';
@@ -112,6 +111,9 @@ const AuditWizard: React.FC<AuditWizardProps> = ({ obras, currentUser, onAuditCo
         const qIds = QUESTIONS.filter(q => q.bloco === b).map(q => q.id);
         const bResps = respostas.filter(r => qIds.includes(r.pergunta_id));
         
+        // Remove respostas N/A do cálculo de média
+        const validResps = bResps.filter(r => r.resposta !== 'n_a');
+        
         let totalScore = 0;
         if (b === 'B') {
            const divergencia = Math.abs(Number(equipeCampo) - Number(equipeGd4));
@@ -120,15 +122,16 @@ const AuditWizard: React.FC<AuditWizardProps> = ({ obras, currentUser, onAuditCo
            totalScore = (scoreEquipe + scoreSub) / 2;
         } else if (b === 'G') {
            const totalResps = entrevistas.flatMap(e => e.respostas);
-           totalScore = totalResps.reduce((sum, r) => {
+           const validTotalResps = totalResps.filter(r => r.resposta !== 'n_a');
+           totalScore = validTotalResps.reduce((sum, r) => {
              const s = r.resposta === 'sim' ? 100 : r.resposta === 'parcial' ? 50 : 0;
              return sum + s;
-           }, 0) / (totalResps.length || 1);
+           }, 0) / (validTotalResps.length || 1);
         } else {
-           totalScore = bResps.reduce((sum, r) => {
+           totalScore = validResps.reduce((sum, r) => {
             const score = r.resposta === 'sim' ? 100 : r.resposta === 'parcial' ? 50 : 0;
             return sum + score;
-          }, 0) / (qIds.length || 1);
+          }, 0) / (validResps.length || 1);
         }
         
         acc[BLOCKS[b as keyof typeof BLOCKS].toLowerCase().replace(/ /g, '_')] = Math.round(totalScore);
@@ -152,6 +155,7 @@ const AuditWizard: React.FC<AuditWizardProps> = ({ obras, currentUser, onAuditCo
           subcontratacao_regular: subcontratacaoRegular
         },
         ocorrencias_graves: ocorrencias.split('\n').filter(s => s.trim()),
+        respostas_detalhadas: respostas // Enviando respostas brutas para IA detectar N/A
       };
 
       const result = await generateAuditReport(auditPayload);
@@ -426,18 +430,18 @@ const AuditWizard: React.FC<AuditWizardProps> = ({ obras, currentUser, onAuditCo
                           <div key={q.id} className="space-y-4">
                              <p className="text-xs font-black text-slate-600 uppercase tracking-tight leading-tight min-h-[32px]">{q.texto}</p>
                              <div className="flex gap-2">
-                                {(['sim', 'parcial', 'nao'] as ResponseValue[]).map(v => (
+                                {(['sim', 'parcial', 'nao', 'n_a'] as ResponseValue[]).map(v => (
                                   <button
                                     key={v}
                                     onClick={() => updateEntrevista(ent.id, q.id, v)}
                                     className={`
                                       flex-1 py-3 rounded-xl font-black text-[10px] uppercase transition-all border-2
                                       ${r?.resposta === v 
-                                        ? (v === 'sim' ? 'bg-emerald-600 text-white border-slate-900' : v === 'parcial' ? 'bg-amber-500 text-white border-slate-900' : 'bg-rose-600 text-white border-slate-900')
+                                        ? (v === 'sim' ? 'bg-emerald-600 text-white border-slate-900' : v === 'parcial' ? 'bg-amber-500 text-white border-slate-900' : v === 'nao' ? 'bg-rose-600 text-white border-slate-900' : 'bg-slate-500 text-white border-slate-900')
                                         : 'bg-slate-50 text-slate-400 border-slate-200'}
                                     `}
                                   >
-                                    {v}
+                                    {v === 'n_a' ? 'N/A' : v}
                                   </button>
                                 ))}
                              </div>
@@ -447,39 +451,33 @@ const AuditWizard: React.FC<AuditWizardProps> = ({ obras, currentUser, onAuditCo
                    </div>
                 </div>
               ))}
-              
-              {entrevistas.length === 0 && (
-                <div className="py-20 text-center border-4 border-dashed border-slate-300 rounded-[2.5rem] bg-slate-50">
-                   <div className="w-20 h-20 bg-white rounded-full flex items-center justify-center mx-auto text-slate-300 border-4 border-slate-100 mb-4">
-                      <Users size={40} />
-                   </div>
-                   <p className="text-slate-400 font-black uppercase text-sm tracking-widest">Nenhum entrevistado adicionado.<br/>Mínimo de 1 para prosseguir.</p>
-                </div>
-              )}
             </div>
           </div>
         ) : (
           currentBlockQuestions.map((q) => {
             const resp = respostas.find(r => r.pergunta_id === q.id);
-            const needsObs = resp && resp.resposta !== 'sim';
+            const needsObs = resp && resp.resposta !== 'sim' && resp.resposta !== 'n_a';
             
             return (
               <div key={q.id} className="bg-white p-8 rounded-[2rem] border-4 border-slate-900 shadow-[8px_8px_0px_0px_rgba(15,23,42,1)] space-y-6 transition-all hover:-translate-y-1">
                 <p className="text-slate-900 font-black leading-tight text-2xl">{q.texto}</p>
                 
                 <div className="flex flex-wrap gap-3">
-                  {(['sim', 'parcial', 'nao'] as ResponseValue[]).map((val) => (
+                  {(['sim', 'parcial', 'nao', 'n_a'] as ResponseValue[]).map((val) => (
                     <button
                       key={val}
                       onClick={() => handleResponseChange(q.id, val)}
                       className={`
                         flex-1 py-5 rounded-2xl font-black text-xs uppercase tracking-widest transition-all border-4
                         ${resp?.resposta === val 
-                          ? (val === 'sim' ? 'bg-emerald-600 text-white border-slate-900 shadow-[0_5px_0_0_rgb(6,95,70)]' : val === 'parcial' ? 'bg-amber-500 text-white border-slate-900 shadow-[0_5px_0_0_rgb(180,83,9)]' : 'bg-rose-600 text-white border-slate-900 shadow-[0_5px_0_0_rgb(159,18,57)]')
+                          ? (val === 'sim' ? 'bg-emerald-600 text-white border-slate-900 shadow-[0_5px_0_0_rgb(6,95,70)]' : 
+                             val === 'parcial' ? 'bg-amber-500 text-white border-slate-900 shadow-[0_5px_0_0_rgb(180,83,9)]' : 
+                             val === 'nao' ? 'bg-rose-600 text-white border-slate-900 shadow-[0_5px_0_0_rgb(159,18,57)]' :
+                             'bg-slate-400 text-white border-slate-900 shadow-[0_5px_0_0_rgb(100,116,139)]')
                           : 'bg-slate-50 text-slate-400 border-slate-200 hover:bg-slate-100'}
                       `}
                     >
-                      {val}
+                      {val === 'n_a' ? 'N/A' : val}
                     </button>
                   ))}
                 </div>
