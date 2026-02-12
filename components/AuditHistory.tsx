@@ -1,15 +1,16 @@
 
 import React from 'react';
 import { Audit, Obra } from '../types';
-import { Search, Filter, Calendar, Building2, ChevronRight, FileSearch } from 'lucide-react';
+import { Search, Filter, Calendar, Building2, ChevronRight, FileSearch, LayoutDashboard } from 'lucide-react';
 
 interface AuditHistoryProps {
   audits: Audit[];
   obras: Obra[];
   onSelectAudit: (audit: Audit) => void;
+  onNavigate: (page: string) => void;
 }
 
-const AuditHistory: React.FC<AuditHistoryProps> = ({ audits, obras, onSelectAudit }) => {
+const AuditHistory: React.FC<AuditHistoryProps> = ({ audits, obras, onSelectAudit, onNavigate }) => {
   const [searchTerm, setSearchTerm] = React.useState('');
 
   const filteredAudits = audits.filter(a => {
@@ -20,12 +21,19 @@ const AuditHistory: React.FC<AuditHistoryProps> = ({ audits, obras, onSelectAudi
 
   return (
     <div className="space-y-6 animate-in fade-in duration-500">
-      <header className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <header className="flex flex-col md:flex-row md:items-start justify-between gap-4">
         <div>
+          <button 
+            onClick={() => onNavigate('dashboard')}
+            className="flex items-center gap-2 px-4 py-2 bg-white border-2 border-slate-200 rounded-xl text-[10px] font-black uppercase tracking-widest text-slate-500 hover:text-[#F05A22] hover:border-[#F05A22] transition-all mb-4"
+          >
+            <LayoutDashboard size={14} />
+            Voltar ao Dashboard
+          </button>
           <h2 className="text-3xl font-black text-slate-900 uppercase tracking-tighter">Histórico de Governança</h2>
           <p className="text-slate-600 font-black text-sm uppercase tracking-widest">Base de Dados de Risco Unità Engenharia</p>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 self-end md:self-auto">
           <div className="relative">
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
             <input 

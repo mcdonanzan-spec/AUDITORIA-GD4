@@ -63,8 +63,6 @@ const App: React.FC = () => {
   };
 
   const handleViewAudit = (audit: Audit) => {
-    // Para auditorias antigas sem o objeto report da IA, simulamos um básico ou apenas mostramos o score
-    // Em um sistema real, o report seria buscado no banco. Aqui passamos um mock compatível.
     const mockReport: AIAnalysisResult = {
       indiceGeral: audit.indice_geral || 0,
       classificacao: audit.classificacao || 'N/A',
@@ -100,9 +98,9 @@ const App: React.FC = () => {
       case 'dashboard':
         return <Dashboard audits={audits} obras={obras} onNavigate={setCurrentPage} />;
       case 'new-audit':
-        return <AuditWizard obras={obras} currentUser={user} onAuditComplete={handleAuditComplete} />;
+        return <AuditWizard obras={obras} currentUser={user} onAuditComplete={handleAuditComplete} onNavigate={setCurrentPage} />;
       case 'obras':
-        return <ObrasManagement obras={obras} audits={audits} onObraAdded={handleObraAdded} onSelectAudit={handleViewAudit} />;
+        return <ObrasManagement obras={obras} audits={audits} onObraAdded={handleObraAdded} onSelectAudit={handleViewAudit} onNavigate={setCurrentPage} />;
       case 'result':
         return viewingAudit ? (
           <AuditResult 
@@ -112,7 +110,7 @@ const App: React.FC = () => {
           />
         ) : <Dashboard audits={audits} obras={obras} onNavigate={setCurrentPage} />;
       case 'history':
-        return <AuditHistory audits={audits} obras={obras} onSelectAudit={handleViewAudit} />;
+        return <AuditHistory audits={audits} obras={obras} onSelectAudit={handleViewAudit} onNavigate={setCurrentPage} />;
       default:
         return <Dashboard audits={audits} obras={obras} onNavigate={setCurrentPage} />;
     }

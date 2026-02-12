@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Obra, Audit } from '../types';
-import { Building2, Plus, Search, MapPin, User as UserIcon, X, Loader2, ChevronRight, History } from 'lucide-react';
+import { Building2, Plus, Search, MapPin, User as UserIcon, X, Loader2, ChevronRight, History, LayoutDashboard } from 'lucide-react';
 import { addObra } from '../services/mockDb';
 
 interface ObrasManagementProps {
@@ -9,9 +9,10 @@ interface ObrasManagementProps {
   audits: Audit[];
   onObraAdded: (obra: Obra) => void;
   onSelectAudit: (audit: Audit) => void;
+  onNavigate: (page: string) => void;
 }
 
-const ObrasManagement: React.FC<ObrasManagementProps> = ({ obras, audits, onObraAdded, onSelectAudit }) => {
+const ObrasManagement: React.FC<ObrasManagementProps> = ({ obras, audits, onObraAdded, onSelectAudit, onNavigate }) => {
   const [isModalOpen, setIsModalOpen] = React.useState(false);
   const [loading, setLoading] = React.useState(false);
   const [searchTerm, setSearchTerm] = React.useState('');
@@ -44,8 +45,15 @@ const ObrasManagement: React.FC<ObrasManagementProps> = ({ obras, audits, onObra
 
   return (
     <div className="space-y-8 animate-in fade-in duration-500 pb-24">
-      <header className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+      <header className="flex flex-col md:flex-row md:items-start justify-between gap-6">
         <div>
+          <button 
+            onClick={() => onNavigate('dashboard')}
+            className="flex items-center gap-2 px-4 py-2 bg-white border-2 border-slate-200 rounded-xl text-[10px] font-black uppercase tracking-widest text-slate-500 hover:text-[#F05A22] hover:border-[#F05A22] transition-all mb-4"
+          >
+            <LayoutDashboard size={14} />
+            Voltar ao Dashboard
+          </button>
           <h2 className="text-4xl font-black text-slate-900 uppercase tracking-tighter">Gestão de Unidades</h2>
           <p className="text-slate-500 font-black text-xs uppercase tracking-widest mt-1">Base de Ativos Unità Engenharia</p>
         </div>
@@ -155,7 +163,7 @@ const ObrasManagement: React.FC<ObrasManagementProps> = ({ obras, audits, onObra
                       </div>
                     </div>
                     <div className="flex items-center gap-4">
-                       <span className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest border-2 ${audit.risco_juridico === 'BAIXO' ? 'bg-emerald-50 text-emerald-600 border-emerald-600' : 'bg-rose-50 text-rose-600 border-rose-600'}`}>
+                       <span className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest border-2 ${audit.risco_juridico === 'BAIXO' ? 'bg-emerald-50 text-emerald-700 border-emerald-600' : 'bg-rose-50 text-rose-600 border-rose-600'}`}>
                          {audit.risco_juridico}
                        </span>
                        <div className="bg-white p-4 rounded-2xl shadow-sm text-slate-300 group-hover:text-[#F05A22] group-hover:bg-orange-50 transition-all border-2 border-slate-100 group-hover:border-[#F05A22]">

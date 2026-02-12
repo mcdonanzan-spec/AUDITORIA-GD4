@@ -13,7 +13,8 @@ import {
   Trash2,
   UserCheck,
   Info,
-  AlertCircle
+  AlertCircle,
+  LayoutDashboard
 } from 'lucide-react';
 import { Obra, Question, ResponseValue, AuditResponse, Audit, AIAnalysisResult, EntrevistaAmostral } from '../types';
 import { QUESTIONS, INTERVIEW_QUESTIONS, BLOCKS } from '../constants';
@@ -23,9 +24,10 @@ interface AuditWizardProps {
   obras: Obra[];
   currentUser: any;
   onAuditComplete: (audit: Audit, report: AIAnalysisResult) => void;
+  onNavigate: (page: string) => void;
 }
 
-const AuditWizard: React.FC<AuditWizardProps> = ({ obras, currentUser, onAuditComplete }) => {
+const AuditWizard: React.FC<AuditWizardProps> = ({ obras, currentUser, onAuditComplete, onNavigate }) => {
   const [step, setStep] = React.useState<'setup' | 'questions' | 'processing'>('setup');
   const [currentBlockIdx, setCurrentBlockIdx] = React.useState(0);
   const [loading, setLoading] = React.useState(false);
@@ -184,7 +186,14 @@ const AuditWizard: React.FC<AuditWizardProps> = ({ obras, currentUser, onAuditCo
   if (step === 'setup') {
     return (
       <div className="max-w-2xl mx-auto space-y-6">
-        <header className="text-center">
+        <header className="flex flex-col items-center">
+          <button 
+            onClick={() => onNavigate('dashboard')}
+            className="flex items-center gap-2 px-6 py-2 bg-white border-2 border-slate-200 rounded-xl text-[10px] font-black uppercase tracking-widest text-slate-500 hover:text-[#F05A22] hover:border-[#F05A22] transition-all mb-6"
+          >
+            <LayoutDashboard size={14} />
+            Voltar ao Dashboard
+          </button>
           <h2 className="text-3xl font-black text-slate-900 uppercase tracking-tighter">Início de Inspeção</h2>
           <p className="text-[#F05A22] font-black text-xs uppercase tracking-[0.2em] mt-2">Protocolo Unità Engenharia</p>
         </header>
@@ -339,7 +348,6 @@ const AuditWizard: React.FC<AuditWizardProps> = ({ obras, currentUser, onAuditCo
           </div>
         ) : currentBlockKey === 'G' ? (
           <div className="space-y-8">
-            {/* NOVO BANNER DE META ESTATÍSTICA */}
             <div className={`p-8 rounded-[2.5rem] border-4 border-slate-900 transition-all shadow-[8px_8px_0px_0px_rgba(15,23,42,1)] ${targetMet ? 'bg-emerald-50' : 'bg-rose-50'}`}>
                <div className="flex items-start gap-6">
                   <div className={`w-14 h-14 rounded-2xl flex items-center justify-center shrink-0 border-2 ${targetMet ? 'bg-emerald-500 text-white border-emerald-700' : 'bg-rose-500 text-white border-rose-700'}`}>
