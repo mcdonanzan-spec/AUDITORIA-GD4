@@ -5,26 +5,30 @@ import { AIAnalysisResult } from "../types";
 export const generateAuditReport = async (auditData: any): Promise<AIAnalysisResult> => {
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
   
-  const prompt = `Você é um sistema de governança e compliance de alto nível da Unità Engenharia.
-  Sua função é analisar uma auditoria de campo em canteiro de obras e determinar o risco jurídico e operacional baseado em fatos sistêmicos e comportamentais.
+  const prompt = `Você é um sistema de governança e compliance de alto nível da Unità Engenharia S.A., especializado em gestão de terceiros (GRD).
+  Sua função é analisar uma auditoria de campo e determinar o risco jurídico e operacional.
   
   Dados da Auditoria:
   ${JSON.stringify(auditData, null, 2)}
   
-  CRITÉRIOS DE ANÁLISE (IMPORTANTE):
-  1. BLOCO G (GESTÃO DOCUMENTAL GD4): Analise o volume de pendências (A Analisar vs Pendentes de Envio). Se houver alto volume comparado ao efetivo, classifique como NEGLIGÊNCIA ADMINISTRATIVA.
-  2. BLOCO F (ENTREVISTAS): Contradições sobre PAGAMENTOS ou BENEFÍCIOS elevam o Risco Jurídico para CRÍTICO imediatamente.
-  3. DIVERGÊNCIA DE EFETIVO: Diferença campo vs sistema indica trabalho informal e risco de passivo trabalhista.
+  CRITÉRIOS DE ANÁLISE MANDATÓRIOS (REGRAS DE NEGÓCIO):
+  1. HABILITAÇÃO JURÍDICA (ITEM 01 GRD - BLOCO F): Se houver falha na validade do termo de qualificação ou certidões, o risco Jurídico deve ser no mínimo ALTO. Se houver empresa desqualificada atuando, a classificação da obra deve ser CRÍTICA automática, independente da nota.
+  2. AMOSTRAGEM COMPORTAMENTAL (BLOCO G): Contradições sobre pagamentos ou benefícios indicam fraude documental sistêmica. Eleve o risco para CRÍTICO se irregularidades forem relatadas por colaboradores.
+  3. DIVERGÊNCIA DE EFETIVO (BLOCO B): Diferença positiva de pessoas em campo vs GD4 indica trabalho informal/irregular.
   
-  REGRAS DE CLASSIFICAÇÃO:
-  - REGULAR: Score > 80% e pendências documentais baixas (<10% do efetivo).
-  - ATENÇÃO: Score 60-80% ou pendências documentais acumuladas.
-  - CRÍTICA: Score < 60% ou negligência grave no GD4 ou contradições em entrevistas.
+  ESTRUTURA DE RESPOSTA (JSON):
+  - indiceGeral: Cálculo ponderado (0-100).
+  - classificacao: REGULAR, ATENÇÃO ou CRÍTICA.
+  - riscoJuridico: BAIXO, MÉDIO, ALTO ou CRÍTICO.
+  - naoConformidades: Lista de desvios detectados.
+  - impactoJuridico: Descrição técnica do passivo potencial.
+  - recomendacoes: Ações corretivas imediatas.
+  - conclusaoExecutiva: Texto formal direcionado à diretoria da Unità Engenharia.
   
-  Gere um relatório estruturado em JSON para a diretoria executiva.`;
+  Retorne APENAS o JSON.`;
 
   const response = await ai.models.generateContent({
-    model: "gemini-3-flash-preview",
+    model: 'gemini-3-flash-preview',
     contents: prompt,
     config: {
       responseMimeType: "application/json",

@@ -15,21 +15,27 @@ export const QUESTIONS: Question[] = [
   
   { id: 'e1', bloco: 'E', texto: 'O controle de ponto em campo está sendo preenchido em tempo real (Sem horário britânico)?', peso: 25 },
   { id: 'e2', bloco: 'E', texto: 'Os EPIs utilizados (C.A.) coincidem com o registrado na Ficha de EPI?', peso: 15 },
+
+  // BLOCO F - HABILITAÇÃO JURÍDICA (ITEM 01 GRD)
+  { id: 'f_h1', bloco: 'F', texto: 'Todas as empresas presentes possuem Termo de Qualificação/Habilitação Jurídica válido?', peso: 30 },
+  { id: 'f_h2', bloco: 'F', texto: 'A data da qualificação é anterior à mobilização da empresa no canteiro?', peso: 20 },
+  { id: 'f_h3', bloco: 'F', texto: 'As certidões negativas (CND, CRF, CNDT) estão dentro da validade no sistema?', peso: 25 },
+  { id: 'f_h4', bloco: 'F', texto: 'A empresa está livre de sanções ou bloqueios posteriores à qualificação inicial?', peso: 25 },
 ];
 
 export const INTERVIEW_QUESTIONS: Question[] = [
-  { id: 'f1', bloco: 'F', texto: 'Recebimento integral de Benefícios (VT/VR) na data certa?', peso: 20 },
-  { id: 'f2', bloco: 'F', texto: 'Valor recebido em conta coincide com o Holerite assinado?', peso: 25 },
-  { id: 'f3', bloco: 'F', texto: 'Condições de Alojamento e Refeitório são dignas?', peso: 15 },
-  { id: 'f4', bloco: 'F', texto: 'Passou por treinamento de segurança (Integração) antes de iniciar?', peso: 10 },
+  { id: 'g1', bloco: 'G', texto: 'Recebimento integral de Benefícios (VT/VR) na data certa?', peso: 20 },
+  { id: 'g2', bloco: 'G', texto: 'Valor recebido em conta coincide com o Holerite assinado?', peso: 25 },
+  { id: 'g3', bloco: 'G', texto: 'Condições de Alojamento e Refeitório são dignas?', peso: 15 },
+  { id: 'g4', bloco: 'G', texto: 'Passou por treinamento de segurança (Integração) antes de iniciar?', peso: 10 },
 ];
 
 export const BLOCKS = {
-  A: 'Controle de Acesso',
-  B: 'Conformidade de Efetivo',
+  A: 'Acesso (GD4)',
+  B: 'Efetivo',
   C: 'Subcontratação',
-  D: 'Identificação Visual',
+  D: 'Identificação',
   E: 'Técnico Campo',
-  F: 'Amostragem Comportamental',
-  G: 'Gestão Documental (GD4)'
+  F: 'Habilitação Jurídica (Item 01 GRD)',
+  G: 'Amostragem Comportamental'
 };
