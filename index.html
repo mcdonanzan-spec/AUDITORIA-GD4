@@ -12,61 +12,58 @@
         -webkit-tap-highlight-color: transparent;
       }
 
-      /* SOLUÇÃO DEFINITIVA PARA IMPRESSÃO / PDF */
+      /* ESTRUTURA DE IMPRESSÃO PROFISSIONAL */
       @media print {
-        /* Configurações de página: Margens e Tamanho */
+        /* Configurações de Página */
         @page {
-          margin: 1cm;
-          size: auto; /* Deixa o navegador gerenciar o melhor encaixe */
+          margin: 1.5cm;
+          size: portrait;
         }
 
-        /* Esconder TUDO que não é o conteúdo principal da auditoria */
-        aside, nav, header, .print-hidden, button, [role="button"], .fixed, .sticky { 
-          display: none !important; 
+        /* Esconde ABSOLUTAMENTE TUDO da interface web */
+        body * {
           visibility: hidden !important;
-        }
-        
-        /* Resetar o body e html para fluxo de documento simples (estático) */
-        html, body {
-          background: white !important;
-          color: black !important;
-          width: 100% !important;
-          height: auto !important;
-          margin: 0 !important;
-          padding: 0 !important;
           overflow: visible !important;
-          position: relative !important;
         }
 
-        /* Forçar o conteúdo a ocupar a largura total e ser visível */
-        #root, main, .max-w-7xl, .max-w-4xl {
+        /* Mostra APENAS o container do relatório e seus filhos */
+        .printable-area, .printable-area * {
+          visibility: visible !important;
+        }
+
+        /* Reposiciona o relatório no topo da folha para evitar espaços em branco */
+        .printable-area {
+          position: absolute !important;
+          left: 0 !important;
+          top: 0 !important;
           width: 100% !important;
-          max-width: none !important;
           margin: 0 !important;
           padding: 0 !important;
           display: block !important;
-          overflow: visible !important;
-          position: static !important;
-          float: none !important;
+          background: white !important;
         }
 
-        /* Garante que imagens e textos apareçam */
+        /* Reseta elementos de layout que travam a impressão */
+        html, body {
+          height: auto !important;
+          overflow: visible !important;
+          background: white !important;
+        }
+
+        /* Remove botões e elementos desnecessários no PDF */
+        .print-hidden, button, [role="button"] {
+          display: none !important;
+        }
+
+        /* Força a fidelidade de cores e fundos no PDF */
         * {
           -webkit-print-color-adjust: exact !important;
           print-color-adjust: exact !important;
-          opacity: 1 !important;
         }
 
-        /* Evita quebra de página no meio de cards */
-        .print-break-inside-avoid { 
+        .print-break-inside-avoid {
           break-inside: avoid;
           page-break-inside: avoid;
-        }
-
-        /* Remove sombras para o PDF ficar limpo */
-        .shadow-sm, .shadow-md, .shadow-lg, .shadow-xl, .shadow-2xl {
-          box-shadow: none !important;
-          border: 1px solid #e2e8f0 !important; /* Adiciona borda leve onde havia sombra */
         }
       }
     </style>
