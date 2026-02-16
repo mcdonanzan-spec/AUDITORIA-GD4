@@ -6,22 +6,25 @@ export const generateAuditReport = async (auditData: any): Promise<AIAnalysisRes
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
   
   const prompt = `Você é um sistema de Inteligência de Risco Jurídico e Financeiro da Unità Engenharia S.A.
-  Sua tarefa é converter desvios de conformidade em uma estimativa de Passivo Financeiro Potencial.
+  Sua tarefa é converter desvios de conformidade em uma estimativa de Passivo Financeiro Potencial e classificação de status.
   
   DADOS DA AUDITORIA:
   ${JSON.stringify(auditData, null, 2)}
   
+  METODOLOGIA DE CLASSIFICAÇÃO (STATUS):
+  1. REGULAR: Índice Geral >= 85%.
+  2. ATENÇÃO: Índice Geral entre 70% e 84%.
+  3. CRÍTICA: Índice Geral < 70%.
+  
   METODOLOGIA DE CÁLCULO FINANCEIRO (BASE LEGAL BRASILEIRA):
-  1. TRABALHADOR SEM REGISTRO/Pendente: Risco de R$ 60.000,00 por ocorrência (Vínculo + Multas eSocial + FGTS).
-  2. FALHA EM CONTROLE DE ACESSO: Multa NR-28 (I3) - Estimar R$ 5.000,00 por dia de irregularidade detectada.
-  3. BENEFÍCIOS NÃO PAGOS (Entrevistas): Risco de Ação Coletiva e Multas sindicais. Estimar R$ 3.000,00 por colaborador afetado.
-  4. SUBCONTRATAÇÃO IRREGULAR: Risco de responsabilidade solidária integral. Estimar 40% do valor total da folha da terceirizada (Mínimo R$ 100k).
-  5. DOCUMENTAÇÃO GRD VENCIDA: Risco de interdição parcial ou multa administrativa (R$ 15k a R$ 40k).
+  1. TRABALHADOR SEM REGISTRO/Pendente: Risco de R$ 60.000,00 por ocorrência.
+  2. FALHA EM CONTROLE DE ACESSO: Multa NR-28 - Estimar R$ 5.000,00 por dia de irregularidade.
+  3. BENEFÍCIOS NÃO PAGOS (Entrevistas): Estimar R$ 3.000,00 por colaborador afetado.
+  4. SUBCONTRATAÇÃO IRREGULAR: Estimar 40% do valor total da folha da terceirizada (Mínimo R$ 100k).
+  5. DOCUMENTAÇÃO GRD VENCIDA: Risco de multa administrativa (R$ 15k a R$ 40k).
   
   REGRAS:
-  - Ignore itens marcados como N/A.
-  - Se a classificação for REGULAR e não houver desvios graves, a exposição pode ser R$ 0,00.
-  - Seja realista, mas enfatize o risco para a diretoria.
+  - Se houver OCORRÊNCIA GRAVE (ex: subcontratação irregular ou falta de registro), o status deve ser no mínimo ATENÇÃO, independente da média numérica.
   
   ESTRUTURA DE RESPOSTA (JSON):
   - indiceGeral: 0-100.

@@ -14,7 +14,8 @@ import {
   Loader2,
   Coins,
   TrendingDown,
-  Users
+  Users,
+  Info
 } from 'lucide-react';
 import { Audit, AIAnalysisResult } from '../types';
 import { QUESTIONS, INTERVIEW_QUESTIONS } from '../constants';
@@ -32,6 +33,32 @@ const AuditResult: React.FC<AuditResultProps> = ({ audit, report, onClose }) => 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
   };
+
+  const getStatusColors = (score: number) => {
+    if (score >= 85) return {
+      bg: 'bg-emerald-600',
+      light: 'bg-emerald-50',
+      border: 'border-emerald-700',
+      text: 'text-emerald-700',
+      icon: <ShieldCheck className="text-emerald-500" size={24} />
+    };
+    if (score >= 70) return {
+      bg: 'bg-amber-500',
+      light: 'bg-amber-50',
+      border: 'border-amber-600',
+      text: 'text-amber-700',
+      icon: <AlertOctagon className="text-amber-500" size={24} />
+    };
+    return {
+      bg: 'bg-rose-600',
+      light: 'bg-rose-50',
+      border: 'border-rose-700',
+      text: 'text-rose-700',
+      icon: <ShieldAlert className="text-rose-500" size={24} />
+    };
+  };
+
+  const statusStyle = getStatusColors(report.indiceGeral);
 
   const handleGeneratePDF = async () => {
     setIsGenerating(true);
@@ -102,7 +129,7 @@ const AuditResult: React.FC<AuditResultProps> = ({ audit, report, onClose }) => 
 
       <div id="relatorio-tecnico-unita" className="bg-white p-2 md:p-4 space-y-10">
         
-        {/* CABEÇALHO DO RELATÓRIO PDF COM EFETIVO TOTAL */}
+        {/* CABEÇALHO DO RELATÓRIO PDF */}
         <div className="flex justify-between items-start border-b-8 border-slate-900 pb-10 mb-10">
           <UnitaLogo className="scale-125 origin-left" />
           <div className="text-right">
@@ -124,7 +151,7 @@ const AuditResult: React.FC<AuditResultProps> = ({ audit, report, onClose }) => 
           </div>
         </div>
 
-        {/* INDICADORES PRINCIPAIS REESTRUTURADOS */}
+        {/* INDICADORES PRINCIPAIS COM CICLO DE CORES E LEGENDAS */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           <div className="bg-slate-50 p-6 rounded-[2rem] border-2 border-slate-200 flex flex-col items-center text-center relative overflow-hidden group">
              <Users className="text-[#F05A22] mb-2" size={24} />
@@ -138,18 +165,47 @@ const AuditResult: React.FC<AuditResultProps> = ({ audit, report, onClose }) => 
              <p className="text-2xl font-black text-slate-900">{audit.entrevistas?.length || 0}</p>
              <div className="absolute bottom-0 inset-x-0 h-1 bg-emerald-500 transform scale-x-0 group-hover:scale-x-100 transition-transform"></div>
           </div>
-          <div className="bg-slate-900 p-6 rounded-[2rem] border-2 border-slate-900 flex flex-col items-center text-center shadow-lg">
-             <p className="text-[8px] font-black text-[#F05A22] uppercase tracking-widest mb-1">Score Conformidade</p>
-             <p className="text-3xl font-black text-white leading-none">{report.indiceGeral}%</p>
+          
+          {/* CARD SCORE CONFORMIDADE DINÂMICO */}
+          <div className={`${statusStyle.bg} p-6 rounded-[2rem] border-2 ${statusStyle.border} flex flex-col items-center text-center shadow-lg text-white group relative`}>
+             <p className="text-[8px] font-black opacity-80 uppercase tracking-widest mb-1">Score Conformidade</p>
+             <p className="text-3xl font-black leading-none mb-2">{report.indiceGeral}%</p>
+             <div className="mt-1 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                <Info size={10} />
+                <span className="text-[7px] font-black uppercase tracking-tighter">Faixa: {report.indiceGeral >= 85 ? '85-100%' : report.indiceGeral >= 70 ? '70-84%' : '< 70%'}</span>
+             </div>
           </div>
-          <div className={`p-6 rounded-[2rem] border-2 flex flex-col items-center text-center shadow-lg ${report.classificacao === 'CRÍTICA' ? 'bg-rose-600 border-rose-700 text-white' : 'bg-emerald-600 border-emerald-700 text-white'}`}>
+
+          {/* CARD STATUS FINAL DINÂMICO */}
+          <div className={`${statusStyle.bg} p-6 rounded-[2rem] border-2 ${statusStyle.border} flex flex-col items-center text-center shadow-lg text-white group relative`}>
              <p className="text-[8px] font-black opacity-80 uppercase tracking-widest mb-1">Status Final</p>
-             <p className="text-lg font-black uppercase leading-none">{report.classificacao}</p>
+             <p className="text-lg font-black uppercase leading-none mb-2">{report.classificacao}</p>
+             <div className="bg-white/20 px-3 py-1 rounded-full flex items-center gap-1">
+                <span className="text-[7px] font-black uppercase tracking-tighter">
+                   {report.classificacao === 'REGULAR' ? 'CONFORME' : report.classificacao === 'ATENÇÃO' ? 'RISCO LATENTE' : 'INTERVENÇÃO'}
+                </span>
+             </div>
           </div>
         </div>
 
+        {/* LEGENDA DE CORES DO SISTEMA (DISCRETA) */}
+        <div className="flex justify-center gap-8 py-2">
+           <div className="flex items-center gap-2">
+              <div className="w-2 h-2 rounded-full bg-emerald-600"></div>
+              <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Regular (≥85%)</span>
+           </div>
+           <div className="flex items-center gap-2">
+              <div className="w-2 h-2 rounded-full bg-amber-500"></div>
+              <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Atenção (70-84%)</span>
+           </div>
+           <div className="flex items-center gap-2">
+              <div className="w-2 h-2 rounded-full bg-rose-600"></div>
+              <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Crítica (&lt;70%)</span>
+           </div>
+        </div>
+
         {/* CARD DE EXPOSIÇÃO FINANCEIRA */}
-        <div className="bg-white rounded-[2.5rem] border-4 border-slate-900 overflow-hidden shadow-[12px_12px_0px_0px_rgba(240,90,34,1)]">
+        <div className="bg-white rounded-[2.5rem] border-4 border-slate-900 overflow-hidden shadow-[12px_12px_0px_0px_rgba(15,23,42,1)]">
            <div className="bg-slate-900 p-6 flex items-center justify-between">
               <div className="flex items-center gap-4">
                  <div className="w-12 h-12 bg-[#F05A22] rounded-xl flex items-center justify-center text-white border-2 border-white/20">
@@ -170,19 +226,19 @@ const AuditResult: React.FC<AuditResultProps> = ({ audit, report, onClose }) => 
                  <p className="text-xs font-black text-slate-400 uppercase tracking-widest mt-2">Passivo Projetado para o Canteiro</p>
               </div>
               <div className="flex-1 max-w-sm">
-                 <div className={`p-6 rounded-2xl border-2 flex items-center gap-4 ${report.riscoJuridico === 'CRÍTICO' || report.riscoJuridico === 'ALTO' ? 'bg-rose-50 border-rose-200' : 'bg-emerald-50 border-emerald-200'}`}>
-                    <ShieldAlert className={report.riscoJuridico === 'CRÍTICO' || report.riscoJuridico === 'ALTO' ? 'text-rose-600' : 'text-emerald-600'} size={40} />
+                 <div className={`p-6 rounded-2xl border-2 flex items-center gap-4 ${statusStyle.light} ${statusStyle.border}`}>
+                    <div className="shrink-0">{statusStyle.icon}</div>
                     <div>
-                       <p className="text-[10px] font-black text-slate-500 uppercase">Matriz de Risco</p>
-                       <p className={`text-xl font-black uppercase ${report.riscoJuridico === 'CRÍTICO' || report.riscoJuridico === 'ALTO' ? 'text-rose-900' : 'text-emerald-900'}`}>{report.riscoJuridico}</p>
+                       <p className={`text-[10px] font-black uppercase ${statusStyle.text}`}>Matriz de Risco</p>
+                       <p className={`text-xl font-black uppercase ${statusStyle.text}`}>{report.riscoJuridico}</p>
                     </div>
                  </div>
               </div>
            </div>
            <div className="px-10 pb-10">
               <p className="text-xs text-slate-500 font-bold leading-relaxed border-t-2 border-slate-100 pt-6 italic">
-                Atenção: Projeção técnica calculada sobre o universo total de {audit.equipe_campo} colaboradores identificados em campo. 
-                <span className="text-slate-900 ml-1">A amostragem de {coverage}% valida a precisão deste passivo.</span>
+                Atenção: Projeção técnica calculada sobre o universo total de {audit.equipe_campo} colaboradores. 
+                <span className="text-slate-900 ml-1">O Score de {report.indiceGeral}% classifica a unidade em estado de {report.classificacao}.</span>
               </p>
            </div>
         </div>
@@ -243,7 +299,7 @@ const AuditResult: React.FC<AuditResultProps> = ({ audit, report, onClose }) => 
                           <span className="text-[9px] font-black text-slate-500 uppercase flex-1 pr-2 leading-none">
                              {INTERVIEW_QUESTIONS.find(iq => iq.id === r.pergunta_id)?.texto}
                           </span>
-                          <span className={`text-[9px] font-black uppercase px-2 py-1 rounded-md ${r.resposta === 'sim' ? 'text-emerald-600 bg-emerald-50' : 'text-rose-600 bg-rose-50'}`}>
+                          <span className={`text-[9px] font-black uppercase px-2 py-1 rounded-md ${r.resposta === 'sim' ? 'text-emerald-600 bg-emerald-50' : r.resposta === 'parcial' ? 'text-amber-600 bg-amber-50' : 'text-rose-600 bg-rose-50'}`}>
                              {r.resposta}
                           </span>
                        </div>
