@@ -5,15 +5,24 @@ import { AIAnalysisResult } from "../types";
 export const generateAuditReport = async (auditData: any): Promise<AIAnalysisResult> => {
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
   
-  const prompt = `Analise os riscos desta auditoria da Unità Engenharia.
-  DADOS: ${JSON.stringify(auditData)}
+  const prompt = `ATUE COMO UM SISTEMA DE AUDITORIA DE CONFORMIDADE JURÍDICA EM OBRAS.
+  DADOS DA AUDITORIA: ${JSON.stringify(auditData)}
   
-  REGRAS DE CÁLCULO (Projetar amostra para o total de ${auditData.amostragem.total_efetivo} pessoas):
-  - Multa CLT Art 47: R$ 60.000 por irregular.
-  - NR-28 (Acesso): R$ 5.000 por falha.
-  - Súmula 331 TST: R$ 100.000 fixo se houver quarteirização irregular.
-  
-  Gere um JSON com: indiceGeral(0-100), classificacao, riscoJuridico, exposicaoFinanceira(número), detalhamentoCalculo(item, valor, baseLegal, logica), naoConformidades(array), impactoJuridico, recomendacoes(array), conclusaoExecutiva.`;
+  SUA TAREFA:
+  1. Calcular o Índice Geral (0-100) baseado no peso dos blocos.
+  2. Projetar Exposição Financeira (Passivo Trabalhista) baseado em CLT Art 47 (R$ 60k por irregular) e Súmula 331 TST (R$ 100k fixo para quarteirização).
+  3. Identificar riscos imediatos.
+
+  SAÍDA OBRIGATÓRIA EM JSON:
+  - indiceGeral: número
+  - classificacao: REGULAR, ATENÇÃO ou CRÍTICA
+  - riscoJuridico: BAIXO, MÉDIO, ALTO ou CRÍTICO
+  - exposicaoFinanceira: número total projetado
+  - detalhamentoCalculo: array de objetos {item, valor, baseLegal, logica}
+  - naoConformidades: array de strings
+  - impactoJuridico: texto técnico curto
+  - recomendacoes: array de strings técnicas
+  - conclusaoExecutiva: parágrafo formal para a diretoria.`;
 
   try {
     const response = await ai.models.generateContent({
@@ -54,6 +63,6 @@ export const generateAuditReport = async (auditData: any): Promise<AIAnalysisRes
     return JSON.parse(text) as AIAnalysisResult;
   } catch (error) {
     console.error("Erro na IA:", error);
-    throw new Error("Erro de comunicação com o motor de risco.");
+    throw new Error("Falha ao processar análise de risco.");
   }
 };
