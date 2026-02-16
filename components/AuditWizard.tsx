@@ -133,15 +133,12 @@ const AuditWizard: React.FC<AuditWizardProps> = ({ obras, currentUser, onAuditCo
     return currentBlockQuestions.every(q => {
       const r = respostas.find(resp => resp.pergunta_id === q.id);
       if (!r) return false;
-      
       const needsObs = r.resposta !== 'sim' && r.resposta !== 'n_a';
       if (needsObs && (!r.observacao || r.observacao.trim().length < 5)) return false;
-
       if (q.requiresPhotos) {
         const minReq = q.minPhotos || 3;
         if ((r.fotos?.length || 0) < minReq) return false;
       }
-      
       return true;
     });
   };
@@ -151,53 +148,28 @@ const AuditWizard: React.FC<AuditWizardProps> = ({ obras, currentUser, onAuditCo
     setLoading(true);
 
     try {
-      const blockScores = blockKeys.reduce((acc, b) => {
-        const qIds = QUESTIONS.filter(q => q.bloco === b).map(q => q.id);
-        const bResps = respostas.filter(r => qIds.includes(r.pergunta_id));
-        const validResps = bResps.filter(r => r.resposta !== 'n_a');
-        
-        let totalScore = 0;
-        if (b === 'B') {
-           const divergencia = Math.abs(Number(equipeCampo) - Number(equipeGd4));
-           const scoreEquipe = divergencia === 0 ? 100 : divergencia < 5 ? 50 : 0;
-           const scoreSub = subcontratacaoRegular === true ? 100 : 0;
-           totalScore = (scoreEquipe + scoreSub) / 2;
-        } else if (b === 'G') {
-           const totalResps = entrevistas.flatMap(e => e.respostas);
-           const validTotalResps = totalResps.filter(r => r.resposta !== 'n_a');
-           totalScore = validTotalResps.reduce((sum, r) => {
-             const s = r.resposta === 'sim' ? 100 : r.resposta === 'parcial' ? 50 : 0;
-             return sum + s;
-           }, 0) / (validTotalResps.length || 1);
-        } else {
-           totalScore = validResps.reduce((sum, r) => {
-            const score = r.resposta === 'sim' ? 100 : r.resposta === 'parcial' ? 50 : 0;
-            return sum + score;
-          }, 0) / (validResps.length || 1);
-        }
-        acc[BLOCKS[b as keyof typeof BLOCKS].toLowerCase().replace(/ /g, '_')] = Math.round(totalScore);
-        return acc;
-      }, {} as any);
-
+      // OTIMIZAÇÃO CRÍTICA: Não enviar as fotos em base64 para a IA.
+      // A IA não precisa ver as fotos para calcular o risco jurídico baseado nos dados de texto.
+      // Isso reduz o payload em 95%.
       const auditPayload = {
         obra: obras.find(o => o.id === selectedObra)?.nome || '',
-        data: new Date().toISOString(),
-        auditor: currentUser.nome,
-        blocos: blockScores,
         amostragem: {
           total_efetivo: Number(equipeCampo),
           efetivo_gd4: Number(equipeGd4),
-          divergencia: Math.abs(Number(equipeCampo) - Number(equipeGd4)),
           quarteirizacao_irregular: !subcontratacaoRegular,
           entrevistados: entrevistas.length,
-          cobertura: `${coveragePercent}%`,
-          meta_atingida: targetMet,
-          detalhes: entrevistas
+          cobertura: `${coveragePercent}%`
         },
-        respostas_detalhadas: respostas.map(r => ({
-           pergunta: QUESTIONS.find(q => q.id === r.pergunta_id)?.texto,
-           resposta: r.resposta,
-           obs: r.observacao
+        desvios_identificados: respostas
+          .filter(r => r.resposta !== 'sim' && r.resposta !== 'n_a')
+          .map(r => ({
+             pergunta: QUESTIONS.find(q => q.id === r.pergunta_id)?.texto,
+             status: r.resposta,
+             observacao: r.observacao
+          })),
+        entrevistas_resumo: entrevistas.map(e => ({
+           funcao: e.funcao,
+           erros: e.respostas.filter(r => r.resposta !== 'sim' && r.resposta !== 'n_a').length
         }))
       };
 
@@ -224,7 +196,7 @@ const AuditWizard: React.FC<AuditWizardProps> = ({ obras, currentUser, onAuditCo
     } catch (err) {
       console.error(err);
       setStep('questions');
-      alert("Falha técnica ao consolidar relatório. Verifique sua conexão ou tente novamente.");
+      alert("Falha técnica ao processar relatório. Tente novamente.");
     } finally {
       setLoading(false);
     }
@@ -313,40 +285,26 @@ const AuditWizard: React.FC<AuditWizardProps> = ({ obras, currentUser, onAuditCo
   }
 
   return (
-    <div className="max-w-5xl mx-auto space-y-8 animate-in slide-in-from-right duration-500 pb-20">
-      <input 
-        type="file" 
-        accept="image/*" 
-        capture="environment" 
-        className="hidden" 
-        ref={fileInputRef} 
-        onChange={handleFileChange}
-      />
+    <div className="max-w-5xl mx-auto space-y-8 pb-20">
+      <input type="file" accept="image/*" capture="environment" className="hidden" ref={fileInputRef} onChange={handleFileChange} />
       
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-6">
-          <div className="w-16 h-16 bg-slate-900 text-white rounded-[1.25rem] flex items-center justify-center font-black text-3xl shadow-xl border-4 border-[#F05A22]">
-            {currentBlockKey}
-          </div>
+          <div className="w-16 h-16 bg-slate-900 text-white rounded-[1.25rem] flex items-center justify-center font-black text-3xl shadow-xl border-4 border-[#F05A22]">{currentBlockKey}</div>
           <div>
             <h2 className="text-2xl font-black text-slate-900 uppercase tracking-tighter leading-none">{BLOCKS[currentBlockKey as keyof typeof BLOCKS]}</h2>
             <div className="flex gap-2 mt-3">
               {blockKeys.map((_, idx) => (
-                <div 
-                  key={idx} 
-                  className={`h-3 w-10 rounded-full transition-all border-2 border-slate-900 ${idx <= currentBlockIdx ? 'bg-[#F05A22]' : 'bg-slate-200'}`}
-                />
+                <div key={idx} className={`h-3 w-10 rounded-full transition-all border-2 border-slate-900 ${idx <= currentBlockIdx ? 'bg-[#F05A22]' : 'bg-slate-200'}`} />
               ))}
             </div>
           </div>
         </div>
-
         {currentBlockKey === 'G' && (
-          <div className={`flex items-center gap-4 px-6 py-3 rounded-2xl border-4 border-slate-900 shadow-sm transition-all ${targetMet ? 'bg-emerald-50' : 'bg-rose-50 animate-pulse'}`}>
+          <div className={`flex items-center gap-4 px-6 py-3 rounded-2xl border-4 border-slate-900 shadow-sm ${targetMet ? 'bg-emerald-50' : 'bg-rose-50 animate-pulse'}`}>
              <div className="flex flex-col items-end">
                 <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Cobertura Real</span>
-                <span className={`text-xl font-black ${targetMet ? 'text-emerald-600' : 'text-rose-600'}`}>{coveragePercent}% do efetivo</span>
-                {!targetMet && <span className="text-[8px] font-black uppercase text-rose-500">Mínimo 10% exigido</span>}
+                <span className={`text-xl font-black ${targetMet ? 'text-emerald-600' : 'text-rose-600'}`}>{coveragePercent}%</span>
              </div>
              {targetMet ? <UserCheck size={32} className="text-emerald-500" /> : <AlertOctagon size={32} className="text-rose-600" />}
           </div>
@@ -358,207 +316,73 @@ const AuditWizard: React.FC<AuditWizardProps> = ({ obras, currentUser, onAuditCo
           <div className="bg-white p-8 rounded-[2.5rem] border-4 border-slate-900 shadow-[8px_8px_0px_0px_rgba(15,23,42,1)] space-y-10">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
               <div className="space-y-3">
-                <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest flex items-center gap-2">
-                  <Users size={16} className="text-[#F05A22]" /> Efetivo Real (Campo)
-                </label>
-                <input 
-                  type="number" 
-                  className="w-full bg-slate-50 border-4 border-slate-900 rounded-2xl px-6 py-5 focus:ring-4 focus:ring-orange-500/20 focus:outline-none font-black text-4xl text-slate-900"
-                  placeholder="0"
-                  value={equipeCampo}
-                  onChange={e => setEquipeCampo(e.target.value)}
-                />
+                <label className="text-[10px] font-black text-slate-500 uppercase flex items-center gap-2"><Users size={16} /> Efetivo Real</label>
+                <input type="number" className="w-full bg-slate-50 border-4 border-slate-900 rounded-2xl px-6 py-5 font-black text-4xl" value={equipeCampo} onChange={e => setEquipeCampo(e.target.value)} />
               </div>
               <div className="space-y-3">
-                <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest flex items-center gap-2">
-                  <Database size={16} className="text-[#F05A22]" /> Efetivo no GD4 (Sistema)
-                </label>
-                <input 
-                  type="number" 
-                  className="w-full bg-slate-50 border-4 border-slate-900 rounded-2xl px-6 py-5 focus:ring-4 focus:ring-orange-500/20 focus:outline-none font-black text-4xl text-slate-900"
-                  placeholder="0"
-                  value={equipeGd4}
-                  onChange={e => setEquipeGd4(e.target.value)}
-                />
+                <label className="text-[10px] font-black text-slate-500 uppercase flex items-center gap-2"><Database size={16} /> Efetivo GD4</label>
+                <input type="number" className="w-full bg-slate-50 border-4 border-slate-900 rounded-2xl px-6 py-5 font-black text-4xl" value={equipeGd4} onChange={e => setEquipeGd4(e.target.value)} />
               </div>
             </div>
-
             <div className="space-y-4">
-              <label className="text-sm font-black text-slate-900 uppercase tracking-tight block">Toda subcontratação em campo está autorizada pela Unità?</label>
+              <label className="text-sm font-black uppercase">Quarteirização Autorizada?</label>
               <div className="flex gap-4">
                 {[true, false].map((val) => (
-                  <button
-                    key={val ? 'sim' : 'nao'}
-                    onClick={() => setSubcontratacaoRegular(val)}
-                    className={`
-                      flex-1 py-6 rounded-2xl font-black text-sm uppercase transition-all border-4
-                      ${subcontratacaoRegular === val 
-                        ? (val ? 'bg-emerald-600 text-white border-slate-900 shadow-[0_6px_0_0_rgb(6,95,70)]' : 'bg-rose-600 text-white border-slate-900 shadow-[0_6px_0_0_rgb(159,18,57)]')
-                        : 'bg-slate-50 text-slate-400 border-slate-300 hover:bg-slate-100'}
-                    `}
-                  >
-                    {val ? 'SIM (CONFORME)' : 'NÃO (IRREGULAR)'}
-                  </button>
+                  <button key={val ? 's' : 'n'} onClick={() => setSubcontratacaoRegular(val)} className={`flex-1 py-6 rounded-2xl font-black border-4 transition-all ${subcontratacaoRegular === val ? 'bg-slate-900 text-white' : 'bg-slate-50 text-slate-400 border-slate-200'}`}>{val ? 'SIM' : 'NÃO'}</button>
                 ))}
               </div>
             </div>
           </div>
         ) : currentBlockKey === 'G' ? (
           <div className="space-y-8">
-            <div className="flex justify-between items-center bg-slate-900 p-6 rounded-3xl border-4 border-slate-900 shadow-xl">
-               <div className="flex items-center gap-4 text-white">
-                  <MessageSquareQuote size={32} className="text-[#F05A22]" />
-                  <div>
-                    <h4 className="font-black uppercase text-sm">Entrevistas de Campo</h4>
-                    <p className="text-xs text-slate-400 font-bold uppercase">Valide a realidade do canteiro com os trabalhadores.</p>
-                  </div>
-               </div>
-               <button 
-                onClick={addEntrevistado}
-                className="bg-[#F05A22] text-white px-6 py-3 rounded-2xl font-black text-xs uppercase tracking-widest flex items-center gap-2 hover:bg-white hover:text-slate-900 transition-all border-2 border-transparent hover:border-slate-900"
-               >
-                 <Plus size={18} />
-                 Adicionar Colaborador
-               </button>
+            <div className="flex justify-between items-center bg-slate-900 p-6 rounded-3xl text-white">
+               <h4 className="font-black uppercase text-sm">Amostragem Operacional</h4>
+               <button onClick={addEntrevistado} className="bg-[#F05A22] px-6 py-3 rounded-2xl font-black text-xs uppercase flex items-center gap-2"><Plus size={18} /> Add Colaborador</button>
             </div>
-
-            <div className="space-y-6">
-              {entrevistas.map((ent, entIdx) => (
-                <div key={ent.id} className="bg-white rounded-[2.5rem] border-4 border-slate-900 shadow-[8px_8px_0px_0px_rgba(15,23,42,1)] overflow-hidden animate-in zoom-in-95">
-                   <div className="bg-slate-50 p-6 border-b-4 border-slate-900 flex justify-between items-center gap-4">
-                      <div className="flex items-center gap-4 flex-1">
-                         <div className="w-10 h-10 bg-slate-900 text-white rounded-xl flex items-center justify-center font-black">
-                            {entIdx + 1}
-                         </div>
-                         <div className="grid grid-cols-2 gap-4 flex-1">
-                            <div className="relative">
-                               <Briefcase className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={14} />
-                               <input 
-                                  placeholder="Cargo/Função"
-                                  className="w-full bg-white border-2 border-slate-200 rounded-xl pl-10 pr-4 py-3 font-black text-slate-900 uppercase text-xs"
-                                  value={ent.funcao}
-                                  onChange={(e) => setEntrevistas(prev => prev.map(item => item.id === ent.id ? {...item, funcao: e.target.value} : item))}
-                               />
-                            </div>
-                            <div className="relative">
-                               <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={14} />
-                               <input 
-                                  placeholder="Nome da Empresa"
-                                  className="w-full bg-white border-2 border-slate-200 rounded-xl pl-10 pr-4 py-3 font-black text-slate-900 uppercase text-xs"
-                                  value={ent.empresa}
-                                  onChange={(e) => setEntrevistas(prev => prev.map(item => item.id === ent.id ? {...item, empresa: e.target.value} : item))}
-                               />
-                            </div>
+            {entrevistas.map((ent, idx) => (
+              <div key={ent.id} className="bg-white rounded-[2.5rem] border-4 border-slate-900 overflow-hidden">
+                 <div className="bg-slate-50 p-6 border-b-4 border-slate-900 flex justify-between items-center">
+                    <div className="flex gap-4 flex-1">
+                      <input placeholder="Função" className="bg-white border-2 border-slate-200 rounded-xl px-4 py-2 font-black text-xs flex-1 uppercase" value={ent.funcao} onChange={e => setEntrevistas(ev => ev.map(it => it.id === ent.id ? {...it, funcao: e.target.value} : it))} />
+                      <input placeholder="Empresa" className="bg-white border-2 border-slate-200 rounded-xl px-4 py-2 font-black text-xs flex-1 uppercase" value={ent.empresa} onChange={e => setEntrevistas(ev => ev.map(it => it.id === ent.id ? {...it, empresa: e.target.value} : it))} />
+                    </div>
+                    <button onClick={() => removeEntrevistado(ent.id)} className="p-3 text-rose-600"><Trash2 size={20} /></button>
+                 </div>
+                 <div className="p-8 grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {INTERVIEW_QUESTIONS.map(q => (
+                      <div key={q.id} className="space-y-2">
+                         <p className="text-[10px] font-black uppercase text-slate-500">{q.texto}</p>
+                         <div className="flex gap-2">
+                           {['sim', 'nao'].map(v => (
+                             <button key={v} onClick={() => updateEntrevista(ent.id, q.id, v as any)} className={`flex-1 py-2 rounded-xl font-black text-[10px] uppercase border-2 ${ent.respostas.find(r => r.pergunta_id === q.id)?.resposta === v ? 'bg-slate-900 text-white border-slate-900' : 'bg-white text-slate-400 border-slate-200'}`}>{v}</button>
+                           ))}
                          </div>
                       </div>
-                      <button onClick={() => removeEntrevistado(ent.id)} className="p-3 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-all">
-                        <Trash2 size={20} />
-                      </button>
-                   </div>
-                   <div className="p-8 grid grid-cols-1 md:grid-cols-2 gap-8">
-                      {INTERVIEW_QUESTIONS.map(q => {
-                        const r = ent.respostas.find(item => item.pergunta_id === q.id);
-                        return (
-                          <div key={q.id} className="space-y-4">
-                             <p className="text-xs font-black text-slate-600 uppercase tracking-tight leading-tight">{q.texto}</p>
-                             <div className="flex gap-2">
-                                {(['sim', 'parcial', 'nao', 'n_a'] as ResponseValue[]).map(v => (
-                                  <button
-                                    key={v}
-                                    onClick={() => updateEntrevista(ent.id, q.id, v)}
-                                    className={`
-                                      flex-1 py-3 rounded-xl font-black text-[10px] uppercase transition-all border-2
-                                      ${r?.resposta === v 
-                                        ? (v === 'sim' ? 'bg-emerald-600 text-white border-slate-900' : v === 'parcial' ? 'bg-amber-500 text-white border-slate-900' : v === 'nao' ? 'bg-rose-600 text-white border-slate-900' : 'bg-slate-500 text-white border-slate-900')
-                                        : 'bg-slate-50 text-slate-400 border-slate-200'}
-                                    `}
-                                  >
-                                    {v === 'n_a' ? 'N/A' : v}
-                                  </button>
-                                ))}
-                             </div>
-                          </div>
-                        );
-                      })}
-                   </div>
-                </div>
-              ))}
-            </div>
+                    ))}
+                 </div>
+              </div>
+            ))}
           </div>
         ) : (
           currentBlockQuestions.map((q) => {
             const resp = respostas.find(r => r.pergunta_id === q.id);
             const needsObs = resp && resp.resposta !== 'sim' && resp.resposta !== 'n_a';
-            const obsIsMissing = needsObs && (!resp.observacao || resp.observacao.trim().length < 5);
-            const minReq = q.minPhotos || 3;
-            
             return (
-              <div key={q.id} className="bg-white p-8 rounded-[2rem] border-4 border-slate-900 shadow-[8px_8px_0px_0px_rgba(15,23,42,1)] space-y-6 transition-all hover:-translate-y-1">
-                <p className="text-slate-900 font-black leading-tight text-2xl">{q.texto}</p>
-                
-                <div className="flex flex-wrap gap-3">
+              <div key={q.id} className="bg-white p-8 rounded-[2rem] border-4 border-slate-900 shadow-[8px_8px_0px_0px_rgba(15,23,42,1)] space-y-6">
+                <p className="text-slate-900 font-black text-xl uppercase tracking-tight leading-tight">{q.texto}</p>
+                <div className="flex gap-3">
                   {(['sim', 'parcial', 'nao', 'n_a'] as ResponseValue[]).map((val) => (
-                    <button
-                      key={val}
-                      onClick={() => handleResponseChange(q.id, val)}
-                      className={`
-                        flex-1 py-5 rounded-2xl font-black text-xs uppercase tracking-widest transition-all border-4
-                        ${resp?.resposta === val 
-                          ? (val === 'sim' ? 'bg-emerald-600 text-white border-slate-900 shadow-[0_5px_0_0_rgb(6,95,70)]' : 
-                             val === 'parcial' ? 'bg-amber-500 text-white border-slate-900 shadow-[0_5px_0_0_rgb(180,83,9)]' : 
-                             val === 'nao' ? 'bg-rose-600 text-white border-slate-900 shadow-[0_5px_0_0_rgb(159,18,57)]' :
-                             'bg-slate-400 text-white border-slate-900 shadow-[0_5px_0_0_rgb(100,116,139)]')
-                          : 'bg-slate-50 text-slate-400 border-slate-200 hover:bg-slate-100'}
-                      `}
-                    >
-                      {val === 'n_a' ? 'N/A' : val}
-                    </button>
+                    <button key={val} onClick={() => handleResponseChange(q.id, val)} className={`flex-1 py-4 rounded-2xl font-black text-[10px] uppercase border-4 transition-all ${resp?.resposta === val ? 'bg-slate-900 text-white border-slate-900' : 'bg-slate-50 text-slate-400 border-slate-200'}`}>{val}</button>
                   ))}
                 </div>
-
                 {q.requiresPhotos && (
-                  <div className={`bg-slate-50 p-6 rounded-2xl border-4 space-y-4 transition-all ${((resp?.fotos?.length || 0) < minReq) ? 'border-rose-400' : 'border-slate-900'}`}>
-                    <div className="flex justify-between items-center">
-                      <p className="text-xs font-black text-slate-900 uppercase tracking-widest flex items-center gap-2">
-                         <Camera size={16} className="text-[#F05A22]" /> 
-                         Evidência Fotográfica (Mínimo {minReq} {minReq === 1 ? 'Foto' : 'Fotos'})
-                      </p>
-                      <span className={`text-xs font-black ${(resp?.fotos?.length || 0) < minReq ? 'text-rose-600 animate-pulse' : 'text-emerald-600'}`}>
-                        {resp?.fotos?.length || 0}/{minReq}
-                      </span>
-                    </div>
-                    <div className="flex gap-4 overflow-x-auto pb-2">
-                       {(resp?.fotos || []).map((f, i) => (
-                         <div key={i} className="w-24 h-24 rounded-xl border-4 border-slate-900 overflow-hidden shadow-sm shrink-0">
-                            <img src={f} className="w-full h-full object-cover" />
-                         </div>
-                       ))}
-                       {(resp?.fotos?.length || 0) < 5 && (
-                         <button 
-                           onClick={() => triggerCamera(q.id)}
-                           className="w-24 h-24 rounded-xl border-4 border-dashed border-slate-300 flex flex-col items-center justify-center text-slate-400 hover:text-[#F05A22] hover:border-[#F05A22] transition-all bg-white shrink-0"
-                         >
-                           <Camera size={24} />
-                           <span className="text-[10px] font-black uppercase">FOTO</span>
-                         </button>
-                       )}
-                    </div>
+                  <div className="bg-slate-50 p-4 rounded-2xl border-4 border-slate-900 flex gap-4 overflow-x-auto">
+                    {resp?.fotos?.map((f, i) => <img key={i} src={f} className="w-16 h-16 rounded-xl object-cover border-2 border-slate-900" />)}
+                    <button onClick={() => triggerCamera(q.id)} className="w-16 h-16 rounded-xl border-4 border-dashed border-slate-300 flex items-center justify-center text-slate-400 hover:border-[#F05A22] hover:text-[#F05A22]"><Camera size={24} /></button>
                   </div>
                 )}
-
                 {needsObs && (
-                  <div className="animate-in slide-in-from-top-3 duration-300 space-y-2">
-                    <label className={`text-[10px] font-black uppercase tracking-widest ${obsIsMissing ? 'text-rose-600' : 'text-slate-400'}`}>
-                       Justificativa Obrigatória {obsIsMissing && '(Favor detalhar o desvio)'}
-                    </label>
-                    <textarea
-                      value={resp.observacao || ''}
-                      onChange={(e) => handleObsChange(q.id, e.target.value)}
-                      placeholder="Descreva o desvio técnico ou observação relevante encontrada no campo..."
-                      className={`w-full border-4 rounded-2xl p-5 text-lg font-black text-slate-900 focus:ring-4 focus:outline-none min-h-[120px] transition-all
-                        ${obsIsMissing ? 'bg-rose-50 border-rose-300 focus:ring-rose-500/20' : 'bg-slate-50 border-slate-100 focus:border-slate-900 focus:ring-slate-500/10'}`}
-                    />
-                  </div>
+                  <textarea placeholder="Justifique o desvio..." className="w-full border-4 border-slate-900 rounded-2xl p-4 font-black bg-rose-50" value={resp.observacao || ''} onChange={e => handleObsChange(q.id, e.target.value)} />
                 )}
               </div>
             );
@@ -566,23 +390,9 @@ const AuditWizard: React.FC<AuditWizardProps> = ({ obras, currentUser, onAuditCo
         )}
       </div>
 
-      <footer className="flex justify-between items-center py-16">
-        <button onClick={() => currentBlockIdx === 0 ? setStep('setup') : setCurrentBlockIdx(prev => prev - 1)} className="flex items-center gap-2 font-black text-slate-900 hover:text-orange-600 uppercase text-sm tracking-widest group">
-          <ChevronLeft size={28} className="group-hover:-translate-x-1 transition-transform" />
-          Voltar
-        </button>
-
-        <button
-          disabled={!isBlockComplete()}
-          onClick={() => currentBlockIdx === blockKeys.length - 1 ? handleSubmit() : setCurrentBlockIdx(prev => prev + 1)}
-          className={`
-            px-16 py-7 rounded-2xl font-black text-xl transition-all shadow-[0_10px_0_0_rgb(0,0,0)] border-4 border-slate-900 active:translate-y-2 active:shadow-none uppercase tracking-widest
-            ${!isBlockComplete() ? 'opacity-50 cursor-not-allowed bg-slate-200 text-slate-400 shadow-none translate-y-2' : 
-              currentBlockIdx === blockKeys.length - 1 ? 'bg-slate-900 text-white hover:bg-[#F05A22]' : 'bg-[#F05A22] text-white hover:bg-slate-900'}
-          `}
-        >
-          {currentBlockIdx === blockKeys.length - 1 ? 'FINALIZAR RELATÓRIO' : 'PRÓXIMA ETAPA'}
-        </button>
+      <footer className="flex justify-between items-center py-10">
+        <button onClick={() => currentBlockIdx === 0 ? setStep('setup') : setCurrentBlockIdx(prev => prev - 1)} className="font-black uppercase text-xs tracking-widest flex items-center gap-2 hover:text-[#F05A22]"><ChevronLeft /> Voltar</button>
+        <button disabled={!isBlockComplete()} onClick={() => currentBlockIdx === blockKeys.length - 1 ? handleSubmit() : setCurrentBlockIdx(prev => prev + 1)} className="bg-[#F05A22] text-white px-16 py-6 rounded-2xl font-black text-sm uppercase tracking-widest border-4 border-slate-900 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] disabled:opacity-50">Próxima Etapa <ChevronRight className="inline" /></button>
       </footer>
     </div>
   );

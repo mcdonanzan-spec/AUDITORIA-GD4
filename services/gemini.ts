@@ -5,33 +5,15 @@ import { AIAnalysisResult } from "../types";
 export const generateAuditReport = async (auditData: any): Promise<AIAnalysisResult> => {
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
   
-  const prompt = `Você é um sistema de Inteligência de Risco Jurídico e Financeiro da Unità Engenharia S.A.
-  Sua tarefa é converter desvios de conformidade em uma estimativa de Passivo Financeiro Potencial e classificação de status.
+  const prompt = `Analise os riscos desta auditoria da Unità Engenharia.
+  DADOS: ${JSON.stringify(auditData)}
   
-  DADOS DA AUDITORIA:
-  ${JSON.stringify(auditData, null, 2)}
+  REGRAS DE CÁLCULO (Projetar amostra para o total de ${auditData.amostragem.total_efetivo} pessoas):
+  - Multa CLT Art 47: R$ 60.000 por irregular.
+  - NR-28 (Acesso): R$ 5.000 por falha.
+  - Súmula 331 TST: R$ 100.000 fixo se houver quarteirização irregular.
   
-  O cálculo deve projetar as falhas encontradas na amostra (${auditData.amostragem.entrevistados} pessoas) para o efetivo total de ${auditData.amostragem.total_efetivo || 'pessoas informadas'}.
-  
-  METODOLOGIA DE CÁLCULO E BASE LEGAL:
-  1. TRABALHADOR PENDENTE/SEM REGISTRO: R$ 60.000,00 (Multa Art. 47 CLT + Passivo de verbas rescisórias).
-  2. FALHA ACESSO/CATRACA: R$ 5.000,00/dia (NR-28 - Fiscalização e Penalidades).
-  3. BENEFÍCIOS (VT/VR): R$ 3.000,00 por colaborador afetado (Projeção estatística da amostra para o total).
-  4. QUARTEIRIZAÇÃO IRREGULAR: Mínimo R$ 100.000,00 (Risco de reconhecimento de vínculo direto - Súmula 331 TST).
-  5. DOCUMENTAÇÃO GRD: R$ 15.000,00 a R$ 40.000,00 (Autuações administrativas e multas sindicais).
-  
-  ESTRUTURA DE RESPOSTA (JSON):
-  - indiceGeral: número.
-  - classificacao: REGULAR, ATENÇÃO, CRÍTICA.
-  - riscoJuridico: BAIXO, MÉDIO, ALTO, CRÍTICO.
-  - exposicaoFinanceira: soma total numérica.
-  - detalhamentoCalculo: [ { item, valor, baseLegal, logica } ]
-  - naoConformidades: [ strings ]
-  - impactoJuridico: string
-  - recomendacoes: [ strings ]
-  - conclusaoExecutiva: string
-  
-  Retorne APENAS o JSON puro, sem blocos de código ou explicações adicionais.`;
+  Gere um JSON com: indiceGeral(0-100), classificacao, riscoJuridico, exposicaoFinanceira(número), detalhamentoCalculo(item, valor, baseLegal, logica), naoConformidades(array), impactoJuridico, recomendacoes(array), conclusaoExecutiva.`;
 
   try {
     const response = await ai.models.generateContent({
@@ -68,15 +50,10 @@ export const generateAuditReport = async (auditData: any): Promise<AIAnalysisRes
       }
     });
 
-    // Limpeza rigorosa para garantir que o JSON.parse não falhe
-    let text = response.text?.trim() || "{}";
-    if (text.startsWith('```')) {
-      text = text.replace(/^```json/, '').replace(/```$/, '').trim();
-    }
-    
+    const text = response.text?.trim() || "{}";
     return JSON.parse(text) as AIAnalysisResult;
   } catch (error) {
-    console.error("Erro na geração do relatório IA:", error);
-    throw error;
+    console.error("Erro na IA:", error);
+    throw new Error("Erro de comunicação com o motor de risco.");
   }
 };
