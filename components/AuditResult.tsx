@@ -12,10 +12,12 @@ import {
   Users2,
   ShieldCheck,
   AlertOctagon,
-  ListCheck
+  ListCheck,
+  Building2,
+  UserCheck
 } from 'lucide-react';
 import { Audit, AIAnalysisResult } from '../types';
-import { QUESTIONS, BLOCKS } from '../constants';
+import { QUESTIONS, INTERVIEW_QUESTIONS, BLOCKS } from '../constants';
 
 interface AuditResultProps {
   audit: Audit;
@@ -24,7 +26,8 @@ interface AuditResultProps {
 }
 
 const AuditResult: React.FC<AuditResultProps> = ({ audit, report, onClose }) => {
-  const handlePrint = () => {
+  const handlePrint = (e: React.MouseEvent) => {
+    e.preventDefault();
     window.print();
   };
 
@@ -37,7 +40,7 @@ const AuditResult: React.FC<AuditResultProps> = ({ audit, report, onClose }) => 
   const isMetodologyValid = coverage >= 10;
 
   return (
-    <div className="max-w-4xl mx-auto space-y-8 pb-12 animate-in fade-in duration-500 print:p-0">
+    <div className="max-w-4xl mx-auto space-y-8 pb-24 animate-in fade-in duration-500 print:p-0 print:space-y-4">
       <header className="flex flex-col md:flex-row md:items-center justify-between gap-4 print:hidden">
         <div>
           <button onClick={onClose} className="flex items-center gap-1 text-xs font-black text-slate-500 uppercase tracking-widest hover:text-[#F05A22] mb-2">
@@ -47,11 +50,21 @@ const AuditResult: React.FC<AuditResultProps> = ({ audit, report, onClose }) => 
           <p className="text-slate-600 font-bold uppercase text-[10px] tracking-widest">Unità Engenharia S.A. - AuditRisk v2.5</p>
         </div>
         <div className="flex gap-3">
-          <button onClick={handlePrint} className="flex items-center gap-2 bg-white text-slate-900 px-6 py-3 rounded-xl font-black text-xs uppercase tracking-widest hover:bg-slate-50 border-4 border-slate-900 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
-            <Download size={18} /> Gerar PDF
+          <button 
+            type="button"
+            onClick={handlePrint} 
+            className="flex items-center gap-2 bg-[#F05A22] text-white px-6 py-4 rounded-xl font-black text-xs uppercase tracking-widest hover:bg-slate-900 transition-all border-4 border-slate-900 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] active:translate-y-1 active:shadow-none"
+          >
+            <Download size={18} /> Gerar PDF / Imprimir
           </button>
         </div>
       </header>
+
+      {/* Identificação da Obra (Print only) */}
+      <div className="hidden print:block border-b-4 border-slate-900 pb-4 mb-4">
+        <h2 className="text-2xl font-black uppercase">Relatório Técnico Unità</h2>
+        <p className="font-bold uppercase text-xs">Obra: {audit.obra_id} | Data: {new Date(audit.created_at).toLocaleDateString('pt-BR')}</p>
+      </div>
 
       {/* Amostragem Highlights */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 print:grid-cols-2">
@@ -98,32 +111,67 @@ const AuditResult: React.FC<AuditResultProps> = ({ audit, report, onClose }) => 
         </div>
       </div>
 
-      <div className="bg-white p-10 rounded-[2.5rem] border-4 border-slate-900 shadow-[8px_8px_0px_0px_rgba(15,23,42,1)] space-y-8">
+      {/* CHECKLIST DETALHADO DAS PERGUNTAS */}
+      <div className="bg-white p-8 rounded-[2.5rem] border-4 border-slate-900 shadow-[8px_8px_0px_0px_rgba(15,23,42,1)] space-y-6 print:shadow-none print:p-4">
         <h3 className="text-xl font-black text-slate-900 flex items-center gap-3 uppercase tracking-tighter">
           <ListCheck className="text-[#F05A22]" size={28} />
-          Checklist Detalhado (Evidências de Campo)
+          Evidências de Auditoria (Checklist)
         </h3>
-        <div className="space-y-4">
+        <div className="grid grid-cols-1 gap-3">
            {QUESTIONS.map(q => {
              const r = audit.respostas.find(res => res.pergunta_id === q.id);
              if (!r) return null;
              return (
-               <div key={q.id} className="flex items-start gap-4 p-4 bg-slate-50 rounded-2xl border-2 border-slate-100">
-                  <div className={`shrink-0 w-8 h-8 rounded-lg flex items-center justify-center font-black text-xs text-white ${r.resposta === 'sim' ? 'bg-emerald-500' : r.resposta === 'nao' ? 'bg-rose-500' : 'bg-amber-500'}`}>
+               <div key={q.id} className="flex items-start gap-4 p-4 bg-slate-50 rounded-2xl border-2 border-slate-100 print:bg-white">
+                  <div className={`shrink-0 w-10 h-10 rounded-xl flex items-center justify-center font-black text-xs text-white border-2 border-slate-900 ${r.resposta === 'sim' ? 'bg-emerald-500' : r.resposta === 'nao' ? 'bg-rose-500' : 'bg-amber-500'}`}>
                     {r.resposta.toUpperCase()}
                   </div>
-                  <div className="flex-1 space-y-2">
-                     <p className="text-xs font-black text-slate-900 uppercase tracking-tight">{q.texto}</p>
-                     {r.observacao && <p className="text-[10px] text-slate-500 font-bold uppercase italic">OBS: {r.observacao}</p>}
-                     {r.fotos && r.fotos.length > 0 && (
-                       <div className="flex gap-2 pt-2">
-                          {r.fotos.map((f, i) => <img key={i} src={f} className="w-12 h-12 rounded-lg border-2 border-slate-200 object-cover" />)}
-                       </div>
-                     )}
+                  <div className="flex-1 space-y-1">
+                     <p className="text-xs font-black text-slate-900 uppercase tracking-tight leading-tight">{q.texto}</p>
+                     {r.observacao && <p className="text-[10px] text-rose-600 font-black uppercase">⚠️ {r.observacao}</p>}
                   </div>
                </div>
              )
            })}
+        </div>
+      </div>
+
+      {/* DETALHAMENTO DA AMOSTRAGEM (ENTREVISTAS) */}
+      <div className="bg-white p-8 rounded-[2.5rem] border-4 border-slate-900 shadow-[8px_8px_0px_0px_rgba(15,23,42,1)] space-y-6 print:shadow-none print:p-4">
+        <h3 className="text-xl font-black text-slate-900 flex items-center gap-3 uppercase tracking-tighter">
+          <UserCheck className="text-[#F05A22]" size={28} />
+          Detalhamento da Amostragem
+        </h3>
+        <div className="space-y-4">
+           {audit.entrevistas?.map((ent, idx) => (
+             <div key={ent.id} className="border-2 border-slate-100 rounded-3xl overflow-hidden print:break-inside-avoid">
+                <div className="bg-slate-900 text-white p-4 flex justify-between items-center">
+                   <div className="flex items-center gap-4">
+                      <span className="w-8 h-8 bg-[#F05A22] rounded-lg flex items-center justify-center font-black text-xs">{idx + 1}</span>
+                      <div className="flex flex-col">
+                        <span className="text-[10px] font-black uppercase text-[#F05A22]">Colaborador</span>
+                        <span className="text-xs font-black uppercase tracking-tight">{ent.funcao}</span>
+                      </div>
+                   </div>
+                   <div className="flex items-center gap-2 text-right">
+                      <Building2 size={14} className="text-[#F05A22]" />
+                      <span className="text-[10px] font-black uppercase tracking-widest">{ent.empresa}</span>
+                   </div>
+                </div>
+                <div className="p-4 grid grid-cols-2 gap-4 bg-slate-50">
+                   {ent.respostas.map(r => (
+                     <div key={r.pergunta_id} className="flex justify-between items-center bg-white p-3 rounded-xl border border-slate-200">
+                        <span className="text-[9px] font-black text-slate-500 uppercase flex-1 pr-2">
+                           {INTERVIEW_QUESTIONS.find(iq => iq.id === r.pergunta_id)?.texto}
+                        </span>
+                        <span className={`text-[10px] font-black uppercase px-2 py-1 rounded-md ${r.resposta === 'sim' ? 'text-emerald-600 bg-emerald-50' : 'text-rose-600 bg-rose-50'}`}>
+                           {r.resposta}
+                        </span>
+                     </div>
+                   ))}
+                </div>
+             </div>
+           ))}
         </div>
       </div>
 
@@ -157,12 +205,12 @@ const AuditResult: React.FC<AuditResultProps> = ({ audit, report, onClose }) => 
         </section>
       </div>
 
-      <section className="bg-slate-900 p-10 rounded-[2.5rem] border-4 border-slate-900 text-white space-y-4">
+      <section className="bg-slate-900 p-10 rounded-[2.5rem] border-4 border-slate-900 text-white space-y-4 print:bg-white print:text-slate-900 print:p-4">
         <h3 className="text-xl font-black flex items-center gap-3 uppercase tracking-tighter">
           <FileText className="text-[#F05A22]" size={32} />
           Conclusão Executiva
         </h3>
-        <p className="text-lg leading-relaxed font-black italic border-l-8 border-[#F05A22] pl-8 py-2">
+        <p className="text-lg leading-relaxed font-black italic border-l-8 border-[#F05A22] pl-8 py-2 print:text-sm">
           "{report.conclusaoExecutiva}"
         </p>
       </section>

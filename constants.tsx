@@ -4,8 +4,8 @@ import { Question } from './types';
 export const QUESTIONS: Question[] = [
   // BLOCO A - PORTARIA E ACESSO
   { id: 'a0', bloco: 'A', texto: 'A estrutura física e sistemas da portaria estão aptos ao controle (Catraca/Guarita)?', peso: 30, requiresPhotos: true },
-  { id: 'a1', bloco: 'A', texto: 'Está ocorrendo liberação manual na catraca (burla ao sistema)?', peso: 25 },
-  { id: 'a2', bloco: 'A', texto: 'Todos os terceiros estão com a facial cadastrada no sistema?', peso: 20 },
+  { id: 'a1', bloco: 'A', texto: 'As catracas operam sem liberações manuais (Acesso 100% sistêmico)?', peso: 25 },
+  { id: 'a2', bloco: 'A', texto: 'Todos os terceiros estão com a biometria facial cadastrada?', peso: 20 },
   
   { id: 'b3', bloco: 'B', texto: 'O efetivo em campo é integralmente composto por funcionários com RE validado no GD4?', peso: 20 },
   { id: 'b4', bloco: 'B', texto: 'A obra está livre de trabalhadores com status "pendente" circulando em frentes de serviço?', peso: 30 },
