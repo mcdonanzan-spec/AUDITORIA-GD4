@@ -18,7 +18,9 @@ import {
   Info,
   Database,
   ArrowRightLeft,
-  Scale
+  Scale,
+  Gavel,
+  Calculator
 } from 'lucide-react';
 import { Audit, AIAnalysisResult } from '../types';
 import { QUESTIONS, INTERVIEW_QUESTIONS } from '../constants';
@@ -179,13 +181,12 @@ const AuditResult: React.FC<AuditResultProps> = ({ audit, report, onClose }) => 
           </div>
         </div>
 
-        {/* SEÇÃO: CONFERÊNCIA DE EFETIVO X GD4 (BLOCO B) */}
+        {/* ANÁLISE DE EFETIVO */}
         <div className="space-y-6 animate-in slide-in-from-bottom-4 duration-500">
           <h3 className="text-xl font-black text-slate-900 flex items-center gap-3 uppercase tracking-tighter border-l-8 border-slate-900 pl-4">
             Análise de Efetivo e Quarteirização
           </h3>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {/* Comparativo de Efetivo */}
             <div className="col-span-1 md:col-span-2 bg-slate-50 rounded-[2rem] border-4 border-slate-900 p-8 flex items-center justify-between shadow-[8px_8px_0px_0px_rgba(240,90,34,1)]">
                <div className="space-y-6 w-full">
                   <div className="flex items-center justify-between pb-4 border-b-2 border-slate-200">
@@ -212,7 +213,6 @@ const AuditResult: React.FC<AuditResultProps> = ({ audit, report, onClose }) => 
                </div>
             </div>
 
-            {/* Status de Subcontratação */}
             <div className={`rounded-[2rem] border-4 p-8 flex flex-col items-center justify-center text-center gap-4 shadow-[8px_8px_0px_0px_rgba(15,23,42,1)] ${audit.subcontratacao_identificada ? 'bg-rose-50 border-rose-600' : 'bg-emerald-50 border-emerald-600'}`}>
                <Scale size={40} className={audit.subcontratacao_identificada ? 'text-rose-600' : 'text-emerald-600'} />
                <div>
@@ -221,46 +221,70 @@ const AuditResult: React.FC<AuditResultProps> = ({ audit, report, onClose }) => 
                      {audit.subcontratacao_identificada ? 'Irregularidade Identificada' : 'Totalmente Regularizada'}
                   </p>
                </div>
-               {audit.subcontratacao_identificada && (
-                 <div className="bg-rose-600 text-white px-3 py-1 rounded-lg text-[9px] font-black uppercase animate-bounce">
-                    Risco de Responsabilidade Solidária
-                 </div>
-               )}
             </div>
           </div>
         </div>
 
-        {/* CARD DE EXPOSIÇÃO FINANCEIRA */}
-        <div className="bg-white rounded-[2.5rem] border-4 border-slate-900 overflow-hidden shadow-[12px_12px_0px_0px_rgba(15,23,42,1)]">
-           <div className="bg-slate-900 p-6 flex items-center justify-between">
-              <div className="flex items-center gap-4">
-                 <div className="w-12 h-12 bg-[#F05A22] rounded-xl flex items-center justify-center text-white border-2 border-white/20">
-                    <Coins size={28} />
-                 </div>
-                 <div>
-                    <h3 className="text-white font-black uppercase text-xs tracking-widest">Exposição Financeira Potencial</h3>
-                    <p className="text-[#F05A22] font-black text-[10px] uppercase tracking-tighter">Cálculo de Risco sobre Efetivo Total ({audit.equipe_campo} p.)</p>
-                 </div>
-              </div>
-              <TrendingDown className={report.exposicaoFinanceira > 0 ? 'text-rose-500' : 'text-emerald-500'} size={32} />
-           </div>
-           <div className="p-10 flex flex-col md:flex-row items-center justify-between gap-8">
-              <div className="text-center md:text-left">
-                 <p className="text-6xl font-black text-slate-900 tracking-tighter">
-                   {formatCurrency(report.exposicaoFinanceira)}
-                 </p>
-                 <p className="text-xs font-black text-slate-400 uppercase tracking-widest mt-2">Passivo Projetado para o Canteiro</p>
-              </div>
-              <div className="flex-1 max-w-sm">
-                 <div className={`p-6 rounded-2xl border-2 flex items-center gap-4 ${statusStyle.light} ${statusStyle.border}`}>
-                    <div className="shrink-0">{statusStyle.icon}</div>
-                    <div>
-                       <p className={`text-[10px] font-black uppercase ${statusStyle.text}`}>Matriz de Risco</p>
-                       <p className={`text-xl font-black uppercase ${statusStyle.text}`}>{report.riscoJuridico}</p>
-                    </div>
-                 </div>
-              </div>
-           </div>
+        {/* EXPOSIÇÃO FINANCEIRA COM DETALHAMENTO DE CÁLCULO */}
+        <div className="space-y-6">
+          <div className="bg-white rounded-[2.5rem] border-4 border-slate-900 overflow-hidden shadow-[12px_12px_0px_0px_rgba(15,23,42,1)]">
+             <div className="bg-slate-900 p-6 flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                   <div className="w-12 h-12 bg-[#F05A22] rounded-xl flex items-center justify-center text-white border-2 border-white/20">
+                      <Coins size={28} />
+                   </div>
+                   <div>
+                      <h3 className="text-white font-black uppercase text-xs tracking-widest">Exposição Financeira Potencial</h3>
+                      <p className="text-[#F05A22] font-black text-[10px] uppercase tracking-tighter">Cálculo de Risco Projetado sobre Efetivo Total ({audit.equipe_campo} p.)</p>
+                   </div>
+                </div>
+                <TrendingDown className={report.exposicaoFinanceira > 0 ? 'text-rose-500' : 'text-emerald-500'} size={32} />
+             </div>
+             <div className="p-10 flex flex-col md:flex-row items-center justify-between gap-8">
+                <div className="text-center md:text-left">
+                   <p className="text-6xl font-black text-slate-900 tracking-tighter">
+                     {formatCurrency(report.exposicaoFinanceira)}
+                   </p>
+                   <p className="text-xs font-black text-slate-400 uppercase tracking-widest mt-2">Passivo Trabalhista e Previdenciário Estimado</p>
+                </div>
+                <div className="flex-1 max-w-sm">
+                   <div className={`p-6 rounded-2xl border-2 flex items-center gap-4 ${statusStyle.light} ${statusStyle.border}`}>
+                      <div className="shrink-0">{statusStyle.icon}</div>
+                      <div>
+                         <p className={`text-[10px] font-black uppercase ${statusStyle.text}`}>Matriz de Risco</p>
+                         <p className={`text-xl font-black uppercase ${statusStyle.text}`}>{report.riscoJuridico}</p>
+                      </div>
+                   </div>
+                </div>
+             </div>
+             
+             {/* NOVA SEÇÃO: MEMÓRIA DE CÁLCULO */}
+             <div className="px-10 pb-10">
+                <div className="bg-slate-50 border-2 border-slate-100 rounded-3xl p-6 space-y-4">
+                   <div className="flex items-center gap-2 mb-2">
+                      <Calculator size={18} className="text-[#F05A22]" />
+                      <h4 className="text-[10px] font-black text-slate-900 uppercase tracking-widest">Memória de Cálculo e Base Legal</h4>
+                   </div>
+                   <div className="space-y-3">
+                      {report.detalhamentoCalculo?.map((calc, i) => (
+                        <div key={i} className="flex flex-col md:flex-row md:items-center justify-between gap-2 border-b border-slate-200 pb-3 last:border-0 last:pb-0">
+                           <div className="flex-1">
+                              <p className="text-[11px] font-black text-slate-900 uppercase leading-tight">{calc.item}</p>
+                              <div className="flex items-center gap-2 mt-1">
+                                 <Gavel size={10} className="text-slate-400" />
+                                 <p className="text-[9px] font-bold text-slate-500 uppercase">{calc.baseLegal}</p>
+                              </div>
+                              <p className="text-[9px] text-slate-400 font-medium italic mt-1">{calc.logica}</p>
+                           </div>
+                           <div className="text-right">
+                              <span className="text-xs font-black text-rose-600">{formatCurrency(calc.valor)}</span>
+                           </div>
+                        </div>
+                      ))}
+                   </div>
+                </div>
+             </div>
+          </div>
         </div>
 
         {/* EVIDÊNCIAS DE CHECKLIST */}

@@ -71,9 +71,15 @@ export interface AIAnalysisResult {
   indiceGeral: number;
   classificacao: string;
   riscoJuridico: string;
-  exposicaoFinanceira: number; // Valor em Reais
+  exposicaoFinanceira: number; 
   naoConformidades: string[];
   impactoJuridico: string;
   recomendacoes: string[];
   conclusaoExecutiva: string;
+  detalhamentoCalculo: {
+    item: string;
+    valor: number;
+    baseLegal: string;
+    logica: string;
+  }[];
 }

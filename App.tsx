@@ -62,7 +62,7 @@ const App: React.FC = () => {
     setCurrentPage('result');
   };
 
-  // Added missing 'exposicaoFinanceira' property to satisfy AIAnalysisResult interface
+  // Fix: Added missing 'detalhamentoCalculo' property to satisfy AIAnalysisResult interface
   const handleViewAudit = (audit: Audit) => {
     const mockReport: AIAnalysisResult = {
       indiceGeral: audit.indice_geral || 0,
@@ -72,7 +72,8 @@ const App: React.FC = () => {
       naoConformidades: ["Histórico de auditoria carregado."],
       impactoJuridico: "Análise histórica consolidada.",
       recomendacoes: ["Revisar pontos críticos da última medição."],
-      conclusaoExecutiva: "Esta é uma visualização de histórico. Os detalhes completos estão arquivados no GD4."
+      conclusaoExecutiva: "Esta é uma visualização de histórico. Os detalhes completos estão arquivados no GD4.",
+      detalhamentoCalculo: []
     };
     setViewingAudit({ audit, report: mockReport });
     setCurrentPage('result');

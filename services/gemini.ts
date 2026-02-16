@@ -11,30 +11,25 @@ export const generateAuditReport = async (auditData: any): Promise<AIAnalysisRes
   DADOS DA AUDITORIA:
   ${JSON.stringify(auditData, null, 2)}
   
-  METODOLOGIA DE CLASSIFICAÇÃO (STATUS):
-  1. REGULAR: Índice Geral >= 85%.
-  2. ATENÇÃO: Índice Geral entre 70% e 84%.
-  3. CRÍTICA: Índice Geral < 70%.
+  O cálculo deve projetar as falhas encontradas na amostra para o efetivo total de ${auditData.amostragem.total_efetivo || 'pessoas informadas'}.
   
-  METODOLOGIA DE CÁLCULO FINANCEIRO (BASE LEGAL BRASILEIRA):
-  1. TRABALHADOR SEM REGISTRO/Pendente: Risco de R$ 60.000,00 por ocorrência.
-  2. FALHA EM CONTROLE DE ACESSO: Multa NR-28 - Estimar R$ 5.000,00 por dia de irregularidade.
-  3. BENEFÍCIOS NÃO PAGOS (Entrevistas): Estimar R$ 3.000,00 por colaborador afetado.
-  4. SUBCONTRATAÇÃO IRREGULAR: Estimar 40% do valor total da folha da terceirizada (Mínimo R$ 100k).
-  5. DOCUMENTAÇÃO GRD VENCIDA: Risco de multa administrativa (R$ 15k a R$ 40k).
-  
-  REGRAS:
-  - Se houver OCORRÊNCIA GRAVE (ex: subcontratação irregular ou falta de registro), o status deve ser no mínimo ATENÇÃO, independente da média numérica.
+  METODOLOGIA DE CÁLCULO E BASE LEGAL:
+  1. TRABALHADOR PENDENTE/SEM REGISTRO: R$ 60.000,00 (Multa Art. 47 CLT + Passivo de verbas rescisórias).
+  2. FALHA ACESSO/CATRACA: R$ 5.000,00/dia (NR-28 - Fiscalização e Penalidades).
+  3. BENEFÍCIOS (VT/VR): R$ 3.000,00 por colaborador afetado (Projeção estatística da amostra para o total).
+  4. QUARTEIRIZAÇÃO IRREGULAR: Mínimo R$ 100.000,00 (Risco de reconhecimento de vínculo direto - Súmula 331 TST).
+  5. DOCUMENTAÇÃO GRD: R$ 15.000,00 a R$ 40.000,00 (Autuações administrativas e multas sindicais).
   
   ESTRUTURA DE RESPOSTA (JSON):
-  - indiceGeral: 0-100.
+  - indiceGeral: número.
   - classificacao: REGULAR, ATENÇÃO, CRÍTICA.
   - riscoJuridico: BAIXO, MÉDIO, ALTO, CRÍTICO.
-  - exposicaoFinanceira: Valor numérico total estimado em Reais (BRL).
-  - naoConformidades: Lista de desvios.
-  - impactoJuridico: Descrição técnica focada em passivo.
-  - recomendacoes: Ações para mitigar o prejuízo financeiro.
-  - conclusaoExecutiva: Linguagem para C-Level (Diretoria).
+  - exposicaoFinanceira: soma total.
+  - detalhamentoCalculo: [ { item, valor, baseLegal, logica } ]
+  - naoConformidades: [ strings ]
+  - impactoJuridico: string
+  - recomendacoes: [ strings ]
+  - conclusaoExecutiva: string
   
   Retorne APENAS o JSON.`;
 
@@ -50,22 +45,24 @@ export const generateAuditReport = async (auditData: any): Promise<AIAnalysisRes
           classificacao: { type: Type.STRING },
           riscoJuridico: { type: Type.STRING },
           exposicaoFinanceira: { type: Type.NUMBER },
-          naoConformidades: { 
-            type: Type.ARRAY, 
-            items: { type: Type.STRING } 
+          detalhamentoCalculo: {
+            type: Type.ARRAY,
+            items: {
+              type: Type.OBJECT,
+              properties: {
+                item: { type: Type.STRING },
+                valor: { type: Type.NUMBER },
+                baseLegal: { type: Type.STRING },
+                logica: { type: Type.STRING }
+              }
+            }
           },
+          naoConformidades: { type: Type.ARRAY, items: { type: Type.STRING } },
           impactoJuridico: { type: Type.STRING },
-          recomendacoes: { 
-            type: Type.ARRAY, 
-            items: { type: Type.STRING } 
-          },
+          recomendacoes: { type: Type.ARRAY, items: { type: Type.STRING } },
           conclusaoExecutiva: { type: Type.STRING }
         },
-        required: [
-          "indiceGeral", "classificacao", "riscoJuridico", "exposicaoFinanceira",
-          "naoConformidades", "impactoJuridico", 
-          "recomendacoes", "conclusaoExecutiva"
-        ]
+        required: ["indiceGeral", "classificacao", "riscoJuridico", "exposicaoFinanceira", "detalhamentoCalculo", "naoConformidades", "impactoJuridico", "recomendacoes", "conclusaoExecutiva"]
       }
     }
   });
