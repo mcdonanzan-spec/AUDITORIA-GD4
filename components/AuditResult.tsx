@@ -26,8 +26,8 @@ interface AuditResultProps {
 }
 
 const AuditResult: React.FC<AuditResultProps> = ({ audit, report, onClose }) => {
-  const handlePrint = (e: React.MouseEvent) => {
-    e.preventDefault();
+  const handlePrint = () => {
+    // Garante que o CSS de impressão seja aplicado limpando seleções se houver
     window.print();
   };
 
@@ -51,7 +51,6 @@ const AuditResult: React.FC<AuditResultProps> = ({ audit, report, onClose }) => 
         </div>
         <div className="flex gap-3">
           <button 
-            type="button"
             onClick={handlePrint} 
             className="flex items-center gap-2 bg-[#F05A22] text-white px-6 py-4 rounded-xl font-black text-xs uppercase tracking-widest hover:bg-slate-900 transition-all border-4 border-slate-900 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] active:translate-y-1 active:shadow-none"
           >
@@ -62,8 +61,11 @@ const AuditResult: React.FC<AuditResultProps> = ({ audit, report, onClose }) => 
 
       {/* Identificação da Obra (Print only) */}
       <div className="hidden print:block border-b-4 border-slate-900 pb-4 mb-4">
-        <h2 className="text-2xl font-black uppercase">Relatório Técnico Unità</h2>
-        <p className="font-bold uppercase text-xs">Obra: {audit.obra_id} | Data: {new Date(audit.created_at).toLocaleDateString('pt-BR')}</p>
+        <h2 className="text-2xl font-black uppercase">Relatório Técnico de Governança - Unità Engenharia</h2>
+        <div className="grid grid-cols-2 gap-4 mt-2">
+          <p className="font-bold uppercase text-xs">Obra: {audit.obra_id}</p>
+          <p className="font-bold uppercase text-xs text-right">Data: {new Date(audit.created_at).toLocaleDateString('pt-BR')}</p>
+        </div>
       </div>
 
       {/* Amostragem Highlights */}
@@ -83,7 +85,7 @@ const AuditResult: React.FC<AuditResultProps> = ({ audit, report, onClose }) => 
            </div>
            <div>
               <p className={`text-[10px] font-black uppercase tracking-widest ${isMetodologyValid ? 'text-emerald-600' : 'text-rose-600'}`}>
-                {isMetodologyValid ? 'Metodologia Validada' : 'Amostragem Insuficiente'}
+                {isMetodologyValid ? 'Metodologia Validada' : 'Amostragem Crítica'}
               </p>
               <p className={`text-xl font-black uppercase tracking-tighter ${isMetodologyValid ? 'text-emerald-900' : 'text-rose-900'}`}>Cobertura: {coverage}%</p>
            </div>
@@ -115,20 +117,25 @@ const AuditResult: React.FC<AuditResultProps> = ({ audit, report, onClose }) => 
       <div className="bg-white p-8 rounded-[2.5rem] border-4 border-slate-900 shadow-[8px_8px_0px_0px_rgba(15,23,42,1)] space-y-6 print:shadow-none print:p-4">
         <h3 className="text-xl font-black text-slate-900 flex items-center gap-3 uppercase tracking-tighter">
           <ListCheck className="text-[#F05A22]" size={28} />
-          Evidências de Auditoria (Checklist)
+          Evidências de Auditoria (Checklist Completo)
         </h3>
         <div className="grid grid-cols-1 gap-3">
            {QUESTIONS.map(q => {
              const r = audit.respostas.find(res => res.pergunta_id === q.id);
              if (!r) return null;
              return (
-               <div key={q.id} className="flex items-start gap-4 p-4 bg-slate-50 rounded-2xl border-2 border-slate-100 print:bg-white">
+               <div key={q.id} className="flex items-start gap-4 p-4 bg-slate-50 rounded-2xl border-2 border-slate-100 print:bg-white print:break-inside-avoid">
                   <div className={`shrink-0 w-10 h-10 rounded-xl flex items-center justify-center font-black text-xs text-white border-2 border-slate-900 ${r.resposta === 'sim' ? 'bg-emerald-500' : r.resposta === 'nao' ? 'bg-rose-500' : 'bg-amber-500'}`}>
                     {r.resposta.toUpperCase()}
                   </div>
                   <div className="flex-1 space-y-1">
                      <p className="text-xs font-black text-slate-900 uppercase tracking-tight leading-tight">{q.texto}</p>
-                     {r.observacao && <p className="text-[10px] text-rose-600 font-black uppercase">⚠️ {r.observacao}</p>}
+                     {r.observacao && <p className="text-[10px] text-rose-600 font-black uppercase">⚠️ OBS: {r.observacao}</p>}
+                     {r.fotos && r.fotos.length > 0 && (
+                       <div className="flex gap-2 pt-2">
+                          {r.fotos.map((f, i) => <img key={i} src={f} className="w-16 h-16 rounded-lg border-2 border-slate-300 object-cover" />)}
+                       </div>
+                     )}
                   </div>
                </div>
              )
@@ -140,7 +147,7 @@ const AuditResult: React.FC<AuditResultProps> = ({ audit, report, onClose }) => 
       <div className="bg-white p-8 rounded-[2.5rem] border-4 border-slate-900 shadow-[8px_8px_0px_0px_rgba(15,23,42,1)] space-y-6 print:shadow-none print:p-4">
         <h3 className="text-xl font-black text-slate-900 flex items-center gap-3 uppercase tracking-tighter">
           <UserCheck className="text-[#F05A22]" size={28} />
-          Detalhamento da Amostragem
+          Detalhamento das Entrevistas (Amostragem)
         </h3>
         <div className="space-y-4">
            {audit.entrevistas?.map((ent, idx) => (
@@ -150,12 +157,12 @@ const AuditResult: React.FC<AuditResultProps> = ({ audit, report, onClose }) => 
                       <span className="w-8 h-8 bg-[#F05A22] rounded-lg flex items-center justify-center font-black text-xs">{idx + 1}</span>
                       <div className="flex flex-col">
                         <span className="text-[10px] font-black uppercase text-[#F05A22]">Colaborador</span>
-                        <span className="text-xs font-black uppercase tracking-tight">{ent.funcao}</span>
+                        <span className="text-xs font-black uppercase tracking-tight">{ent.funcao || 'NÃO INFORMADO'}</span>
                       </div>
                    </div>
                    <div className="flex items-center gap-2 text-right">
                       <Building2 size={14} className="text-[#F05A22]" />
-                      <span className="text-[10px] font-black uppercase tracking-widest">{ent.empresa}</span>
+                      <span className="text-[10px] font-black uppercase tracking-widest">{ent.empresa || 'NÃO INFORMADO'}</span>
                    </div>
                 </div>
                 <div className="p-4 grid grid-cols-2 gap-4 bg-slate-50">
@@ -179,7 +186,7 @@ const AuditResult: React.FC<AuditResultProps> = ({ audit, report, onClose }) => 
         <section className="space-y-6">
           <h3 className="text-xl font-black text-slate-900 flex items-center gap-3 uppercase tracking-tighter">
             <AlertTriangle className="text-rose-600" size={28} />
-            Não Conformidades
+            Não Conformidades Graves
           </h3>
           <div className="space-y-3">
             {report.naoConformidades.map((item, idx) => (
@@ -193,7 +200,7 @@ const AuditResult: React.FC<AuditResultProps> = ({ audit, report, onClose }) => 
         <section className="space-y-6">
           <h3 className="text-xl font-black text-slate-900 flex items-center gap-3 uppercase tracking-tighter">
             <ShieldCheck className="text-emerald-600" size={28} />
-            Recomendações
+            Plano de Ação Recomendado
           </h3>
           <div className="space-y-3">
             {report.recomendacoes.map((item, idx) => (
@@ -205,10 +212,10 @@ const AuditResult: React.FC<AuditResultProps> = ({ audit, report, onClose }) => 
         </section>
       </div>
 
-      <section className="bg-slate-900 p-10 rounded-[2.5rem] border-4 border-slate-900 text-white space-y-4 print:bg-white print:text-slate-900 print:p-4">
+      <section className="bg-slate-900 p-10 rounded-[2.5rem] border-4 border-slate-900 text-white space-y-4 print:bg-white print:text-slate-900 print:p-4 print:border-slate-200">
         <h3 className="text-xl font-black flex items-center gap-3 uppercase tracking-tighter">
           <FileText className="text-[#F05A22]" size={32} />
-          Conclusão Executiva
+          Parecer Técnico / Conclusão Executiva
         </h3>
         <p className="text-lg leading-relaxed font-black italic border-l-8 border-[#F05A22] pl-8 py-2 print:text-sm">
           "{report.conclusaoExecutiva}"

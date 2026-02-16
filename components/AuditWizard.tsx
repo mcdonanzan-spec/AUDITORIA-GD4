@@ -15,7 +15,8 @@ import {
   AlertCircle, 
   LayoutDashboard,
   Camera,
-  Briefcase
+  Briefcase,
+  AlertOctagon
 } from 'lucide-react';
 import { Obra, Question, ResponseValue, AuditResponse, Audit, AIAnalysisResult, EntrevistaAmostral } from '../types';
 import { QUESTIONS, INTERVIEW_QUESTIONS, BLOCKS } from '../constants';
@@ -32,6 +33,8 @@ const AuditWizard: React.FC<AuditWizardProps> = ({ obras, currentUser, onAuditCo
   const [step, setStep] = React.useState<'setup' | 'questions' | 'processing'>('setup');
   const [currentBlockIdx, setCurrentBlockIdx] = React.useState(0);
   const [loading, setLoading] = React.useState(false);
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
+  const [activePhotoQuestionId, setActivePhotoQuestionId] = React.useState<string | null>(null);
   
   const [selectedObra, setSelectedObra] = React.useState<string>('');
   const [auditType, setAuditType] = React.useState<'mensal' | 'extraordinaria'>('mensal');
@@ -64,14 +67,28 @@ const AuditWizard: React.FC<AuditWizardProps> = ({ obras, currentUser, onAuditCo
     });
   };
 
-  const handleAddPhoto = (questionId: string) => {
-    setRespostas(prev => prev.map(r => {
-      if (r.pergunta_id === questionId) {
-        const currentFotos = r.fotos || [];
-        return { ...r, fotos: [...currentFotos, `https://images.unsplash.com/photo-1590644365607-1c5a519a7a37?w=400&auto=format&fit=crop&q=60&id=${Date.now()}`] };
-      }
-      return r;
-    }));
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file && activePhotoQuestionId) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const base64String = reader.result as string;
+        setRespostas(prev => prev.map(r => {
+          if (r.pergunta_id === activePhotoQuestionId) {
+            const currentFotos = r.fotos || [];
+            return { ...r, fotos: [...currentFotos, base64String] };
+          }
+          return r;
+        }));
+        setActivePhotoQuestionId(null);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const triggerCamera = (questionId: string) => {
+    setActivePhotoQuestionId(questionId);
+    fileInputRef.current?.click();
   };
 
   const handleObsChange = (questionId: string, val: string) => {
@@ -108,13 +125,24 @@ const AuditWizard: React.FC<AuditWizardProps> = ({ obras, currentUser, onAuditCo
     if (currentBlockKey === 'B') {
       return equipeCampo !== '' && equipeGd4 !== '' && subcontratacaoRegular !== null;
     }
+    
     if (currentBlockKey === 'G') {
-      return entrevistas.length > 0 && entrevistas.every(e => e.funcao !== '' && e.empresa !== '');
+      // Trava de 10% de amostragem
+      return targetMet && entrevistas.length > 0 && entrevistas.every(e => e.funcao.trim() !== '' && e.empresa.trim() !== '');
     }
+
+    // Trava de justificativa obrigatória e fotos
     return currentBlockQuestions.every(q => {
       const r = respostas.find(resp => resp.pergunta_id === q.id);
       if (!r) return false;
+      
+      // Se não for SIM nem N/A, a observação é obrigatória
+      const needsObs = r.resposta !== 'sim' && r.resposta !== 'n_a';
+      if (needsObs && (!r.observacao || r.observacao.trim().length < 5)) return false;
+
+      // Se exigir fotos, mínimo de 3
       if (q.requiresPhotos && (r.fotos?.length || 0) < 3) return false;
+      
       return true;
     });
   };
@@ -283,6 +311,15 @@ const AuditWizard: React.FC<AuditWizardProps> = ({ obras, currentUser, onAuditCo
 
   return (
     <div className="max-w-5xl mx-auto space-y-8 animate-in slide-in-from-right duration-500 pb-20">
+      <input 
+        type="file" 
+        accept="image/*" 
+        capture="environment" 
+        className="hidden" 
+        ref={fileInputRef} 
+        onChange={handleFileChange}
+      />
+      
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-6">
           <div className="w-16 h-16 bg-slate-900 text-white rounded-[1.25rem] flex items-center justify-center font-black text-3xl shadow-xl border-4 border-[#F05A22]">
@@ -302,12 +339,13 @@ const AuditWizard: React.FC<AuditWizardProps> = ({ obras, currentUser, onAuditCo
         </div>
 
         {currentBlockKey === 'G' && (
-          <div className="flex items-center gap-4 bg-white px-6 py-3 rounded-2xl border-4 border-slate-900 shadow-sm">
+          <div className={`flex items-center gap-4 px-6 py-3 rounded-2xl border-4 border-slate-900 shadow-sm transition-all ${targetMet ? 'bg-emerald-50' : 'bg-rose-50 animate-pulse'}`}>
              <div className="flex flex-col items-end">
                 <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Cobertura Real</span>
                 <span className={`text-xl font-black ${targetMet ? 'text-emerald-600' : 'text-rose-600'}`}>{coveragePercent}% do efetivo</span>
+                {!targetMet && <span className="text-[8px] font-black uppercase text-rose-500">Mínimo 10% exigido</span>}
              </div>
-             <UserCheck size={32} className={targetMet ? 'text-emerald-500' : 'text-rose-600'} />
+             {targetMet ? <UserCheck size={32} className="text-emerald-500" /> : <AlertOctagon size={32} className="text-rose-600" />}
           </div>
         )}
       </div>
@@ -448,6 +486,7 @@ const AuditWizard: React.FC<AuditWizardProps> = ({ obras, currentUser, onAuditCo
           currentBlockQuestions.map((q) => {
             const resp = respostas.find(r => r.pergunta_id === q.id);
             const needsObs = resp && resp.resposta !== 'sim' && resp.resposta !== 'n_a';
+            const obsIsMissing = needsObs && (!resp.observacao || resp.observacao.trim().length < 5);
             
             return (
               <div key={q.id} className="bg-white p-8 rounded-[2rem] border-4 border-slate-900 shadow-[8px_8px_0px_0px_rgba(15,23,42,1)] space-y-6 transition-all hover:-translate-y-1">
@@ -474,27 +513,29 @@ const AuditWizard: React.FC<AuditWizardProps> = ({ obras, currentUser, onAuditCo
                 </div>
 
                 {q.requiresPhotos && (
-                  <div className="bg-slate-50 p-6 rounded-2xl border-4 border-slate-900 space-y-4">
+                  <div className={`bg-slate-50 p-6 rounded-2xl border-4 space-y-4 transition-all ${((resp?.fotos?.length || 0) < 3) ? 'border-rose-400' : 'border-slate-900'}`}>
                     <div className="flex justify-between items-center">
                       <p className="text-xs font-black text-slate-900 uppercase tracking-widest flex items-center gap-2">
                          <Camera size={16} className="text-[#F05A22]" /> 
                          Evidências da Estrutura (Mínimo 3 Fotos)
                       </p>
-                      <span className="text-xs font-black text-[#F05A22]">{resp?.fotos?.length || 0}/3</span>
+                      <span className={`text-xs font-black ${(resp?.fotos?.length || 0) < 3 ? 'text-rose-600 animate-pulse' : 'text-emerald-600'}`}>
+                        {resp?.fotos?.length || 0}/3
+                      </span>
                     </div>
-                    <div className="flex gap-4">
+                    <div className="flex gap-4 overflow-x-auto pb-2">
                        {(resp?.fotos || []).map((f, i) => (
-                         <div key={i} className="w-24 h-24 rounded-xl border-4 border-slate-900 overflow-hidden shadow-sm relative">
+                         <div key={i} className="w-24 h-24 rounded-xl border-4 border-slate-900 overflow-hidden shadow-sm shrink-0">
                             <img src={f} className="w-full h-full object-cover" />
                          </div>
                        ))}
                        {(resp?.fotos?.length || 0) < 5 && (
                          <button 
-                           onClick={() => handleAddPhoto(q.id)}
-                           className="w-24 h-24 rounded-xl border-4 border-dashed border-slate-300 flex flex-col items-center justify-center text-slate-400 hover:text-[#F05A22] hover:border-[#F05A22] transition-all bg-white"
+                           onClick={() => triggerCamera(q.id)}
+                           className="w-24 h-24 rounded-xl border-4 border-dashed border-slate-300 flex flex-col items-center justify-center text-slate-400 hover:text-[#F05A22] hover:border-[#F05A22] transition-all bg-white shrink-0"
                          >
-                           <Plus size={24} />
-                           <span className="text-[10px] font-black uppercase">Adicionar</span>
+                           <Camera size={24} />
+                           <span className="text-[10px] font-black uppercase">FOTO</span>
                          </button>
                        )}
                     </div>
@@ -502,12 +543,16 @@ const AuditWizard: React.FC<AuditWizardProps> = ({ obras, currentUser, onAuditCo
                 )}
 
                 {needsObs && (
-                  <div className="animate-in slide-in-from-top-3 duration-300">
+                  <div className="animate-in slide-in-from-top-3 duration-300 space-y-2">
+                    <label className={`text-[10px] font-black uppercase tracking-widest ${obsIsMissing ? 'text-rose-600' : 'text-slate-400'}`}>
+                       Justificativa Obrigatória {obsIsMissing && '(Favor detalhar o desvio)'}
+                    </label>
                     <textarea
                       value={resp.observacao || ''}
                       onChange={(e) => handleObsChange(q.id, e.target.value)}
-                      placeholder="Descreva o desvio ou justificativa técnica..."
-                      className="w-full bg-rose-50 border-4 border-rose-200 rounded-2xl p-5 text-lg font-black text-slate-900 focus:ring-4 focus:ring-rose-600/20 focus:outline-none min-h-[120px]"
+                      placeholder="Descreva o desvio técnico ou observação relevante encontrada no campo..."
+                      className={`w-full border-4 rounded-2xl p-5 text-lg font-black text-slate-900 focus:ring-4 focus:outline-none min-h-[120px] transition-all
+                        ${obsIsMissing ? 'bg-rose-50 border-rose-300 focus:ring-rose-500/20' : 'bg-slate-50 border-slate-100 focus:border-slate-900 focus:ring-slate-500/10'}`}
                     />
                   </div>
                 )}
@@ -528,10 +573,11 @@ const AuditWizard: React.FC<AuditWizardProps> = ({ obras, currentUser, onAuditCo
           onClick={() => currentBlockIdx === blockKeys.length - 1 ? handleSubmit() : setCurrentBlockIdx(prev => prev + 1)}
           className={`
             px-16 py-7 rounded-2xl font-black text-xl transition-all shadow-[0_10px_0_0_rgb(0,0,0)] border-4 border-slate-900 active:translate-y-2 active:shadow-none uppercase tracking-widest
-            ${currentBlockIdx === blockKeys.length - 1 ? 'bg-slate-900 text-white hover:bg-[#F05A22]' : 'bg-[#F05A22] text-white hover:bg-slate-900'}
+            ${!isBlockComplete() ? 'opacity-50 cursor-not-allowed bg-slate-200 text-slate-400 shadow-none translate-y-2' : 
+              currentBlockIdx === blockKeys.length - 1 ? 'bg-slate-900 text-white hover:bg-[#F05A22]' : 'bg-[#F05A22] text-white hover:bg-slate-900'}
           `}
         >
-          {currentBlockIdx === blockKeys.length - 1 ? 'FINALIZAR' : 'PRÓXIMA ETAPA'}
+          {currentBlockIdx === blockKeys.length - 1 ? 'FINALIZAR RELATÓRIO' : 'PRÓXIMA ETAPA'}
         </button>
       </footer>
     </div>
