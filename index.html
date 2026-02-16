@@ -8,50 +8,57 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
       @media print {
-        /* Remove elementos de interface */
+        /* Configurações básicas de página */
+        @page {
+          margin: 1.5cm;
+          size: portrait;
+        }
+
+        /* Esconde toda a interface do sistema */
         aside, nav, header, button, .print-hidden, [role="button"] { 
           display: none !important; 
         }
         
-        /* Reseta containers para permitir múltiplas páginas */
+        /* Reseta o layout para um fluxo de documento padrão */
         html, body {
           background-color: white !important;
+          color: black !important;
           height: auto !important;
-          overflow: visible !important;
+          width: 100% !important;
           margin: 0 !important;
           padding: 0 !important;
+          overflow: visible !important;
+          position: static !important;
         }
 
-        #root, main, .max-w-7xl {
+        #root, main, .max-w-7xl, .max-w-4xl {
           width: 100% !important;
           max-width: none !important;
           margin: 0 !important;
           padding: 0 !important;
           overflow: visible !important;
           display: block !important;
-          position: relative !important;
+          position: static !important;
         }
 
-        /* Força cores de fundo no PDF (Tailwind print:bg-white não é suficiente às vezes) */
-        .print-bg-force {
-          print-color-adjust: exact;
-          -webkit-print-color-adjust: exact;
-        }
-
-        .print-break-inside-avoid { 
-          break-inside: avoid; 
-        }
-
-        /* Remove sombras no PDF para economizar tinta e manter clareza */
+        /* Força a renderização de cores e fundos */
         * {
+          -webkit-print-color-adjust: exact !important;
+          print-color-adjust: exact !important;
           box-shadow: none !important;
           text-shadow: none !important;
         }
 
-        /* Ajuste de margens da página */
-        @page {
-          margin: 1.5cm;
-          size: portrait;
+        /* Evita quebras de página no meio de cards importantes */
+        .print-break-inside-avoid { 
+          break-inside: avoid; 
+          page-break-inside: avoid;
+          position: relative;
+        }
+
+        /* Melhora a legibilidade no papel */
+        p, span, h1, h2, h3 {
+          color: black !important;
         }
       }
     </style>
