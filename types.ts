@@ -26,7 +26,7 @@ export interface Question {
   texto: string;
   peso: number;
   requiresPhotos?: boolean;
-  minPhotos?: number; // Novo campo para validação específica
+  minPhotos?: number;
 }
 
 export type ResponseValue = 'sim' | 'parcial' | 'nao' | 'n_a';
@@ -71,6 +71,7 @@ export interface AIAnalysisResult {
   indiceGeral: number;
   classificacao: string;
   riscoJuridico: string;
+  exposicaoFinanceira: number; // Valor em Reais
   naoConformidades: string[];
   impactoJuridico: string;
   recomendacoes: string[];

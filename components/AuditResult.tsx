@@ -11,7 +11,9 @@ import {
   Building2,
   UserCheck,
   Users2,
-  Loader2
+  Loader2,
+  Coins,
+  TrendingDown
 } from 'lucide-react';
 import { Audit, AIAnalysisResult } from '../types';
 import { QUESTIONS, INTERVIEW_QUESTIONS } from '../constants';
@@ -26,30 +28,25 @@ interface AuditResultProps {
 const AuditResult: React.FC<AuditResultProps> = ({ audit, report, onClose }) => {
   const [isGenerating, setIsGenerating] = React.useState(false);
 
+  const formatCurrency = (value: number) => {
+    return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
+  };
+
   const handleGeneratePDF = async () => {
     setIsGenerating(true);
-    
     const element = document.getElementById('relatorio-tecnico-unita');
-    
     if (!element) {
       alert("Erro ao localizar conteúdo do relatório.");
       setIsGenerating(false);
       return;
     }
-
     const opt = {
       margin: [10, 10, 10, 10],
       filename: `Relatorio_Unita_${audit.obra_id}_${new Date().toLocaleDateString('pt-BR').replace(/\//g, '-')}.pdf`,
       image: { type: 'jpeg', quality: 0.98 },
-      html2canvas: { 
-        scale: 2,
-        useCORS: true, 
-        letterRendering: true,
-        backgroundColor: '#FFFFFF'
-      },
+      html2canvas: { scale: 2, useCORS: true, letterRendering: true, backgroundColor: '#FFFFFF' },
       jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
     };
-
     try {
       // @ts-ignore
       await html2pdf().set(opt).from(element).save();
@@ -117,48 +114,68 @@ const AuditResult: React.FC<AuditResultProps> = ({ audit, report, onClose }) => 
           </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-6">
-          <div className="bg-slate-50 p-6 rounded-[2rem] border-4 border-slate-900 flex items-center gap-5">
-             <div className="w-14 h-14 bg-white rounded-2xl flex items-center justify-center border-2 border-slate-200">
-                <Users2 className="text-[#F05A22]" size={32} />
-             </div>
-             <div>
-                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">Pessoas Auditadas</p>
-                <p className="text-xl font-black text-slate-900 uppercase tracking-tighter">{audit.entrevistas?.length || 0} Colaboradores</p>
-             </div>
+        {/* INDICADORES PRINCIPAIS */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="bg-slate-50 p-5 rounded-[1.5rem] border-2 border-slate-200 flex flex-col items-center text-center">
+             <Users2 className="text-[#F05A22] mb-2" size={24} />
+             <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Efetivo</p>
+             <p className="text-lg font-black text-slate-900">{audit.entrevistas?.length || 0}</p>
           </div>
-          <div className={`p-6 rounded-[2rem] border-4 border-slate-900 flex items-center gap-5 ${isMetodologyValid ? 'bg-emerald-50' : 'bg-rose-50'}`}>
-             <div className={`w-14 h-14 rounded-2xl flex items-center justify-center border-2 ${isMetodologyValid ? 'bg-emerald-500 text-white' : 'bg-rose-500 text-white'}`}>
-                {isMetodologyValid ? <ShieldCheck size={32} /> : <AlertOctagon size={32} />}
-             </div>
-             <div>
-                <p className={`text-[10px] font-black uppercase tracking-widest leading-none mb-1 ${isMetodologyValid ? 'text-emerald-600' : 'text-rose-600'}`}>
-                  Metodologia Unità
-                </p>
-                <p className={`text-xl font-black uppercase tracking-tighter ${isMetodologyValid ? 'text-emerald-900' : 'text-rose-900'}`}>Amostragem: {coverage}%</p>
-             </div>
+          <div className="bg-slate-50 p-5 rounded-[1.5rem] border-2 border-slate-200 flex flex-col items-center text-center">
+             <ShieldCheck className="text-emerald-500 mb-2" size={24} />
+             <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Amostragem</p>
+             <p className="text-lg font-black text-slate-900">{coverage}%</p>
+          </div>
+          <div className="bg-slate-900 p-5 rounded-[1.5rem] border-2 border-slate-900 flex flex-col items-center text-center">
+             <p className="text-[8px] font-black text-[#F05A22] uppercase tracking-widest mb-1">Score Geral</p>
+             <p className="text-2xl font-black text-white">{report.indiceGeral}%</p>
+          </div>
+          <div className={`p-5 rounded-[1.5rem] border-2 flex flex-col items-center text-center ${report.classificacao === 'CRÍTICA' ? 'bg-rose-600 border-rose-700 text-white' : 'bg-emerald-600 border-emerald-700 text-white'}`}>
+             <p className="text-[8px] font-black opacity-80 uppercase tracking-widest mb-1">Status</p>
+             <p className="text-sm font-black uppercase">{report.classificacao}</p>
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="bg-white p-8 rounded-[2.5rem] border-4 border-slate-900 shadow-md flex flex-col items-center justify-center text-center space-y-4">
-            <div className="text-4xl font-black text-slate-900 tracking-tighter">{report.indiceGeral}%</div>
-            <span className={`px-5 py-2 rounded-xl text-xs font-black uppercase tracking-widest border-2 ${report.classificacao === 'REGULAR' ? 'bg-emerald-50 text-emerald-800 border-emerald-600' : 'bg-rose-50 text-rose-800 border-rose-600'}`}>
-              STATUS: {report.classificacao}
-            </span>
-          </div>
-
-          <div className="md:col-span-2 bg-slate-900 text-white p-10 rounded-[2.5rem] border-4 border-slate-900">
-            <div className="space-y-4">
-              <div className="flex items-center gap-4 text-[#F05A22]">
-                <ShieldAlert size={32} />
-                <h3 className="font-black text-xl uppercase tracking-tighter">Risco Jurídico: {report.riscoJuridico}</h3>
+        {/* CARD DE EXPOSIÇÃO FINANCEIRA - NOVO DESTAQUE */}
+        <div className="bg-white rounded-[2.5rem] border-4 border-slate-900 overflow-hidden shadow-[12px_12px_0px_0px_rgba(240,90,34,1)]">
+           <div className="bg-slate-900 p-6 flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                 <div className="w-12 h-12 bg-[#F05A22] rounded-xl flex items-center justify-center text-white border-2 border-white/20">
+                    <Coins size={28} />
+                 </div>
+                 <div>
+                    <h3 className="text-white font-black uppercase text-xs tracking-widest">Exposição Financeira Potencial</h3>
+                    <p className="text-[#F05A22] font-black text-[10px] uppercase tracking-tighter">Estimativa baseada em NR-28 e Jurisprudência TST</p>
+                 </div>
               </div>
-              <p className="text-sm text-slate-300 font-black uppercase leading-tight">{report.impactoJuridico}</p>
-            </div>
-          </div>
+              <TrendingDown className={report.exposicaoFinanceira > 0 ? 'text-rose-500' : 'text-emerald-500'} size={32} />
+           </div>
+           <div className="p-10 flex flex-col md:flex-row items-center justify-between gap-8">
+              <div className="text-center md:text-left">
+                 <p className="text-6xl font-black text-slate-900 tracking-tighter">
+                   {formatCurrency(report.exposicaoFinanceira)}
+                 </p>
+                 <p className="text-xs font-black text-slate-400 uppercase tracking-widest mt-2">Passivo Trabalhista e Previdenciário Projetado</p>
+              </div>
+              <div className="flex-1 max-w-sm">
+                 <div className={`p-6 rounded-2xl border-2 flex items-center gap-4 ${report.riscoJuridico === 'CRÍTICO' || report.riscoJuridico === 'ALTO' ? 'bg-rose-50 border-rose-200' : 'bg-emerald-50 border-emerald-200'}`}>
+                    <ShieldAlert className={report.riscoJuridico === 'CRÍTICO' || report.riscoJuridico === 'ALTO' ? 'text-rose-600' : 'text-emerald-600'} size={40} />
+                    <div>
+                       <p className="text-[10px] font-black text-slate-500 uppercase">Matriz de Risco</p>
+                       <p className={`text-xl font-black uppercase ${report.riscoJuridico === 'CRÍTICO' || report.riscoJuridico === 'ALTO' ? 'text-rose-900' : 'text-emerald-900'}`}>{report.riscoJuridico}</p>
+                    </div>
+                 </div>
+              </div>
+           </div>
+           <div className="px-10 pb-10">
+              <p className="text-xs text-slate-500 font-bold leading-relaxed border-t-2 border-slate-100 pt-6 italic">
+                Atenção: Este valor representa uma projeção técnica baseada em amostragem. O montante final pode variar conforme o volume total de colaboradores e frentes de serviço ativas. 
+                <span className="text-slate-900 ml-1">Recomenda-se saneamento imediato das não conformidades citadas abaixo.</span>
+              </p>
+           </div>
         </div>
 
+        {/* Itens de Verificação */}
         <div className="space-y-6">
           <h3 className="text-xl font-black text-slate-900 flex items-center gap-3 uppercase tracking-tighter border-l-8 border-[#F05A22] pl-4">
             Evidências do Checklist (Campo)
@@ -187,6 +204,7 @@ const AuditResult: React.FC<AuditResultProps> = ({ audit, report, onClose }) => 
           </div>
         </div>
 
+        {/* Amostragem de Entrevistas */}
         <div className="space-y-6">
           <h3 className="text-xl font-black text-slate-900 flex items-center gap-3 uppercase tracking-tighter border-l-8 border-[#F05A22] pl-4">
             Amostragem de Entrevistas Comportamentais
@@ -224,7 +242,7 @@ const AuditResult: React.FC<AuditResultProps> = ({ audit, report, onClose }) => 
           </div>
         </div>
 
-        {/* Parecer Final e Área de Assinatura Digital Certificada */}
+        {/* Parecer Final e Área de Assinatura */}
         <section className="bg-white p-10 rounded-[2.5rem] border-4 border-slate-900 text-slate-900 space-y-8 break-inside-avoid mt-12 relative overflow-hidden">
           <div className="flex items-center gap-3">
             <FileText className="text-[#F05A22]" size={32} />
@@ -238,39 +256,38 @@ const AuditResult: React.FC<AuditResultProps> = ({ audit, report, onClose }) => 
              <div className="grid grid-cols-2 gap-16">
                 <div className="flex flex-col items-center">
                    <div className="w-full h-24 border-b-2 border-slate-300 flex items-center justify-center mb-4 relative">
-                      <span className="text-[10px] text-slate-300 font-bold uppercase tracking-[0.4em] absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 select-none pointer-events-none">
-                         Espaço para assinatura Gov.br
+                      <span className="text-[10px] text-slate-300 font-bold uppercase tracking-[0.4em] absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 select-none pointer-events-none text-center px-4">
+                         Espaço para assinatura digital (Gov.br / ICP-Brasil)
                       </span>
                    </div>
                    <p className="text-[12px] font-black uppercase tracking-widest text-slate-900">Auditor Unità S.A.</p>
-                   <p className="text-[9px] font-bold text-slate-400 mt-1 uppercase tracking-tighter italic">Responsável pela Coleta de Dados em Campo</p>
+                   <p className="text-[9px] font-bold text-slate-400 mt-1 uppercase tracking-tighter italic">Responsável pela Coleta</p>
                 </div>
                 <div className="flex flex-col items-center">
                    <div className="w-full h-24 border-b-2 border-slate-300 flex items-center justify-center mb-4 relative">
-                      <span className="text-[10px] text-slate-300 font-bold uppercase tracking-[0.4em] absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 select-none pointer-events-none">
-                         Espaço para assinatura Gov.br
+                      <span className="text-[10px] text-slate-300 font-bold uppercase tracking-[0.4em] absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 select-none pointer-events-none text-center px-4">
+                         Espaço para assinatura digital (Gov.br / ICP-Brasil)
                       </span>
                    </div>
                    <p className="text-[12px] font-black uppercase tracking-widest text-slate-900">Responsável pela Unidade</p>
-                   <p className="text-[9px] font-bold text-slate-400 mt-1 uppercase tracking-tighter italic">Ciente do Resultado e Matriz de Risco</p>
+                   <p className="text-[9px] font-bold text-slate-400 mt-1 uppercase tracking-tighter italic">Ciente do Risco Financeiro</p>
                 </div>
              </div>
 
              <div className="pt-8 border-t border-slate-100 flex justify-between items-center text-slate-400">
-                <div className="flex flex-col">
-                   <span className="text-[8px] font-black uppercase tracking-widest">Hash de Segurança AuditRisk</span>
-                   <span className="text-[10px] font-mono">{audit.id.toUpperCase()}</span>
+                <div className="flex flex-col text-[8px] font-black uppercase tracking-widest">
+                   <span>ID RELATÓRIO: {audit.id.toUpperCase()}</span>
                 </div>
-                <div className="text-right flex flex-col">
-                   <span className="text-[8px] font-black uppercase tracking-widest">Documento Válido para</span>
-                   <span className="text-[10px] font-black text-slate-900 uppercase tracking-tighter">Assinatura Digital Certificada (ICP-Brasil)</span>
+                <div className="text-right flex flex-col items-end">
+                   <span className="text-[8px] font-black uppercase tracking-widest">Tecnologia AuditRisk v2.5</span>
+                   <span className="text-[10px] font-black text-[#F05A22] uppercase tracking-tighter">Unità Engenharia S.A.</span>
                 </div>
              </div>
           </div>
         </section>
 
         <div className="pt-10 text-center text-[9px] font-black text-slate-300 uppercase tracking-[0.4em]">
-           UNITA ENGENHARIA S.A. - SISTEMA AUDITRISK v2.5
+           DOCUMENTO CONFIDENCIAL - USO INTERNO
         </div>
       </div>
     </div>

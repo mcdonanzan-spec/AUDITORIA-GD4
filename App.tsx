@@ -62,11 +62,13 @@ const App: React.FC = () => {
     setCurrentPage('result');
   };
 
+  // Added missing 'exposicaoFinanceira' property to satisfy AIAnalysisResult interface
   const handleViewAudit = (audit: Audit) => {
     const mockReport: AIAnalysisResult = {
       indiceGeral: audit.indice_geral || 0,
       classificacao: audit.classificacao || 'N/A',
       riscoJuridico: audit.risco_juridico || 'N/A',
+      exposicaoFinanceira: 0,
       naoConformidades: ["Histórico de auditoria carregado."],
       impactoJuridico: "Análise histórica consolidada.",
       recomendacoes: ["Revisar pontos críticos da última medição."],

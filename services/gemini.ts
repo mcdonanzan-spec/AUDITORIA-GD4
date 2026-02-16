@@ -5,28 +5,33 @@ import { AIAnalysisResult } from "../types";
 export const generateAuditReport = async (auditData: any): Promise<AIAnalysisResult> => {
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
   
-  const prompt = `Você é um sistema de governança e compliance de alto nível da Unità Engenharia S.A., especializado em gestão de terceiros e mão de obra própria (GRD).
-  Sua função é analisar uma auditoria de campo e determinar o risco jurídico e operacional.
+  const prompt = `Você é um sistema de Inteligência de Risco Jurídico e Financeiro da Unità Engenharia S.A.
+  Sua tarefa é converter desvios de conformidade em uma estimativa de Passivo Financeiro Potencial.
   
-  Dados da Auditoria:
+  DADOS DA AUDITORIA:
   ${JSON.stringify(auditData, null, 2)}
   
-  CRITÉRIOS DE ANÁLISE MANDATÓRIOS (REGRAS DE NEGÓCIO):
-  1. ITENS "N/A" (NÃO SE APLICA): Se uma pergunta foi marcada como "n_a", ela deve ser totalmente ignorada na análise de risco. Não penalize a obra por atividades que não existem no local (ex: se não houver quarteirização).
-  2. GOVERNANÇA GRD (BLOCO F) - FASE DE TRANSIÇÃO:
-     - O Item 01 (Termo de Qualificação) é um processo novo na Unità. Se houver respostas "Parcial" ou "Nao", verifique se há uma justificativa de implantação. Não classifique como "Risco Crítico" imediatamente se for claramente um caso de transição. Em vez disso, sugira um "Cronograma de Saneamento Documental".
-     - Item 02 (Próprios): Continua sendo CRÍTICO. A documentação interna deve estar em dia.
-  3. AMOSTRAGEM COMPORTAMENTAL (BLOCO G): Contradições sobre pagamentos ou benefícios indicam fraude documental sistêmica.
-  4. DIVERGÊNCIA DE EFETIVO (BLOCO B): Diferença positiva de pessoas em campo vs GD4 indica trabalho informal.
+  METODOLOGIA DE CÁLCULO FINANCEIRO (BASE LEGAL BRASILEIRA):
+  1. TRABALHADOR SEM REGISTRO/Pendente: Risco de R$ 60.000,00 por ocorrência (Vínculo + Multas eSocial + FGTS).
+  2. FALHA EM CONTROLE DE ACESSO: Multa NR-28 (I3) - Estimar R$ 5.000,00 por dia de irregularidade detectada.
+  3. BENEFÍCIOS NÃO PAGOS (Entrevistas): Risco de Ação Coletiva e Multas sindicais. Estimar R$ 3.000,00 por colaborador afetado.
+  4. SUBCONTRATAÇÃO IRREGULAR: Risco de responsabilidade solidária integral. Estimar 40% do valor total da folha da terceirizada (Mínimo R$ 100k).
+  5. DOCUMENTAÇÃO GRD VENCIDA: Risco de interdição parcial ou multa administrativa (R$ 15k a R$ 40k).
+  
+  REGRAS:
+  - Ignore itens marcados como N/A.
+  - Se a classificação for REGULAR e não houver desvios graves, a exposição pode ser R$ 0,00.
+  - Seja realista, mas enfatize o risco para a diretoria.
   
   ESTRUTURA DE RESPOSTA (JSON):
-  - indiceGeral: Cálculo ponderado (0-100) ignorando os itens N/A.
-  - classificacao: REGULAR, ATENÇÃO ou CRÍTICA.
-  - riscoJuridico: BAIXO, MÉDIO, ALTO ou CRÍTICO.
-  - naoConformidades: Lista de desvios detectados (ignore os N/A).
-  - impactoJuridico: Descrição técnica do passivo potencial.
-  - recomendacoes: Ações corretivas imediatas e cronogramas de transição para processos novos.
-  - conclusaoExecutiva: Texto formal direcionado à diretoria da Unità Engenharia.
+  - indiceGeral: 0-100.
+  - classificacao: REGULAR, ATENÇÃO, CRÍTICA.
+  - riscoJuridico: BAIXO, MÉDIO, ALTO, CRÍTICO.
+  - exposicaoFinanceira: Valor numérico total estimado em Reais (BRL).
+  - naoConformidades: Lista de desvios.
+  - impactoJuridico: Descrição técnica focada em passivo.
+  - recomendacoes: Ações para mitigar o prejuízo financeiro.
+  - conclusaoExecutiva: Linguagem para C-Level (Diretoria).
   
   Retorne APENAS o JSON.`;
 
@@ -41,6 +46,7 @@ export const generateAuditReport = async (auditData: any): Promise<AIAnalysisRes
           indiceGeral: { type: Type.NUMBER },
           classificacao: { type: Type.STRING },
           riscoJuridico: { type: Type.STRING },
+          exposicaoFinanceira: { type: Type.NUMBER },
           naoConformidades: { 
             type: Type.ARRAY, 
             items: { type: Type.STRING } 
@@ -53,7 +59,7 @@ export const generateAuditReport = async (auditData: any): Promise<AIAnalysisRes
           conclusaoExecutiva: { type: Type.STRING }
         },
         required: [
-          "indiceGeral", "classificacao", "riscoJuridico", 
+          "indiceGeral", "classificacao", "riscoJuridico", "exposicaoFinanceira",
           "naoConformidades", "impactoJuridico", 
           "recomendacoes", "conclusaoExecutiva"
         ]
