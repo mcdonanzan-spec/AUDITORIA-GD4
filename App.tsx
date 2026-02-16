@@ -16,20 +16,17 @@ const App: React.FC = () => {
   const [currentPage, setCurrentPage] = React.useState('dashboard');
   const [audits, setAudits] = React.useState<Audit[]>([]);
   const [obras, setObras] = React.useState<Obra[]>([]);
-  const [allUsers, setAllUsers] = React.useState<User[]>([]);
   const [viewingAudit, setViewingAudit] = React.useState<{ audit: Audit; report: AIAnalysisResult } | null>(null);
   const [loading, setLoading] = React.useState(true);
 
   const fetchData = async () => {
     try {
-      const [fetchedAudits, fetchedObras, fetchedUsers] = await Promise.all([
+      const [fetchedAudits, fetchedObras] = await Promise.all([
         getAudits(),
-        getObras(),
-        getUsers()
+        getObras()
       ]);
       setAudits(fetchedAudits);
       setObras(fetchedObras);
-      setAllUsers(fetchedUsers);
     } finally {
       setLoading(false);
     }
@@ -39,21 +36,8 @@ const App: React.FC = () => {
     fetchData();
   }, []);
 
-  const handleLogin = (email: string, role: UserRole) => {
-    // Busca o usuário mock correspondente ao perfil selecionado
-    const foundUser = allUsers.find(u => u.perfil === role);
-    if (foundUser) {
-      setUser(foundUser);
-    } else {
-      // Fallback caso não encontre (não deve ocorrer com o mock atual)
-      setUser({
-        id: 'u-temp-' + Date.now(),
-        nome: email.split('@')[0].toUpperCase(),
-        email: email,
-        perfil: role,
-        obra_ids: []
-      });
-    }
+  const handleLogin = (authenticatedUser: User) => {
+    setUser(authenticatedUser);
   };
 
   const handleLogout = () => {

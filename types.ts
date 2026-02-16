@@ -1,12 +1,14 @@
 
 export type UserRole = 'admin' | 'auditor' | 'diretoria' | 'obra';
+export type UserStatus = 'ativo' | 'pendente' | 'bloqueado';
 
 export interface User {
   id: string;
   nome: string;
   email: string;
   perfil: UserRole;
-  obra_ids?: string[]; // Mudança de obra_id (único) para obra_ids (lista)
+  status: UserStatus; // Novo campo
+  obra_ids?: string[];
 }
 
 export interface Obra {

@@ -9,10 +9,10 @@ let MOCK_OBRAS: Obra[] = [
 ];
 
 let MOCK_USERS: User[] = [
-  { id: 'u1', nome: 'Admin Master', email: 'admin@unita.eng.br', perfil: 'admin' },
-  { id: 'u2', nome: 'Auditor Senior', email: 'auditor@unita.eng.br', perfil: 'auditor' },
-  { id: 'u3', nome: 'Diretoria Regional', email: 'diretoria@unita.eng.br', perfil: 'diretoria' },
-  { id: 'u4', nome: 'Eng. Ricardo', email: 'obra@unita.eng.br', perfil: 'obra', obra_ids: ['1', '4'] },
+  { id: 'u1', nome: 'Admin Master', email: 'admin@unita.eng.br', perfil: 'admin', status: 'ativo' },
+  { id: 'u2', nome: 'Auditor Senior', email: 'auditor@unita.eng.br', perfil: 'auditor', status: 'ativo' },
+  { id: 'u3', nome: 'Diretoria Regional', email: 'diretoria@unita.eng.br', perfil: 'diretoria', status: 'ativo' },
+  { id: 'u4', nome: 'Eng. Ricardo', email: 'obra@unita.eng.br', perfil: 'obra', status: 'ativo', obra_ids: ['1', '4'] },
 ];
 
 let MOCK_AUDITS: Audit[] = [
@@ -27,18 +27,6 @@ let MOCK_AUDITS: Audit[] = [
     risco_juridico: 'BAIXO',
     respostas: [],
     created_at: '2023-10-20T10:00:00Z'
-  },
-  {
-    id: 'aud-2',
-    obra_id: '2',
-    auditor_id: 'u2',
-    data: '2023-10-22',
-    tipo: 'extraordinaria',
-    indice_geral: 45,
-    classificacao: 'CRÍTICA',
-    risco_juridico: 'ALTO',
-    respostas: [],
-    created_at: '2023-10-22T14:30:00Z'
   }
 ];
 
@@ -64,7 +52,16 @@ export const getUsers = async (): Promise<User[]> => {
   return new Promise((resolve) => setTimeout(() => resolve([...MOCK_USERS]), 100));
 };
 
+export const createUserRequest = async (user: User): Promise<User> => {
+  MOCK_USERS = [...MOCK_USERS, user];
+  return user;
+};
+
 export const updateUser = async (user: User): Promise<User> => {
   MOCK_USERS = MOCK_USERS.map(u => u.id === user.id ? user : u);
   return user;
+};
+
+export const deleteUser = async (userId: string): Promise<void> => {
+  MOCK_USERS = MOCK_USERS.filter(u => u.id !== userId);
 };
