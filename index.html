@@ -20,6 +20,18 @@
       
       @media print {
         .print-hidden { display: none !important; }
+        .page-break { page-break-before: always; }
+        
+        /* Previne cortes no meio de elementos críticos */
+        .break-inside-avoid {
+          break-inside: avoid;
+          page-break-inside: avoid;
+        }
+      }
+
+      /* Estilo para html2pdf não cortar divs no meio */
+      [data-html2canvas-ignore] {
+        display: none !important;
       }
     </style>
   <script type="importmap">

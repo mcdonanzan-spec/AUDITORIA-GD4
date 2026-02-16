@@ -78,7 +78,9 @@ const AuditResult: React.FC<AuditResultProps> = ({ audit, report, onClose }) => 
       filename: `Relatorio_Unita_${audit.obra_id}_${new Date().toLocaleDateString('pt-BR').replace(/\//g, '-')}.pdf`,
       image: { type: 'jpeg', quality: 0.98 },
       html2canvas: { scale: 2, useCORS: true, letterRendering: true, backgroundColor: '#FFFFFF' },
-      jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+      jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+      // Configuração vital para evitar cortes:
+      pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
     };
     try {
       // @ts-ignore
@@ -103,7 +105,7 @@ const AuditResult: React.FC<AuditResultProps> = ({ audit, report, onClose }) => 
   return (
     <div className="max-w-4xl mx-auto space-y-8 pb-24 animate-in fade-in duration-500">
       
-      <header className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <header className="flex flex-col md:flex-row md:items-center justify-between gap-4 print-hidden">
         <div>
           <button onClick={onClose} className="flex items-center gap-1 text-xs font-black text-slate-500 uppercase tracking-widest hover:text-[#F05A22] mb-2">
             <ArrowLeft size={14} /> Voltar ao Dashboard
@@ -136,7 +138,7 @@ const AuditResult: React.FC<AuditResultProps> = ({ audit, report, onClose }) => 
       <div id="relatorio-tecnico-unita" className="bg-white p-2 md:p-4 space-y-10">
         
         {/* CABEÇALHO DO RELATÓRIO PDF */}
-        <div className="flex justify-between items-start border-b-8 border-slate-900 pb-10 mb-10">
+        <div className="flex justify-between items-start border-b-8 border-slate-900 pb-10 mb-10 break-inside-avoid">
           <UnitaLogo className="scale-125 origin-left" />
           <div className="text-right">
             <h2 className="text-3xl font-black uppercase tracking-tighter leading-none text-slate-900">Relatório de Conformidade</h2>
@@ -158,7 +160,7 @@ const AuditResult: React.FC<AuditResultProps> = ({ audit, report, onClose }) => 
         </div>
 
         {/* INDICADORES PRINCIPAIS */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 break-inside-avoid">
           <div className="bg-slate-50 p-6 rounded-[2rem] border-2 border-slate-200 flex flex-col items-center text-center relative overflow-hidden group">
              <Users className="text-[#F05A22] mb-2" size={24} />
              <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Efetivo Total</p>
@@ -182,7 +184,7 @@ const AuditResult: React.FC<AuditResultProps> = ({ audit, report, onClose }) => 
         </div>
 
         {/* ANÁLISE DE EFETIVO */}
-        <div className="space-y-6 animate-in slide-in-from-bottom-4 duration-500">
+        <div className="space-y-6 break-inside-avoid">
           <h3 className="text-xl font-black text-slate-900 flex items-center gap-3 uppercase tracking-tighter border-l-8 border-slate-900 pl-4">
             Análise de Efetivo e Quarteirização
           </h3>
@@ -226,7 +228,7 @@ const AuditResult: React.FC<AuditResultProps> = ({ audit, report, onClose }) => 
         </div>
 
         {/* EXPOSIÇÃO FINANCEIRA COM DETALHAMENTO DE CÁLCULO */}
-        <div className="space-y-6">
+        <div className="space-y-6 break-inside-avoid">
           <div className="bg-white rounded-[2.5rem] border-4 border-slate-900 overflow-hidden shadow-[12px_12px_0px_0px_rgba(15,23,42,1)]">
              <div className="bg-slate-900 p-6 flex items-center justify-between">
                 <div className="flex items-center gap-4">
@@ -240,7 +242,7 @@ const AuditResult: React.FC<AuditResultProps> = ({ audit, report, onClose }) => 
                 </div>
                 <TrendingDown className={report.exposicaoFinanceira > 0 ? 'text-rose-500' : 'text-emerald-500'} size={32} />
              </div>
-             <div className="p-10 flex flex-col md:flex-row items-center justify-between gap-8">
+             <div className="p-10 flex flex-col md:flex-row items-center justify-between gap-8 border-b-2 border-slate-100">
                 <div className="text-center md:text-left">
                    <p className="text-6xl font-black text-slate-900 tracking-tighter">
                      {formatCurrency(report.exposicaoFinanceira)}
@@ -258,16 +260,16 @@ const AuditResult: React.FC<AuditResultProps> = ({ audit, report, onClose }) => 
                 </div>
              </div>
              
-             {/* NOVA SEÇÃO: MEMÓRIA DE CÁLCULO */}
-             <div className="px-10 pb-10">
-                <div className="bg-slate-50 border-2 border-slate-100 rounded-3xl p-6 space-y-4">
+             {/* NOVA SEÇÃO: MEMÓRIA DE CÁLCULO - Envolvida em break-inside-avoid para manter coesão */}
+             <div className="px-10 pb-10 pt-10">
+                <div className="bg-slate-50 border-2 border-slate-100 rounded-3xl p-6 space-y-4 break-inside-avoid">
                    <div className="flex items-center gap-2 mb-2">
                       <Calculator size={18} className="text-[#F05A22]" />
                       <h4 className="text-[10px] font-black text-slate-900 uppercase tracking-widest">Memória de Cálculo e Base Legal</h4>
                    </div>
                    <div className="space-y-3">
                       {report.detalhamentoCalculo?.map((calc, i) => (
-                        <div key={i} className="flex flex-col md:flex-row md:items-center justify-between gap-2 border-b border-slate-200 pb-3 last:border-0 last:pb-0">
+                        <div key={i} className="flex flex-col md:flex-row md:items-center justify-between gap-2 border-b border-slate-200 pb-3 last:border-0 last:pb-0 break-inside-avoid">
                            <div className="flex-1">
                               <p className="text-[11px] font-black text-slate-900 uppercase leading-tight">{calc.item}</p>
                               <div className="flex items-center gap-2 mt-1">
@@ -288,7 +290,7 @@ const AuditResult: React.FC<AuditResultProps> = ({ audit, report, onClose }) => 
         </div>
 
         {/* EVIDÊNCIAS DE CHECKLIST */}
-        <div className="space-y-6">
+        <div className="space-y-6 break-inside-avoid">
           <h3 className="text-xl font-black text-slate-900 flex items-center gap-3 uppercase tracking-tighter border-l-8 border-[#F05A22] pl-4">
             Evidências do Checklist (Campo)
           </h3>
@@ -317,13 +319,13 @@ const AuditResult: React.FC<AuditResultProps> = ({ audit, report, onClose }) => 
         </div>
 
         {/* AMOSTRAGEM DE ENTREVISTAS */}
-        <div className="space-y-6">
+        <div className="space-y-6 break-inside-avoid">
           <h3 className="text-xl font-black text-slate-900 flex items-center gap-3 uppercase tracking-tighter border-l-8 border-[#F05A22] pl-4">
             Detalhamento da Amostragem ({audit.entrevistas?.length} Colaboradores)
           </h3>
           <div className="space-y-4">
              {audit.entrevistas?.map((ent, idx) => (
-               <div key={ent.id} className="border-2 border-slate-200 rounded-3xl overflow-hidden break-inside-avoid">
+               <div key={ent.id} className="border-2 border-slate-200 rounded-3xl overflow-hidden break-inside-avoid shadow-sm">
                   <div className="bg-slate-100 p-4 flex justify-between items-center">
                      <div className="flex items-center gap-4">
                         <span className="w-8 h-8 bg-slate-900 text-white rounded-lg flex items-center justify-center font-black text-xs">{idx + 1}</span>
@@ -355,7 +357,7 @@ const AuditResult: React.FC<AuditResultProps> = ({ audit, report, onClose }) => 
         </div>
 
         {/* CONCLUSÃO E ASSINATURAS */}
-        <section className="bg-white p-10 rounded-[2.5rem] border-4 border-slate-900 text-slate-900 space-y-8 break-inside-avoid mt-12 relative overflow-hidden">
+        <section className="bg-white p-10 rounded-[2.5rem] border-4 border-slate-900 text-slate-900 space-y-8 break-inside-avoid mt-12 relative overflow-hidden shadow-lg">
           <div className="flex items-center gap-3">
             <FileText className="text-[#F05A22]" size={32} />
             <h3 className="text-2xl font-black uppercase tracking-tighter">Conclusão Executiva</h3>
@@ -398,7 +400,7 @@ const AuditResult: React.FC<AuditResultProps> = ({ audit, report, onClose }) => 
           </div>
         </section>
 
-        <div className="pt-10 text-center text-[9px] font-black text-slate-300 uppercase tracking-[0.4em]">
+        <div className="pt-10 text-center text-[9px] font-black text-slate-300 uppercase tracking-[0.4em] break-inside-avoid">
            DOCUMENTO CONFIDENCIAL - USO INTERNO
         </div>
       </div>
