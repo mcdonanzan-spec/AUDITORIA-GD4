@@ -204,7 +204,7 @@ const AuditWizard: React.FC<AuditWizardProps> = ({ obras, currentUser, onAuditCo
       case 'parcial': return 'bg-amber-500 text-white border-slate-900 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]';
       case 'nao': return 'bg-rose-500 text-white border-slate-900 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]';
       case 'n_a': return 'bg-slate-500 text-white border-slate-900 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]';
-      default: return 'bg-slate-900 text-white border-slate-900';
+      default: return 'bg-slate-900 text-white border-slate-900 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]';
     }
   };
 
@@ -323,15 +323,25 @@ const AuditWizard: React.FC<AuditWizardProps> = ({ obras, currentUser, onAuditCo
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
               <div className="space-y-3">
                 <label className="text-[10px] font-black text-slate-500 uppercase flex items-center gap-2"><Users size={16} /> Efetivo Real</label>
-                <input type="number" className="w-full bg-slate-50 border-4 border-slate-900 rounded-2xl px-6 py-5 font-black text-4xl" value={equipeCampo} onChange={e => setEquipeCampo(e.target.value)} />
+                <input 
+                  type="number" 
+                  className="w-full bg-slate-50 border-4 border-slate-900 rounded-2xl px-6 py-5 font-black text-4xl text-slate-900" 
+                  value={equipeCampo} 
+                  onChange={e => setEquipeCampo(e.target.value)} 
+                />
               </div>
               <div className="space-y-3">
                 <label className="text-[10px] font-black text-slate-500 uppercase flex items-center gap-2"><Database size={16} /> Efetivo GD4</label>
-                <input type="number" className="w-full bg-slate-50 border-4 border-slate-900 rounded-2xl px-6 py-5 font-black text-4xl" value={equipeGd4} onChange={e => setEquipeGd4(e.target.value)} />
+                <input 
+                  type="number" 
+                  className="w-full bg-slate-50 border-4 border-slate-900 rounded-2xl px-6 py-5 font-black text-4xl text-slate-900" 
+                  value={equipeGd4} 
+                  onChange={e => setEquipeGd4(e.target.value)} 
+                />
               </div>
             </div>
             <div className="space-y-4">
-              <label className="text-sm font-black uppercase">Quarteirização Autorizada?</label>
+              <label className="text-sm font-black uppercase text-slate-900">Quarteirização Autorizada?</label>
               <div className="flex gap-4">
                 {[true, false].map((val) => (
                   <button key={val ? 's' : 'n'} onClick={() => setSubcontratacaoRegular(val)} className={`flex-1 py-6 rounded-2xl font-black border-4 transition-all ${subcontratacaoRegular === val ? 'bg-slate-900 text-white' : 'bg-slate-50 text-slate-400 border-slate-200'}`}>{val ? 'SIM' : 'NÃO'}</button>
@@ -343,14 +353,14 @@ const AuditWizard: React.FC<AuditWizardProps> = ({ obras, currentUser, onAuditCo
           <div className="space-y-8">
             <div className="flex justify-between items-center bg-slate-900 p-6 rounded-3xl text-white border-4 border-slate-900 shadow-[6px_6px_0px_0px_rgba(15,23,42,1)]">
                <h4 className="font-black uppercase text-sm">Amostragem Operacional</h4>
-               <button onClick={addEntrevistado} className="bg-[#F05A22] px-6 py-3 rounded-2xl font-black text-xs uppercase flex items-center gap-2 shadow-sm"><Plus size={18} /> Add Colaborador</button>
+               <button onClick={addEntrevistado} className="bg-[#F05A22] px-6 py-3 rounded-2xl font-black text-xs uppercase flex items-center gap-2 shadow-sm hover:bg-slate-900 transition-colors"><Plus size={18} /> Add Colaborador</button>
             </div>
             {entrevistas.map((ent, idx) => (
               <div key={ent.id} className="bg-white rounded-[2.5rem] border-4 border-slate-900 overflow-hidden shadow-[8px_8px_0px_0px_rgba(15,23,42,1)]">
                  <div className="bg-slate-50 p-6 border-b-4 border-slate-900 flex justify-between items-center">
                     <div className="flex gap-4 flex-1">
-                      <input placeholder="Função" className="bg-white border-2 border-slate-200 rounded-xl px-4 py-2 font-black text-xs flex-1 uppercase" value={ent.funcao} onChange={e => setEntrevistas(ev => ev.map(it => it.id === ent.id ? {...it, funcao: e.target.value} : it))} />
-                      <input placeholder="Empresa" className="bg-white border-2 border-slate-200 rounded-xl px-4 py-2 font-black text-xs flex-1 uppercase" value={ent.empresa} onChange={e => setEntrevistas(ev => ev.map(it => it.id === ent.id ? {...it, empresa: e.target.value} : it))} />
+                      <input placeholder="Função" className="bg-white border-4 border-slate-900 rounded-xl px-4 py-2 font-black text-xs flex-1 uppercase text-slate-900" value={ent.funcao} onChange={e => setEntrevistas(ev => ev.map(it => it.id === ent.id ? {...it, funcao: e.target.value} : it))} />
+                      <input placeholder="Empresa" className="bg-white border-4 border-slate-900 rounded-xl px-4 py-2 font-black text-xs flex-1 uppercase text-slate-900" value={ent.empresa} onChange={e => setEntrevistas(ev => ev.map(it => it.id === ent.id ? {...it, empresa: e.target.value} : it))} />
                     </div>
                     <button onClick={() => removeEntrevistado(ent.id)} className="p-3 text-rose-600 hover:bg-rose-50 rounded-xl transition-all"><Trash2 size={20} /></button>
                  </div>
@@ -363,7 +373,7 @@ const AuditWizard: React.FC<AuditWizardProps> = ({ obras, currentUser, onAuditCo
                              <button 
                               key={v} 
                               onClick={() => updateEntrevista(ent.id, q.id, v as any)} 
-                              className={`flex-1 py-3 rounded-xl font-black text-[10px] uppercase border-4 transition-all ${ent.respostas.find(r => r.pergunta_id === q.id)?.resposta === v ? (v === 'sim' ? 'bg-emerald-500 border-slate-900 text-white' : 'bg-rose-500 border-slate-900 text-white') : 'bg-white text-slate-400 border-slate-100'}`}
+                              className={`flex-1 py-3 rounded-xl font-black text-[10px] uppercase border-4 transition-all ${ent.respostas.find(r => r.pergunta_id === q.id)?.resposta === v ? (v === 'sim' ? 'bg-emerald-500 border-slate-900 text-white' : 'bg-rose-500 border-slate-900 text-white shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]') : 'bg-white text-slate-400 border-slate-100'}`}
                              >
                               {v}
                              </button>
@@ -433,7 +443,7 @@ const AuditWizard: React.FC<AuditWizardProps> = ({ obras, currentUser, onAuditCo
                 {needsObs && (
                   <textarea 
                     placeholder="⚠️ Observação obrigatória: Justifique o desvio identificado..." 
-                    className="w-full border-4 border-slate-900 rounded-2xl p-5 font-black bg-rose-50 placeholder:text-rose-300 focus:ring-4 focus:ring-rose-500/10 outline-none transition-all" 
+                    className="w-full border-4 border-slate-900 rounded-2xl p-5 font-black bg-rose-50 placeholder:text-rose-300 focus:ring-4 focus:ring-rose-500/10 outline-none transition-all text-slate-900" 
                     value={resp.observacao || ''} 
                     onChange={e => handleObsChange(q.id, e.target.value)} 
                   />

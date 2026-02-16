@@ -12,9 +12,8 @@ import {
   Loader2,
   Coins,
   TrendingDown,
-  ArrowRightLeft,
-  Gavel,
-  Calculator
+  Calculator,
+  Gavel
 } from 'lucide-react';
 import { Audit, AIAnalysisResult } from '../types';
 import { QUESTIONS } from '../constants';
@@ -80,8 +79,7 @@ const AuditResult: React.FC<AuditResultProps> = ({ audit, report, onClose }) => 
         logging: false,
         backgroundColor: '#FFFFFF',
         onclone: (clonedDoc: Document) => {
-          // CORREÇÃO CRÍTICA PARA PDF EM BRANCO:
-          // Força visibilidade total e remove delays de animação no clone de captura
+          // FORÇA VISIBILIDADE TOTAL NO CLONE
           const reportClone = clonedDoc.getElementById('relatorio-unita-premium');
           if (reportClone) {
             reportClone.style.opacity = '1';
@@ -89,14 +87,16 @@ const AuditResult: React.FC<AuditResultProps> = ({ audit, report, onClose }) => 
             reportClone.style.display = 'block';
             reportClone.style.transform = 'none';
             
-            // Localiza e "limpa" todos os elementos animados que possam estar com opacidade zero
-            const anims = reportClone.querySelectorAll('.animate-in, .fade-in, .duration-500');
-            anims.forEach((el: any) => {
+            // Remove animações de todos os elementos dentro do relatório
+            const allElements = reportClone.querySelectorAll('*');
+            allElements.forEach((el: any) => {
               el.style.opacity = '1';
               el.style.visibility = 'visible';
               el.style.transform = 'none';
               el.style.animation = 'none';
               el.style.transition = 'none';
+              // Remove classes específicas do Tailwind que causam opacidade zero
+              el.classList.remove('animate-in', 'fade-in', 'duration-500', 'translate-y-4');
             });
           }
         }
@@ -106,8 +106,8 @@ const AuditResult: React.FC<AuditResultProps> = ({ audit, report, onClose }) => 
     };
 
     try {
-      // Pequeno delay para garantir que o browser terminou layouts internos
-      await new Promise(r => setTimeout(r, 200));
+      // Pequeno delay para estabilização
+      await new Promise(r => setTimeout(r, 300));
       // @ts-ignore
       await html2pdf().set(opt).from(element).save();
     } catch (err) {
@@ -142,7 +142,7 @@ const AuditResult: React.FC<AuditResultProps> = ({ audit, report, onClose }) => 
       </header>
 
       {/* ÁREA DO RELATÓRIO COM ESTÉTICA PREMIUM BRUTALISTA */}
-      <div id="relatorio-unita-premium" className="bg-white p-4 md:p-10 space-y-12 text-slate-900 border-x-4 border-slate-50">
+      <div id="relatorio-unita-premium" className="bg-white p-4 md:p-10 space-y-12 text-slate-900 border-x-4 border-slate-50 opacity-100 visible">
         
         {/* HEADER PDF */}
         <div className="flex justify-between items-start border-b-8 border-slate-900 pb-10 mb-10 bg-white">
@@ -254,9 +254,9 @@ const AuditResult: React.FC<AuditResultProps> = ({ audit, report, onClose }) => 
                      <p className="text-lg font-black text-slate-900 uppercase tracking-tight leading-tight">
                        {QUESTIONS.find(q => q.id === r.pergunta_id)?.texto}
                      </p>
-                     <div className="bg-white p-5 rounded-2xl border-4 border-rose-100 shadow-inner">
+                     <div className="bg-white p-5 rounded-2xl border-4 border-rose-100 shadow-inner text-slate-900 font-bold">
                         <p className="text-[10px] font-black text-rose-600 uppercase mb-2">Desvio Técnico:</p>
-                        <p className="text-sm font-bold text-slate-700 uppercase italic">
+                        <p className="text-sm uppercase italic">
                            {r.observacao}
                         </p>
                      </div>
@@ -298,7 +298,6 @@ const AuditResult: React.FC<AuditResultProps> = ({ audit, report, onClose }) => 
                </div>
             </div>
           </div>
-          <div className="absolute top-0 right-0 w-64 h-64 bg-[#F05A22]/5 blur-[100px] rounded-full"></div>
         </section>
 
         <div className="pt-10 text-center text-[10px] font-black text-slate-200 uppercase tracking-[0.6em]">
