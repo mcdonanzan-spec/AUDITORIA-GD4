@@ -69,41 +69,51 @@ const AuditResult: React.FC<AuditResultProps> = ({ audit, report, onClose }) => 
     if (isGenerating) return;
     setIsGenerating(true);
 
-    // Pequeno delay para garantir que o estado 'isGenerating' foi renderizado e o DOM está estável
-    await new Promise(resolve => setTimeout(resolve, 500));
-
-    const element = document.getElementById('relatorio-tecnico-unita');
-    if (!element) {
-      alert("Erro ao localizar conteúdo do relatório.");
-      setIsGenerating(false);
-      return;
-    }
-
-    // Configurações avançadas para evitar PDF em branco
-    const opt = {
-      margin: [10, 5, 10, 5],
-      filename: `Relatorio_Unita_${audit.obra_id}_${new Date().toLocaleDateString('pt-BR').replace(/\//g, '-')}.pdf`,
-      image: { type: 'jpeg', quality: 0.98 },
-      html2canvas: { 
-        scale: 2, 
-        useCORS: true, 
-        letterRendering: true, 
-        backgroundColor: '#FFFFFF',
-        logging: false,
-        scrollY: 0,
-        windowWidth: 1024 // Força largura de visualização para cálculo de layout consistente
-      },
-      jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
-      pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
-    };
-
     try {
+      // 1. Localizar o elemento
+      const element = document.getElementById('relatorio-tecnico-unita');
+      if (!element) throw new Error("Elemento não encontrado");
+
+      // 2. Garantir que todas as imagens estão carregadas antes de iniciar
+      const images = Array.from(element.getElementsByTagName('img'));
+      await Promise.all(images.map(img => {
+        if (img.complete) return Promise.resolve();
+        return new Promise(resolve => {
+          img.onload = resolve;
+          img.onerror = resolve;
+        });
+      }));
+
+      // 3. Aguardar renderização final das fontes e estilos
+      await new Promise(resolve => setTimeout(resolve, 1000));
+
+      // 4. Configuração otimizada para evitar páginas em branco
+      const opt = {
+        margin: [10, 10, 10, 10],
+        filename: `Unita_Relatorio_${audit.obra_id}_${Date.now()}.pdf`,
+        image: { type: 'jpeg', quality: 1.0 },
+        html2canvas: { 
+          scale: 2, 
+          useCORS: true, 
+          logging: false,
+          letterRendering: true,
+          allowTaint: true,
+          backgroundColor: '#FFFFFF',
+          // Importante: garante que capture do topo
+          scrollY: -window.scrollY,
+          windowWidth: document.documentElement.offsetWidth,
+        },
+        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+        pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
+      };
+
+      // 5. Executar geração
       // @ts-ignore
-      const worker = html2pdf().set(opt).from(element);
-      await worker.save();
+      await html2pdf().set(opt).from(element).save();
+
     } catch (error) {
-      console.error("Erro ao gerar PDF:", error);
-      alert("Falha ao gerar o documento. Tente novamente em instantes.");
+      console.error("Erro na geração do PDF:", error);
+      alert("Houve um erro técnico na geração do arquivo. Por favor, tente novamente.");
     } finally {
       setIsGenerating(false);
     }
@@ -151,8 +161,12 @@ const AuditResult: React.FC<AuditResultProps> = ({ audit, report, onClose }) => 
         </div>
       </header>
 
-      {/* Container Principal do Relatório - Forçamos bg-white e texto black para garantir visibilidade no Canvas */}
-      <div id="relatorio-tecnico-unita" className="bg-white p-4 md:p-8 space-y-10 text-slate-900">
+      {/* Container Principal do Relatório - Classes explícitas de visibilidade e cor */}
+      <div 
+        id="relatorio-tecnico-unita" 
+        className="bg-white p-8 md:p-12 space-y-12 text-slate-900 border-x-2 border-slate-100 min-h-[1000px] visible opacity-100"
+        style={{ backgroundColor: '#FFFFFF', color: '#0f172a' }}
+      >
         
         {/* CABEÇALHO DO RELATÓRIO PDF */}
         <div className="flex justify-between items-start border-b-8 border-slate-900 pb-10 mb-10 break-inside-avoid bg-white">
@@ -222,7 +236,7 @@ const AuditResult: React.FC<AuditResultProps> = ({ audit, report, onClose }) => 
                      </div>
                      <span className="text-2xl font-black text-slate-900">{audit.equipe_gd4}</span>
                   </div>
-                  <div className={`flex items-center justify-between pt-2 ${divergenciaEfetivo > 0 ? 'text-rose-600' : 'text-emerald-600'}`}>
+                  <div className={`flex items-center justify-between pt-2 ${divergenciaEfetivo > 0 ? 'text-rose-600 font-bold' : 'text-emerald-600 font-bold'}`}>
                      <div className="flex items-center gap-3">
                         <ArrowRightLeft size={20} />
                         <span className="text-[10px] font-black uppercase tracking-widest">Divergência Detectada</span>
@@ -310,21 +324,21 @@ const AuditResult: React.FC<AuditResultProps> = ({ audit, report, onClose }) => 
           <h3 className="text-xl font-black text-slate-900 flex items-center gap-3 uppercase tracking-tighter border-l-8 border-[#F05A22] pl-4">
             Evidências do Checklist (Campo)
           </h3>
-          <div className="grid grid-cols-1 gap-2">
+          <div className="grid grid-cols-1 gap-4">
              {QUESTIONS.map(q => {
                const r = audit.respostas.find(res => res.pergunta_id === q.id);
                if (!r) return null;
                return (
-                 <div key={q.id} className="flex items-start gap-4 p-4 bg-slate-50 rounded-2xl border border-slate-200 break-inside-avoid">
-                    <div className={`shrink-0 w-8 h-8 rounded-lg flex items-center justify-center font-black text-[10px] text-white border-2 border-slate-900 ${r.resposta === 'sim' ? 'bg-emerald-500' : r.resposta === 'nao' ? 'bg-rose-500' : 'bg-amber-500'}`}>
+                 <div key={q.id} className="flex items-start gap-4 p-5 bg-slate-50 rounded-2xl border border-slate-200 break-inside-avoid shadow-sm">
+                    <div className={`shrink-0 w-10 h-10 rounded-xl flex items-center justify-center font-black text-[12px] text-white border-2 border-slate-900 shadow-sm ${r.resposta === 'sim' ? 'bg-emerald-500' : r.resposta === 'nao' ? 'bg-rose-500' : 'bg-amber-500'}`}>
                       {r.resposta.toUpperCase()}
                     </div>
-                    <div className="flex-1 space-y-1">
-                       <p className="text-[11px] font-black text-slate-900 uppercase tracking-tight leading-tight">{q.texto}</p>
-                       {r.observacao && <p className="text-[10px] text-rose-600 font-black uppercase">⚠️ OBS: {r.observacao}</p>}
+                    <div className="flex-1 space-y-2">
+                       <p className="text-[13px] font-black text-slate-900 uppercase tracking-tight leading-tight">{q.texto}</p>
+                       {r.observacao && <p className="text-[11px] text-rose-600 font-black uppercase bg-white p-2 border border-rose-100 rounded-lg">⚠️ OBS: {r.observacao}</p>}
                        {r.fotos && r.fotos.length > 0 && (
-                         <div className="flex gap-2 pt-2">
-                            {r.fotos.map((f, i) => <img key={i} src={f} className="w-20 h-20 rounded-lg border-2 border-slate-300 object-cover" />)}
+                         <div className="flex gap-3 pt-2">
+                            {r.fotos.map((f, i) => <img key={i} src={f} className="w-24 h-24 rounded-xl border-2 border-slate-300 object-cover shadow-sm" />)}
                          </div>
                        )}
                     </div>
@@ -341,27 +355,27 @@ const AuditResult: React.FC<AuditResultProps> = ({ audit, report, onClose }) => 
           </h3>
           <div className="space-y-4">
              {audit.entrevistas?.map((ent, idx) => (
-               <div key={ent.id} className="border-2 border-slate-200 rounded-3xl overflow-hidden break-inside-avoid shadow-sm bg-white">
-                  <div className="bg-slate-100 p-4 flex justify-between items-center">
+               <div key={ent.id} className="border-4 border-slate-100 rounded-[2.5rem] overflow-hidden break-inside-avoid shadow-sm bg-white">
+                  <div className="bg-slate-900 p-5 flex justify-between items-center text-white">
                      <div className="flex items-center gap-4">
-                        <span className="w-8 h-8 bg-slate-900 text-white rounded-lg flex items-center justify-center font-black text-xs">{idx + 1}</span>
+                        <span className="w-10 h-10 bg-[#F05A22] text-white rounded-xl flex items-center justify-center font-black text-sm border-2 border-white/20">{idx + 1}</span>
                         <div className="flex flex-col">
-                          <span className="text-[10px] font-black uppercase text-slate-500">Função Auditada</span>
-                          <span className="text-xs font-black uppercase tracking-tight text-slate-900">{ent.funcao || 'NÃO INFORMADA'}</span>
+                          <span className="text-[9px] font-black uppercase text-slate-400 tracking-widest">Função Auditada</span>
+                          <span className="text-sm font-black uppercase tracking-tight text-white">{ent.funcao || 'NÃO INFORMADA'}</span>
                         </div>
                      </div>
                      <div className="flex items-center gap-2 text-right">
-                        <Building2 size={14} className="text-[#F05A22]" />
-                        <span className="text-[10px] font-black uppercase tracking-widest text-slate-900">{ent.empresa || 'NÃO INFORMADA'}</span>
+                        <Building2 size={16} className="text-[#F05A22]" />
+                        <span className="text-[10px] font-black uppercase tracking-widest text-slate-100">{ent.empresa || 'NÃO INFORMADA'}</span>
                      </div>
                   </div>
-                  <div className="p-4 grid grid-cols-2 gap-2 bg-white">
+                  <div className="p-6 grid grid-cols-2 gap-4 bg-white">
                      {ent.respostas.map(r => (
-                       <div key={r.pergunta_id} className="flex justify-between items-center bg-slate-50 p-2 rounded-xl border border-slate-100">
-                          <span className="text-[9px] font-black text-slate-500 uppercase flex-1 pr-2 leading-none">
+                       <div key={r.pergunta_id} className="flex justify-between items-center bg-slate-50 p-3 rounded-2xl border border-slate-200">
+                          <span className="text-[10px] font-black text-slate-600 uppercase flex-1 pr-3 leading-tight">
                              {INTERVIEW_QUESTIONS.find(iq => iq.id === r.pergunta_id)?.texto}
                           </span>
-                          <span className={`text-[9px] font-black uppercase px-2 py-1 rounded-md ${r.resposta === 'sim' ? 'text-emerald-600 bg-emerald-50' : r.resposta === 'parcial' ? 'text-amber-600 bg-amber-50' : 'text-rose-600 bg-rose-50'}`}>
+                          <span className={`text-[10px] font-black uppercase px-3 py-1.5 rounded-xl border ${r.resposta === 'sim' ? 'text-emerald-700 bg-emerald-50 border-emerald-200' : r.resposta === 'parcial' ? 'text-amber-700 bg-amber-50 border-amber-200' : 'text-rose-700 bg-rose-50 border-rose-200'}`}>
                              {r.resposta}
                           </span>
                        </div>
@@ -373,51 +387,51 @@ const AuditResult: React.FC<AuditResultProps> = ({ audit, report, onClose }) => 
         </div>
 
         {/* CONCLUSÃO E ASSINATURAS */}
-        <section className="bg-white p-10 rounded-[2.5rem] border-4 border-slate-900 text-slate-900 space-y-8 break-inside-avoid mt-12 relative overflow-hidden shadow-lg bg-white">
+        <section className="bg-white p-12 rounded-[3rem] border-8 border-slate-900 text-slate-900 space-y-10 break-inside-avoid mt-16 relative overflow-hidden shadow-2xl bg-white">
           <div className="flex items-center gap-3">
-            <FileText className="text-[#F05A22]" size={32} />
-            <h3 className="text-2xl font-black uppercase tracking-tighter">Conclusão Executiva</h3>
+            <FileText className="text-[#F05A22]" size={40} />
+            <h3 className="text-3xl font-black uppercase tracking-tighter text-slate-900">Conclusão Executiva</h3>
           </div>
-          <p className="text-lg leading-relaxed font-black italic border-l-8 border-slate-900 pl-8 py-4 bg-slate-50">
+          <p className="text-xl leading-relaxed font-black italic border-l-[12px] border-[#F05A22] pl-10 py-6 bg-slate-50 rounded-r-2xl">
             "{report.conclusaoExecutiva}"
           </p>
           
-          <div className="pt-20 space-y-16">
-             <div className="grid grid-cols-2 gap-16">
+          <div className="pt-24 space-y-20">
+             <div className="grid grid-cols-2 gap-20">
                 <div className="flex flex-col items-center">
-                   <div className="w-full h-24 border-b-2 border-slate-300 flex items-center justify-center mb-4 relative">
-                      <span className="text-[10px] text-slate-300 font-bold uppercase tracking-[0.4em] absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 select-none pointer-events-none text-center px-4">
-                         Assinatura Digital AuditRisk
+                   <div className="w-full h-24 border-b-4 border-slate-200 flex items-center justify-center mb-6 relative">
+                      <span className="text-[11px] text-slate-200 font-bold uppercase tracking-[0.5em] absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 select-none pointer-events-none text-center px-4">
+                         Autenticação Digital Unità
                       </span>
                    </div>
-                   <p className="text-[12px] font-black uppercase tracking-widest text-slate-900">Auditor Unità S.A.</p>
-                   <p className="text-[9px] font-bold text-slate-400 mt-1 uppercase tracking-tighter italic">Responsável pela Coleta</p>
+                   <p className="text-[14px] font-black uppercase tracking-widest text-slate-900">Departamento de Auditoria</p>
+                   <p className="text-[10px] font-bold text-slate-400 mt-2 uppercase tracking-tighter italic">Responsável Governança</p>
                 </div>
                 <div className="flex flex-col items-center">
-                   <div className="w-full h-24 border-b-2 border-slate-300 flex items-center justify-center mb-4 relative">
-                      <span className="text-[10px] text-slate-300 font-bold uppercase tracking-[0.4em] absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 select-none pointer-events-none text-center px-4">
-                         Assinatura Responsável Obra
+                   <div className="w-full h-24 border-b-4 border-slate-200 flex items-center justify-center mb-6 relative">
+                      <span className="text-[11px] text-slate-200 font-bold uppercase tracking-[0.5em] absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 select-none pointer-events-none text-center px-4">
+                         Visto Engenheiro Residente
                       </span>
                    </div>
-                   <p className="text-[12px] font-black uppercase tracking-widest text-slate-900">Engenheiro da Unidade</p>
-                   <p className="text-[9px] font-bold text-slate-400 mt-1 uppercase tracking-tighter italic">Ciente do Risco de {audit.equipe_campo} p.</p>
+                   <p className="text-[14px] font-black uppercase tracking-widest text-slate-900">Responsável pela Unidade</p>
+                   <p className="text-[10px] font-bold text-slate-400 mt-2 uppercase tracking-tighter italic">Ciente do Risco Consolidado</p>
                 </div>
              </div>
 
-             <div className="pt-8 border-t border-slate-100 flex justify-between items-center text-slate-400">
-                <div className="flex flex-col text-[8px] font-black uppercase tracking-widest">
-                   <span>ID RELATÓRIO: {audit.id.toUpperCase()}</span>
+             <div className="pt-10 border-t-2 border-slate-100 flex justify-between items-center text-slate-400">
+                <div className="flex flex-col text-[10px] font-black uppercase tracking-widest">
+                   <span>ID PROTOCOLO: {audit.id.toUpperCase()}</span>
                 </div>
                 <div className="text-right flex flex-col items-end">
-                   <span className="text-[8px] font-black uppercase tracking-widest">Tecnologia AuditRisk v2.5</span>
-                   <span className="text-[10px] font-black text-[#F05A22] uppercase tracking-tighter">Unità Engenharia S.A.</span>
+                   <span className="text-[9px] font-black uppercase tracking-widest">Tecnologia AuditRisk Unità Engenharia S.A.</span>
+                   <span className="text-[12px] font-black text-[#F05A22] uppercase tracking-tighter">Conformidade Operacional v2.5</span>
                 </div>
              </div>
           </div>
         </section>
 
-        <div className="pt-10 text-center text-[9px] font-black text-slate-300 uppercase tracking-[0.4em] break-inside-avoid">
-           DOCUMENTO CONFIDENCIAL - USO INTERNO
+        <div className="pt-16 pb-10 text-center text-[10px] font-black text-slate-200 uppercase tracking-[0.6em] break-inside-avoid bg-white">
+           DOCUMENTO CONFIDENCIAL - USO INTERNO EXCLUSIVO
         </div>
       </div>
     </div>
