@@ -8,10 +8,51 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
       @media print {
-        body { background-color: white !important; }
-        aside, nav, header, button, .print-hidden { display: none !important; }
-        main { margin: 0 !important; padding: 0 !important; }
-        .print-break-inside-avoid { break-inside: avoid; }
+        /* Remove elementos de interface */
+        aside, nav, header, button, .print-hidden, [role="button"] { 
+          display: none !important; 
+        }
+        
+        /* Reseta containers para permitir múltiplas páginas */
+        html, body {
+          background-color: white !important;
+          height: auto !important;
+          overflow: visible !important;
+          margin: 0 !important;
+          padding: 0 !important;
+        }
+
+        #root, main, .max-w-7xl {
+          width: 100% !important;
+          max-width: none !important;
+          margin: 0 !important;
+          padding: 0 !important;
+          overflow: visible !important;
+          display: block !important;
+          position: relative !important;
+        }
+
+        /* Força cores de fundo no PDF (Tailwind print:bg-white não é suficiente às vezes) */
+        .print-bg-force {
+          print-color-adjust: exact;
+          -webkit-print-color-adjust: exact;
+        }
+
+        .print-break-inside-avoid { 
+          break-inside: avoid; 
+        }
+
+        /* Remove sombras no PDF para economizar tinta e manter clareza */
+        * {
+          box-shadow: none !important;
+          text-shadow: none !important;
+        }
+
+        /* Ajuste de margens da página */
+        @page {
+          margin: 1.5cm;
+          size: portrait;
+        }
       }
     </style>
   <script type="importmap">
