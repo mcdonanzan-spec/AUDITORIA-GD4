@@ -6,65 +6,20 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>AuditRisk - Governança Digital</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <style>
-      /* Estilos para tela normal */
       body {
         -webkit-tap-highlight-color: transparent;
       }
 
-      /* ESTRUTURA DE IMPRESSÃO PROFISSIONAL */
+      /* Estilos específicos para garantir que o PDF saia com as cores corretas */
+      .pdf-fix {
+        background-color: white !important;
+        color: black !important;
+      }
+      
       @media print {
-        /* Configurações de Página */
-        @page {
-          margin: 1.5cm;
-          size: portrait;
-        }
-
-        /* Esconde ABSOLUTAMENTE TUDO da interface web */
-        body * {
-          visibility: hidden !important;
-          overflow: visible !important;
-        }
-
-        /* Mostra APENAS o container do relatório e seus filhos */
-        .printable-area, .printable-area * {
-          visibility: visible !important;
-        }
-
-        /* Reposiciona o relatório no topo da folha para evitar espaços em branco */
-        .printable-area {
-          position: absolute !important;
-          left: 0 !important;
-          top: 0 !important;
-          width: 100% !important;
-          margin: 0 !important;
-          padding: 0 !important;
-          display: block !important;
-          background: white !important;
-        }
-
-        /* Reseta elementos de layout que travam a impressão */
-        html, body {
-          height: auto !important;
-          overflow: visible !important;
-          background: white !important;
-        }
-
-        /* Remove botões e elementos desnecessários no PDF */
-        .print-hidden, button, [role="button"] {
-          display: none !important;
-        }
-
-        /* Força a fidelidade de cores e fundos no PDF */
-        * {
-          -webkit-print-color-adjust: exact !important;
-          print-color-adjust: exact !important;
-        }
-
-        .print-break-inside-avoid {
-          break-inside: avoid;
-          page-break-inside: avoid;
-        }
+        .print-hidden { display: none !important; }
       }
     </style>
   <script type="importmap">
