@@ -2,8 +2,10 @@
 import { Question } from './types';
 
 export const QUESTIONS: Question[] = [
-  { id: 'a1', bloco: 'A', texto: 'O bloqueio automático por pendência documental no GD4 está operando sem liberações manuais na catraca?', peso: 25 },
-  { id: 'a2', bloco: 'A', texto: 'A identificação biométrica/facial é utilizada obrigatoriamente por 100% dos terceiros?', peso: 15 },
+  // BLOCO A - PORTARIA E ACESSO
+  { id: 'a0', bloco: 'A', texto: 'A estrutura física e sistemas da portaria estão aptos ao controle (Catraca/Guarita)?', peso: 30, requiresPhotos: true },
+  { id: 'a1', bloco: 'A', texto: 'Está ocorrendo liberação manual na catraca (burla ao sistema)?', peso: 25 },
+  { id: 'a2', bloco: 'A', texto: 'Todos os terceiros estão com a facial cadastrada no sistema?', peso: 20 },
   
   { id: 'b3', bloco: 'B', texto: 'O efetivo em campo é integralmente composto por funcionários com RE validado no GD4?', peso: 20 },
   { id: 'b4', bloco: 'B', texto: 'A obra está livre de trabalhadores com status "pendente" circulando em frentes de serviço?', peso: 30 },
@@ -17,10 +19,10 @@ export const QUESTIONS: Question[] = [
   { id: 'e2', bloco: 'E', texto: 'Os EPIs utilizados (C.A.) coincidem com o registrado na Ficha de EPI?', peso: 15 },
 
   // BLOCO F - GOVERNANÇA GRD (ITENS 01 E 02)
-  { id: 'f_h1', bloco: 'F', texto: 'Todas as empresas presentes possuem Termo de Qualificação/Habilitação Jurídica válido (Item 01 GRD)?', peso: 25 },
-  { id: 'f_h2', bloco: 'F', texto: 'A manutenção da documentação contratual e de segurança da MÃO DE OBRA PRÓPRIA está atualizada no sistema (Item 02 GRD)?', peso: 30 },
+  { id: 'f_h1', bloco: 'F', texto: 'Todas as empresas presentes possuem Termo de Qualificação válido (Item 01 GRD)?', peso: 25 },
+  { id: 'f_h2', bloco: 'F', texto: 'A manutenção da documentação da MÃO DE OBRA PRÓPRIA está atualizada no sistema (Item 02 GRD)?', peso: 30 },
   { id: 'f_h3', bloco: 'F', texto: 'As certidões negativas (CND, CRF, CNDT) das contratadas estão dentro da validade no sistema?', peso: 20 },
-  { id: 'f_h4', bloco: 'F', texto: 'Os treinamentos obrigatórios (NRs) dos funcionários próprios estão com certificados válidos e inseridos no GD4?', peso: 25 },
+  { id: 'f_h4', bloco: 'F', texto: 'Os treinamentos obrigatórios (NRs) dos funcionários próprios estão com certificados válidos no GD4?', peso: 25 },
 ];
 
 export const INTERVIEW_QUESTIONS: Question[] = [
@@ -31,11 +33,11 @@ export const INTERVIEW_QUESTIONS: Question[] = [
 ];
 
 export const BLOCKS = {
-  A: 'Acesso (GD4)',
-  B: 'Efetivo',
+  A: 'Portaria e Acesso',
+  B: 'Gestão de Efetivo',
   C: 'Subcontratação',
-  D: 'Identificação',
-  E: 'Técnico Campo',
-  F: 'Governança GRD (Itens 01 e 02)',
-  G: 'Amostragem Comportamental'
+  D: 'Identificação Visual',
+  E: 'Técnico de Campo',
+  F: 'Governança GRD (01 e 02)',
+  G: 'Amostragem Operacional'
 };

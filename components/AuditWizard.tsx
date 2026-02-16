@@ -13,7 +13,9 @@ import {
   Trash2, 
   UserCheck, 
   AlertCircle, 
-  LayoutDashboard 
+  LayoutDashboard,
+  Camera,
+  Briefcase
 } from 'lucide-react';
 import { Obra, Question, ResponseValue, AuditResponse, Audit, AIAnalysisResult, EntrevistaAmostral } from '../types';
 import { QUESTIONS, INTERVIEW_QUESTIONS, BLOCKS } from '../constants';
@@ -52,8 +54,19 @@ const AuditWizard: React.FC<AuditWizardProps> = ({ obras, currentUser, onAuditCo
       if (existing) {
         return prev.map(r => r.pergunta_id === questionId ? { ...r, resposta: val } : r);
       }
-      return [...prev, { pergunta_id: questionId, resposta: val }];
+      return [...prev, { pergunta_id: questionId, resposta: val, fotos: [] }];
     });
+  };
+
+  const handleAddPhoto = (questionId: string) => {
+    // Simulação de adição de foto
+    setRespostas(prev => prev.map(r => {
+      if (r.pergunta_id === questionId) {
+        const currentFotos = r.fotos || [];
+        return { ...r, fotos: [...currentFotos, `https://images.unsplash.com/photo-1590644365607-1c5a519a7a37?w=400&auto=format&fit=crop&q=60&id=${Date.now()}`] };
+      }
+      return r;
+    }));
   };
 
   const handleObsChange = (questionId: string, val: string) => {
@@ -64,6 +77,7 @@ const AuditWizard: React.FC<AuditWizardProps> = ({ obras, currentUser, onAuditCo
     const novo: EntrevistaAmostral = {
       id: `ent-${Date.now()}`,
       funcao: '',
+      empresa: '',
       respostas: INTERVIEW_QUESTIONS.map(q => ({ pergunta_id: q.id, resposta: 'sim' }))
     };
     setEntrevistas(prev => [...prev, novo]);
@@ -90,9 +104,14 @@ const AuditWizard: React.FC<AuditWizardProps> = ({ obras, currentUser, onAuditCo
       return equipeCampo !== '' && equipeGd4 !== '' && subcontratacaoRegular !== null;
     }
     if (currentBlockKey === 'G') {
-      return entrevistas.length > 0 && entrevistas.every(e => e.funcao !== '');
+      return entrevistas.length > 0 && entrevistas.every(e => e.funcao !== '' && e.empresa !== '');
     }
-    return currentBlockQuestions.every(q => respostas.find(r => r.pergunta_id === q.id));
+    return currentBlockQuestions.every(q => {
+      const r = respostas.find(resp => resp.pergunta_id === q.id);
+      if (!r) return false;
+      if (q.requiresPhotos && (r.fotos?.length || 0) < 3) return false;
+      return true;
+    });
   };
 
   const coveragePercent = React.useMemo(() => {
@@ -110,8 +129,6 @@ const AuditWizard: React.FC<AuditWizardProps> = ({ obras, currentUser, onAuditCo
       const blockScores = blockKeys.reduce((acc, b) => {
         const qIds = QUESTIONS.filter(q => q.bloco === b).map(q => q.id);
         const bResps = respostas.filter(r => qIds.includes(r.pergunta_id));
-        
-        // Remove respostas N/A do cálculo de média
         const validResps = bResps.filter(r => r.resposta !== 'n_a');
         
         let totalScore = 0;
@@ -133,7 +150,6 @@ const AuditWizard: React.FC<AuditWizardProps> = ({ obras, currentUser, onAuditCo
             return sum + score;
           }, 0) / (validResps.length || 1);
         }
-        
         acc[BLOCKS[b as keyof typeof BLOCKS].toLowerCase().replace(/ /g, '_')] = Math.round(totalScore);
         return acc;
       }, {} as any);
@@ -146,16 +162,13 @@ const AuditWizard: React.FC<AuditWizardProps> = ({ obras, currentUser, onAuditCo
         amostragem: {
           entrevistados: entrevistas.length,
           cobertura: `${coveragePercent}%`,
-          meta_atingida: targetMet,
           detalhes: entrevistas
         },
-        equipe: {
-          campo: Number(equipeCampo),
-          gd4: Number(equipeGd4),
-          subcontratacao_regular: subcontratacaoRegular
-        },
-        ocorrencias_graves: ocorrencias.split('\n').filter(s => s.trim()),
-        respostas_detalhadas: respostas // Enviando respostas brutas para IA detectar N/A
+        respostas_detalhadas: respostas.map(r => ({
+           pergunta: QUESTIONS.find(q => q.id === r.pergunta_id)?.texto,
+           resposta: r.resposta,
+           obs: r.observacao
+        }))
       };
 
       const result = await generateAuditReport(auditPayload);
@@ -193,13 +206,13 @@ const AuditWizard: React.FC<AuditWizardProps> = ({ obras, currentUser, onAuditCo
         <header className="flex flex-col items-center">
           <button 
             onClick={() => onNavigate('dashboard')}
-            className="flex items-center gap-2 px-6 py-2 bg-white border-2 border-slate-200 rounded-xl text-[10px] font-black uppercase tracking-widest text-slate-500 hover:text-[#F05A22] hover:border-[#F05A22] transition-all mb-6"
+            className="flex items-center gap-2 px-6 py-2 bg-white border-2 border-slate-200 rounded-xl text-[10px] font-black uppercase tracking-widest text-slate-500 hover:text-[#F05A22] transition-all mb-6"
           >
             <LayoutDashboard size={14} />
             Voltar ao Dashboard
           </button>
-          <h2 className="text-3xl font-black text-slate-900 uppercase tracking-tighter">Início de Inspeção</h2>
-          <p className="text-[#F05A22] font-black text-xs uppercase tracking-[0.2em] mt-2">Protocolo Unità Engenharia</p>
+          <h2 className="text-3xl font-black text-slate-900 uppercase tracking-tighter">Início de Auditoria</h2>
+          <p className="text-[#F05A22] font-black text-xs uppercase tracking-[0.2em] mt-2">Protocolo de Governança Unità</p>
         </header>
 
         <div className="bg-white p-8 rounded-[2.5rem] shadow-[12px_12px_0px_0px_rgba(15,23,42,1)] border-4 border-slate-900 space-y-8">
@@ -231,7 +244,7 @@ const AuditWizard: React.FC<AuditWizardProps> = ({ obras, currentUser, onAuditCo
               </select>
             </div>
             <div className="space-y-3">
-              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block">Inspetor Responsável</label>
+              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block">Auditor</label>
               <div className="bg-slate-50 border-4 border-slate-900 rounded-2xl px-5 py-5 text-slate-900 flex items-center gap-3 font-black">
                 <UserIcon size={20} className="text-[#F05A22]" />
                 {currentUser.nome}
@@ -262,8 +275,8 @@ const AuditWizard: React.FC<AuditWizardProps> = ({ obras, currentUser, onAuditCo
           </div>
         </div>
         <div className="space-y-3">
-          <h2 className="text-3xl font-black text-slate-900 uppercase tracking-tighter">Sincronizando com GD4</h2>
-          <p className="text-slate-600 font-black text-sm uppercase tracking-widest">Calculando Scoring Unità...</p>
+          <h2 className="text-3xl font-black text-slate-900 uppercase tracking-tighter">Consolidando Matriz de Risco</h2>
+          <p className="text-slate-600 font-black text-sm uppercase tracking-widest">Processando Checklist Unità...</p>
         </div>
       </div>
     );
@@ -288,16 +301,6 @@ const AuditWizard: React.FC<AuditWizardProps> = ({ obras, currentUser, onAuditCo
             </div>
           </div>
         </div>
-        
-        {currentBlockKey === 'G' && (
-          <div className="flex items-center gap-4 bg-white px-6 py-3 rounded-2xl border-4 border-slate-900 shadow-sm">
-             <div className="flex flex-col items-end">
-                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Cobertura Real</span>
-                <span className={`text-xl font-black ${coveragePercent < 10 ? 'text-rose-600' : 'text-emerald-600'}`}>{coveragePercent}% do efetivo</span>
-             </div>
-             <UserCheck size={32} className={`transition-colors ${targetMet ? 'text-emerald-500' : 'text-rose-600'}`} />
-          </div>
-        )}
       </div>
 
       <div className="space-y-6">
@@ -306,7 +309,7 @@ const AuditWizard: React.FC<AuditWizardProps> = ({ obras, currentUser, onAuditCo
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
               <div className="space-y-3">
                 <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest flex items-center gap-2">
-                  <Users size={16} className="text-[#F05A22]" /> Efetivo Real (Campo)
+                  <Users size={16} className="text-[#F05A22]" /> Efetivo em Campo
                 </label>
                 <input 
                   type="number" 
@@ -318,7 +321,7 @@ const AuditWizard: React.FC<AuditWizardProps> = ({ obras, currentUser, onAuditCo
               </div>
               <div className="space-y-3">
                 <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest flex items-center gap-2">
-                  <Database size={16} className="text-[#F05A22]" /> Efetivo GD4 (Sistema)
+                  <Database size={16} className="text-[#F05A22]" /> Efetivo no GD4
                 </label>
                 <input 
                   type="number" 
@@ -352,41 +355,12 @@ const AuditWizard: React.FC<AuditWizardProps> = ({ obras, currentUser, onAuditCo
           </div>
         ) : currentBlockKey === 'G' ? (
           <div className="space-y-8">
-            <div className={`p-8 rounded-[2.5rem] border-4 border-slate-900 transition-all shadow-[8px_8px_0px_0px_rgba(15,23,42,1)] ${targetMet ? 'bg-emerald-50' : 'bg-rose-50'}`}>
-               <div className="flex items-start gap-6">
-                  <div className={`w-14 h-14 rounded-2xl flex items-center justify-center shrink-0 border-2 ${targetMet ? 'bg-emerald-500 text-white border-emerald-700' : 'bg-rose-500 text-white border-rose-700'}`}>
-                    {targetMet ? <UserCheck size={32} /> : <AlertCircle size={32} />}
-                  </div>
-                  <div className="flex-1 space-y-4">
-                    <div className="flex justify-between items-end">
-                       <div>
-                         <h4 className={`text-xl font-black uppercase tracking-tight ${targetMet ? 'text-emerald-900' : 'text-rose-900'}`}>
-                           {targetMet ? 'Amostragem Validada' : 'Meta Estatística: 10%'}
-                         </h4>
-                         <p className={`text-[10px] font-black uppercase tracking-widest ${targetMet ? 'text-emerald-600' : 'text-rose-600'}`}>
-                           {targetMet 
-                            ? 'O rigor metodológico da Unità foi atingido para este canteiro.' 
-                            : `Faltam ${Math.max(0, Math.ceil(Number(equipeCampo) * 0.1) - entrevistas.length)} entrevistas para validação técnica.`}
-                         </p>
-                       </div>
-                       <span className={`text-2xl font-black ${targetMet ? 'text-emerald-700' : 'text-rose-700'}`}>{coveragePercent}% / 10%</span>
-                    </div>
-                    <div className="h-4 bg-white rounded-full border-2 border-slate-900 overflow-hidden">
-                       <div 
-                        className={`h-full transition-all duration-500 ${targetMet ? 'bg-emerald-500' : 'bg-rose-500'}`} 
-                        style={{ width: `${Math.min(100, (coveragePercent / 10) * 100)}%` }}
-                       />
-                    </div>
-                  </div>
-               </div>
-            </div>
-
             <div className="flex justify-between items-center bg-slate-900 p-6 rounded-3xl border-4 border-slate-900 shadow-xl">
                <div className="flex items-center gap-4 text-white">
                   <MessageSquareQuote size={32} className="text-[#F05A22]" />
                   <div>
-                    <h4 className="font-black uppercase text-sm">Console de Amostragem</h4>
-                    <p className="text-xs text-slate-400 font-bold uppercase">Entreviste trabalhadores para validar a documentação da GRD.</p>
+                    <h4 className="font-black uppercase text-sm">Entrevistas de Campo</h4>
+                    <p className="text-xs text-slate-400 font-bold uppercase">Valide a realidade do canteiro com os trabalhadores.</p>
                   </div>
                </div>
                <button 
@@ -394,32 +368,40 @@ const AuditWizard: React.FC<AuditWizardProps> = ({ obras, currentUser, onAuditCo
                 className="bg-[#F05A22] text-white px-6 py-3 rounded-2xl font-black text-xs uppercase tracking-widest flex items-center gap-2 hover:bg-white hover:text-slate-900 transition-all border-2 border-transparent hover:border-slate-900"
                >
                  <Plus size={18} />
-                 Adicionar Entrevistado
+                 Adicionar Colaborador
                </button>
             </div>
 
             <div className="space-y-6">
               {entrevistas.map((ent, entIdx) => (
                 <div key={ent.id} className="bg-white rounded-[2.5rem] border-4 border-slate-900 shadow-[8px_8px_0px_0px_rgba(15,23,42,1)] overflow-hidden animate-in zoom-in-95">
-                   <div className="bg-slate-50 p-6 border-b-4 border-slate-900 flex justify-between items-center">
-                      <div className="flex items-center gap-4">
+                   <div className="bg-slate-50 p-6 border-b-4 border-slate-900 flex justify-between items-center gap-4">
+                      <div className="flex items-center gap-4 flex-1">
                          <div className="w-10 h-10 bg-slate-900 text-white rounded-xl flex items-center justify-center font-black">
                             {entIdx + 1}
                          </div>
-                         <input 
-                            placeholder="Qual a função deste colaborador?"
-                            className="bg-transparent border-b-2 border-slate-300 focus:border-[#F05A22] focus:outline-none font-black text-slate-900 uppercase text-sm px-2 py-1"
-                            value={ent.funcao}
-                            onChange={(e) => {
-                               const val = e.target.value;
-                               setEntrevistas(prev => prev.map(item => item.id === ent.id ? {...item, funcao: val} : item));
-                            }}
-                         />
+                         <div className="grid grid-cols-2 gap-4 flex-1">
+                            <div className="relative">
+                               <Briefcase className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={14} />
+                               <input 
+                                  placeholder="Cargo/Função"
+                                  className="w-full bg-white border-2 border-slate-200 rounded-xl pl-10 pr-4 py-3 font-black text-slate-900 uppercase text-xs"
+                                  value={ent.funcao}
+                                  onChange={(e) => setEntrevistas(prev => prev.map(item => item.id === ent.id ? {...item, funcao: e.target.value} : item))}
+                               />
+                            </div>
+                            <div className="relative">
+                               <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={14} />
+                               <input 
+                                  placeholder="Nome da Empresa"
+                                  className="w-full bg-white border-2 border-slate-200 rounded-xl pl-10 pr-4 py-3 font-black text-slate-900 uppercase text-xs"
+                                  value={ent.empresa}
+                                  onChange={(e) => setEntrevistas(prev => prev.map(item => item.id === ent.id ? {...item, empresa: e.target.value} : item))}
+                               />
+                            </div>
+                         </div>
                       </div>
-                      <button 
-                        onClick={() => removeEntrevistado(ent.id)}
-                        className="p-3 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-all"
-                      >
+                      <button onClick={() => removeEntrevistado(ent.id)} className="p-3 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-all">
                         <Trash2 size={20} />
                       </button>
                    </div>
@@ -428,7 +410,7 @@ const AuditWizard: React.FC<AuditWizardProps> = ({ obras, currentUser, onAuditCo
                         const r = ent.respostas.find(item => item.pergunta_id === q.id);
                         return (
                           <div key={q.id} className="space-y-4">
-                             <p className="text-xs font-black text-slate-600 uppercase tracking-tight leading-tight min-h-[32px]">{q.texto}</p>
+                             <p className="text-xs font-black text-slate-600 uppercase tracking-tight leading-tight">{q.texto}</p>
                              <div className="flex gap-2">
                                 {(['sim', 'parcial', 'nao', 'n_a'] as ResponseValue[]).map(v => (
                                   <button
@@ -482,13 +464,40 @@ const AuditWizard: React.FC<AuditWizardProps> = ({ obras, currentUser, onAuditCo
                   ))}
                 </div>
 
+                {q.requiresPhotos && (
+                  <div className="bg-slate-50 p-6 rounded-2xl border-4 border-slate-900 space-y-4">
+                    <div className="flex justify-between items-center">
+                      <p className="text-xs font-black text-slate-900 uppercase tracking-widest flex items-center gap-2">
+                         <Camera size={16} className="text-[#F05A22]" /> 
+                         Evidências da Estrutura (Mínimo 3 Fotos)
+                      </p>
+                      <span className="text-xs font-black text-[#F05A22]">{resp?.fotos?.length || 0}/3</span>
+                    </div>
+                    <div className="flex gap-4">
+                       {(resp?.fotos || []).map((f, i) => (
+                         <div key={i} className="w-24 h-24 rounded-xl border-4 border-slate-900 overflow-hidden shadow-sm relative">
+                            <img src={f} className="w-full h-full object-cover" />
+                         </div>
+                       ))}
+                       {(resp?.fotos?.length || 0) < 5 && (
+                         <button 
+                           onClick={() => handleAddPhoto(q.id)}
+                           className="w-24 h-24 rounded-xl border-4 border-dashed border-slate-300 flex flex-col items-center justify-center text-slate-400 hover:text-[#F05A22] hover:border-[#F05A22] transition-all bg-white"
+                         >
+                           <Plus size={24} />
+                           <span className="text-[10px] font-black uppercase">Adicionar</span>
+                         </button>
+                       )}
+                    </div>
+                  </div>
+                )}
+
                 {needsObs && (
                   <div className="animate-in slide-in-from-top-3 duration-300">
-                    <label className="text-[10px] font-black text-rose-700 uppercase tracking-widest mb-2 block">Evidência / Observação Crítica</label>
                     <textarea
                       value={resp.observacao || ''}
                       onChange={(e) => handleObsChange(q.id, e.target.value)}
-                      placeholder="Relate o desvio técnico encontrado..."
+                      placeholder="Descreva o desvio ou justificativa técnica..."
                       className="w-full bg-rose-50 border-4 border-rose-200 rounded-2xl p-5 text-lg font-black text-slate-900 focus:ring-4 focus:ring-rose-600/20 focus:outline-none min-h-[120px]"
                     />
                   </div>
@@ -500,35 +509,21 @@ const AuditWizard: React.FC<AuditWizardProps> = ({ obras, currentUser, onAuditCo
       </div>
 
       <footer className="flex justify-between items-center py-16">
-        <button
-          onClick={() => {
-            if (currentBlockIdx === 0) setStep('setup');
-            else setCurrentBlockIdx(prev => prev - 1);
-          }}
-          className="flex items-center gap-2 font-black text-slate-900 hover:text-orange-600 transition-colors uppercase text-sm tracking-widest group"
-        >
+        <button onClick={() => currentBlockIdx === 0 ? setStep('setup') : setCurrentBlockIdx(prev => prev - 1)} className="flex items-center gap-2 font-black text-slate-900 hover:text-orange-600 uppercase text-sm tracking-widest group">
           <ChevronLeft size={28} className="group-hover:-translate-x-1 transition-transform" />
-          Etapa Anterior
+          Voltar
         </button>
 
-        {currentBlockIdx === blockKeys.length - 1 ? (
-          <button
-            disabled={!isBlockComplete()}
-            onClick={handleSubmit}
-            className="bg-slate-900 text-white px-16 py-7 rounded-2xl font-black text-xl hover:bg-[#F05A22] disabled:opacity-50 transition-all shadow-[0_10px_0_0_rgb(0,0,0)] border-4 border-slate-900 active:translate-y-2 active:shadow-none uppercase tracking-widest"
-          >
-            FINALIZAR AUDITORIA
-          </button>
-        ) : (
-          <button
-            disabled={!isBlockComplete()}
-            onClick={() => setCurrentBlockIdx(prev => prev + 1)}
-            className="bg-[#F05A22] text-white px-16 py-7 rounded-2xl font-black text-xl hover:bg-slate-900 disabled:opacity-50 transition-all flex items-center gap-3 shadow-[0_10px_0_0_rgb(154,52,18)] border-4 border-slate-900 active:translate-y-2 active:shadow-none uppercase tracking-widest"
-          >
-            PRÓXIMA ETAPA
-            <ChevronRight size={32} />
-          </button>
-        )}
+        <button
+          disabled={!isBlockComplete()}
+          onClick={() => currentBlockIdx === blockKeys.length - 1 ? handleSubmit() : setCurrentBlockIdx(prev => prev + 1)}
+          className={`
+            px-16 py-7 rounded-2xl font-black text-xl transition-all shadow-[0_10px_0_0_rgb(0,0,0)] border-4 border-slate-900 active:translate-y-2 active:shadow-none uppercase tracking-widest
+            ${currentBlockIdx === blockKeys.length - 1 ? 'bg-slate-900 text-white hover:bg-[#F05A22]' : 'bg-[#F05A22] text-white hover:bg-slate-900'}
+          `}
+        >
+          {currentBlockIdx === blockKeys.length - 1 ? 'FINALIZAR' : 'PRÓXIMA ETAPA'}
+        </button>
       </footer>
     </div>
   );

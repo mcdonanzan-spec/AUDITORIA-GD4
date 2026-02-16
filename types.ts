@@ -25,6 +25,7 @@ export interface Question {
   bloco: 'A' | 'B' | 'C' | 'D' | 'E' | 'F' | 'G';
   texto: string;
   peso: number;
+  requiresPhotos?: boolean;
 }
 
 export type ResponseValue = 'sim' | 'parcial' | 'nao' | 'n_a';
@@ -33,12 +34,13 @@ export interface AuditResponse {
   pergunta_id: string;
   resposta: ResponseValue;
   observacao?: string;
-  evidencia_url?: string;
+  fotos?: string[]; // Suporte a múltiplas fotos
 }
 
 export interface EntrevistaAmostral {
   id: string;
   funcao: string;
+  empresa: string; // Novo campo empresa
   respostas: {
     pergunta_id: string;
     resposta: ResponseValue;
