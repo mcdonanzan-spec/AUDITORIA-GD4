@@ -10,35 +10,16 @@
     <style>
       body {
         -webkit-tap-highlight-color: transparent;
-        background-color: #f8fafc;
       }
 
-      /* Classes para forçar renderização no Canvas */
-      .pdf-canvas-container {
+      /* Estilos específicos para garantir que o PDF saia com as cores corretas */
+      .pdf-fix {
         background-color: white !important;
-        opacity: 1 !important;
-        visibility: visible !important;
+        color: black !important;
       }
       
       @media print {
         .print-hidden { display: none !important; }
-        .page-break { page-break-before: always; }
-        
-        .break-inside-avoid {
-          break-inside: avoid;
-          page-break-inside: avoid;
-        }
-      }
-
-      /* Estilo para html2pdf não cortar divs no meio */
-      [data-html2canvas-ignore] {
-        display: none !important;
-      }
-
-      /* Garante que o root não limite a captura */
-      #root {
-        height: auto !important;
-        overflow: visible !important;
       }
     </style>
   <script type="importmap">
