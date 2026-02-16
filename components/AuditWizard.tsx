@@ -15,7 +15,9 @@ import {
   Camera,
   AlertOctagon,
   Info,
-  Loader2
+  Loader2,
+  Target,
+  AlertCircle
 } from 'lucide-react';
 import { Obra, Question, ResponseValue, AuditResponse, Audit, AIAnalysisResult, EntrevistaAmostral } from '../types';
 import { QUESTIONS, INTERVIEW_QUESTIONS, BLOCKS } from '../constants';
@@ -49,12 +51,12 @@ const AuditWizard: React.FC<AuditWizardProps> = ({ obras, currentUser, onAuditCo
   const currentBlockKey = blockKeys[currentBlockIdx];
   const currentBlockQuestions = QUESTIONS.filter(q => q.bloco === currentBlockKey);
 
-  const coveragePercent = React.useMemo(() => {
-    const total = Number(equipeCampo) || 1;
-    return Math.round((entrevistas.length / total) * 100);
-  }, [entrevistas.length, equipeCampo]);
-
-  const targetMet = coveragePercent >= 10;
+  // Lógica de Amostragem (Meta 10%)
+  const totalEfetivo = Number(equipeCampo) || 0;
+  const targetCount = Math.ceil(totalEfetivo * 0.1);
+  const coveragePercent = totalEfetivo > 0 ? Math.round((entrevistas.length / totalEfetivo) * 100) : 0;
+  const targetMet = totalEfetivo > 0 ? (entrevistas.length >= targetCount) : false;
+  const remainingInterviews = Math.max(0, targetCount - entrevistas.length);
 
   const handleResponseChange = (questionId: string, val: ResponseValue) => {
     setRespostas(prev => {
@@ -126,7 +128,8 @@ const AuditWizard: React.FC<AuditWizardProps> = ({ obras, currentUser, onAuditCo
     }
     
     if (currentBlockKey === 'G') {
-      return targetMet && entrevistas.length > 0 && entrevistas.every(e => e.funcao.trim() !== '' && e.empresa.trim() !== '');
+      // Requisito obrigatório de atingir 10% do efetivo
+      return totalEfetivo > 0 && targetMet && entrevistas.every(e => e.funcao.trim() !== '' && e.empresa.trim() !== '');
     }
 
     return currentBlockQuestions.every(q => {
@@ -150,11 +153,12 @@ const AuditWizard: React.FC<AuditWizardProps> = ({ obras, currentUser, onAuditCo
       const auditPayload = {
         obra: obras.find(o => o.id === selectedObra)?.nome || '',
         amostragem: {
-          total_efetivo: Number(equipeCampo),
+          total_efetivo: totalEfetivo,
           efetivo_gd4: Number(equipeGd4),
           quarteirizacao_irregular: !subcontratacaoRegular,
           entrevistados: entrevistas.length,
-          cobertura: `${coveragePercent}%`
+          cobertura: `${coveragePercent}%`,
+          meta_atingida: targetMet
         },
         respostas_check: respostas.map(r => ({
            pergunta: QUESTIONS.find(q => q.id === r.pergunta_id)?.texto,
@@ -181,7 +185,7 @@ const AuditWizard: React.FC<AuditWizardProps> = ({ obras, currentUser, onAuditCo
         risco_juridico: result.riscoJuridico,
         respostas,
         entrevistas,
-        equipe_campo: Number(equipeCampo),
+        equipe_campo: totalEfetivo,
         equipe_gd4: Number(equipeGd4),
         subcontratacao_identificada: !subcontratacaoRegular,
         created_at: new Date().toISOString()
@@ -191,7 +195,7 @@ const AuditWizard: React.FC<AuditWizardProps> = ({ obras, currentUser, onAuditCo
     } catch (err) {
       console.error(err);
       setStep('questions');
-      alert("Falha na análise. Verifique se o seu projeto possui créditos Gemini API.");
+      alert("Erro na análise. Verifique sua conexão ou créditos da API.");
     } finally {
       setLoading(false);
     }
@@ -276,7 +280,7 @@ const AuditWizard: React.FC<AuditWizardProps> = ({ obras, currentUser, onAuditCo
       <div className="min-h-[500px] flex flex-col items-center justify-center text-center space-y-6">
         <Loader2 className="animate-spin text-[#F05A22]" size={64} />
         <h2 className="text-2xl font-black text-slate-900 uppercase">Gerando Inteligência de Risco...</h2>
-        <p className="text-slate-500 font-bold uppercase text-xs tracking-widest">Aguarde a análise do Gemini 2.5 Pro</p>
+        <p className="text-slate-500 font-bold uppercase text-xs tracking-widest">Aguarde a análise do motor Gemini</p>
       </div>
     );
   }
@@ -320,16 +324,47 @@ const AuditWizard: React.FC<AuditWizardProps> = ({ obras, currentUser, onAuditCo
           </div>
         ) : currentBlockKey === 'G' ? (
           <div className="space-y-6">
+            {/* NOVO: Informativo de Meta de 10% */}
+            <div className={`p-8 rounded-[2rem] border-4 border-slate-900 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] flex flex-col md:flex-row items-center justify-between gap-6 transition-all ${targetMet ? 'bg-emerald-50' : 'bg-amber-50'}`}>
+              <div className="flex items-center gap-5">
+                <div className={`w-16 h-16 rounded-2xl flex items-center justify-center border-4 border-slate-900 shadow-sm ${targetMet ? 'bg-emerald-500 text-white' : 'bg-amber-500 text-white'}`}>
+                   {targetMet ? <ShieldCheck size={32} /> : <Target size={32} />}
+                </div>
+                <div>
+                  <h4 className="text-xl font-black text-slate-900 uppercase tracking-tighter">Status da Amostragem</h4>
+                  <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em]">Exigência Unità: Mínimo 10% do Efetivo</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-10">
+                <div className="text-center">
+                  <p className="text-[10px] font-black text-slate-400 uppercase mb-1">Cobertura</p>
+                  <p className={`text-4xl font-black ${targetMet ? 'text-emerald-600' : 'text-amber-600'}`}>{coveragePercent}%</p>
+                </div>
+                <div className="h-12 w-1 bg-slate-200 hidden md:block"></div>
+                <div className="text-right">
+                  {targetMet ? (
+                    <p className="text-emerald-600 font-black text-xs uppercase flex items-center gap-2"><UserCheck size={18} /> Meta Atingida</p>
+                  ) : (
+                    <div className="space-y-1">
+                      <p className="text-rose-600 font-black text-xs uppercase flex items-center gap-2"><AlertCircle size={18} /> Meta Pendente</p>
+                      <p className="text-slate-500 font-bold text-[10px] uppercase">Faltam <span className="text-slate-900">{remainingInterviews}</span> entrevistas</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+
             <div className="flex justify-between items-center bg-slate-900 p-6 rounded-3xl text-white border-4 border-slate-900 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)]">
                <span className="font-black uppercase text-xs tracking-widest">Checklist Amostral ({entrevistas.length})</span>
-               <button onClick={addEntrevistado} className="bg-[#F05A22] px-6 py-3 rounded-2xl font-black text-xs uppercase flex items-center gap-2 border-2 border-slate-900"><Plus size={18} /> Add Colaborador</button>
+               <button onClick={addEntrevistado} className="bg-[#F05A22] px-6 py-3 rounded-2xl font-black text-xs uppercase flex items-center gap-2 border-2 border-slate-900 hover:bg-slate-900 transition-colors"><Plus size={18} /> Add Colaborador</button>
             </div>
+
             {entrevistas.map((ent, idx) => (
               <div key={ent.id} className="bg-white p-8 rounded-[2.5rem] border-4 border-slate-900 space-y-6 shadow-[8px_8px_0px_0px_rgba(15,23,42,1)]">
                  <div className="flex gap-4">
                     <input placeholder="FUNÇÃO" className="flex-1 bg-slate-50 border-4 border-slate-900 rounded-xl px-4 py-3 font-black text-slate-900 uppercase placeholder-slate-300 focus:outline-none" value={ent.funcao} onChange={e => setEntrevistas(ev => ev.map(it => it.id === ent.id ? {...it, funcao: e.target.value} : it))} />
                     <input placeholder="EMPRESA" className="flex-1 bg-slate-50 border-4 border-slate-900 rounded-xl px-4 py-3 font-black text-slate-900 uppercase placeholder-slate-300 focus:outline-none" value={ent.empresa} onChange={e => setEntrevistas(ev => ev.map(it => it.id === ent.id ? {...it, empresa: e.target.value} : it))} />
-                    <button onClick={() => removeEntrevistado(ent.id)} className="text-rose-600 p-2"><Trash2 size={24} /></button>
+                    <button onClick={() => removeEntrevistado(ent.id)} className="text-rose-600 p-2 hover:bg-rose-50 rounded-xl transition-all"><Trash2 size={24} /></button>
                  </div>
                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {INTERVIEW_QUESTIONS.map(q => (
