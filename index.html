@@ -7,58 +7,66 @@
     <title>AuditRisk - Governança Digital</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
+      /* Estilos para tela normal */
+      body {
+        -webkit-tap-highlight-color: transparent;
+      }
+
+      /* SOLUÇÃO DEFINITIVA PARA IMPRESSÃO / PDF */
       @media print {
-        /* Configurações básicas de página */
+        /* Configurações de página: Margens e Tamanho */
         @page {
-          margin: 1.5cm;
-          size: portrait;
+          margin: 1cm;
+          size: auto; /* Deixa o navegador gerenciar o melhor encaixe */
         }
 
-        /* Esconde toda a interface do sistema */
-        aside, nav, header, button, .print-hidden, [role="button"] { 
+        /* Esconder TUDO que não é o conteúdo principal da auditoria */
+        aside, nav, header, .print-hidden, button, [role="button"], .fixed, .sticky { 
           display: none !important; 
+          visibility: hidden !important;
         }
         
-        /* Reseta o layout para um fluxo de documento padrão */
+        /* Resetar o body e html para fluxo de documento simples (estático) */
         html, body {
-          background-color: white !important;
+          background: white !important;
           color: black !important;
-          height: auto !important;
           width: 100% !important;
+          height: auto !important;
           margin: 0 !important;
           padding: 0 !important;
           overflow: visible !important;
-          position: static !important;
+          position: relative !important;
         }
 
+        /* Forçar o conteúdo a ocupar a largura total e ser visível */
         #root, main, .max-w-7xl, .max-w-4xl {
           width: 100% !important;
           max-width: none !important;
           margin: 0 !important;
           padding: 0 !important;
-          overflow: visible !important;
           display: block !important;
+          overflow: visible !important;
           position: static !important;
+          float: none !important;
         }
 
-        /* Força a renderização de cores e fundos */
+        /* Garante que imagens e textos apareçam */
         * {
           -webkit-print-color-adjust: exact !important;
           print-color-adjust: exact !important;
-          box-shadow: none !important;
-          text-shadow: none !important;
+          opacity: 1 !important;
         }
 
-        /* Evita quebras de página no meio de cards importantes */
+        /* Evita quebra de página no meio de cards */
         .print-break-inside-avoid { 
-          break-inside: avoid; 
+          break-inside: avoid;
           page-break-inside: avoid;
-          position: relative;
         }
 
-        /* Melhora a legibilidade no papel */
-        p, span, h1, h2, h3 {
-          color: black !important;
+        /* Remove sombras para o PDF ficar limpo */
+        .shadow-sm, .shadow-md, .shadow-lg, .shadow-xl, .shadow-2xl {
+          box-shadow: none !important;
+          border: 1px solid #e2e8f0 !important; /* Adiciona borda leve onde havia sombra */
         }
       }
     </style>

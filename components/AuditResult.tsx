@@ -25,15 +25,9 @@ interface AuditResultProps {
 }
 
 const AuditResult: React.FC<AuditResultProps> = ({ audit, report, onClose }) => {
+  // Função simplificada e direta. Sem timeouts para evitar bloqueio do navegador.
   const handlePrint = () => {
-    // Tenta disparar a impressão diretamente. 
-    // Em navegadores modernos, isso deve ser chamado sem atrasos para não ser bloqueado.
-    try {
-      window.print();
-    } catch (e) {
-      console.error("Falha ao abrir o diálogo de impressão:", e);
-      alert("Houve um erro ao tentar imprimir. Por favor, utilize o atalho Ctrl + P do seu navegador.");
-    }
+    window.print();
   };
 
   const coverage = React.useMemo(() => {
@@ -45,11 +39,11 @@ const AuditResult: React.FC<AuditResultProps> = ({ audit, report, onClose }) => 
   const isMetodologyValid = coverage >= 10;
 
   return (
-    <div className="max-w-4xl mx-auto space-y-8 pb-24 animate-in fade-in duration-500 print:p-0 print:m-0 print:space-y-6">
-      {/* HEADER DA WEB - ESCONDIDO NO PRINT */}
+    <div className="max-w-4xl mx-auto space-y-8 pb-24 animate-in fade-in duration-500 print:space-y-4 print:p-0">
+      {/* BOTÕES DE INTERFACE - SOMENTE WEB */}
       <header className="flex flex-col md:flex-row md:items-center justify-between gap-4 print:hidden">
         <div>
-          <button onClick={onClose} className="flex items-center gap-1 text-xs font-black text-slate-500 uppercase tracking-widest hover:text-[#F05A22] mb-2 transition-colors">
+          <button onClick={onClose} className="flex items-center gap-1 text-xs font-black text-slate-500 uppercase tracking-widest hover:text-[#F05A22] mb-2">
             <ArrowLeft size={14} /> Voltar ao Dashboard
           </button>
           <h1 className="text-3xl font-black text-slate-900 uppercase tracking-tighter">Relatório de Governança</h1>
@@ -66,22 +60,22 @@ const AuditResult: React.FC<AuditResultProps> = ({ audit, report, onClose }) => 
         </div>
       </header>
 
-      {/* CABEÇALHO OFICIAL DE IMPRESSÃO - SÓ APARECE NO PDF */}
-      <div className="hidden print:flex justify-between items-center border-b-8 border-slate-900 pb-6 mb-8">
-        <UnitaLogo className="scale-90 origin-left" />
+      {/* CABEÇALHO OFICIAL DO DOCUMENTO - SOMENTE PRINT/PDF */}
+      <div className="hidden print:flex justify-between items-center border-b-8 border-slate-900 pb-8 mb-8">
+        <UnitaLogo className="scale-100 origin-left" />
         <div className="text-right">
-          <h2 className="text-2xl font-black uppercase tracking-tighter">Relatório Técnico de Governança</h2>
-          <p className="font-bold uppercase text-[10px] text-slate-500 tracking-widest">Protocolo Unità AuditRisk v2.5</p>
-          <div className="flex gap-4 justify-end mt-2">
-             <span className="text-[10px] font-black uppercase tracking-tight">Obra: {audit.obra_id}</span>
-             <span className="text-[10px] font-black uppercase tracking-tight">Emitido em: {new Date(audit.created_at).toLocaleDateString('pt-BR')}</span>
+          <h2 className="text-3xl font-black uppercase tracking-tighter">Relatório de Conformidade</h2>
+          <p className="font-black uppercase text-[12px] text-slate-500 tracking-widest">Gestão de Riscos e Terceiros</p>
+          <div className="mt-2 space-y-1">
+             <p className="text-[11px] font-black uppercase">Obra: <span className="text-slate-900">{audit.obra_id}</span></p>
+             <p className="text-[11px] font-black uppercase">Emissão: <span className="text-slate-900">{new Date(audit.created_at).toLocaleString('pt-BR')}</span></p>
           </div>
         </div>
       </div>
 
-      {/* Amostragem Highlights */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 print:grid-cols-2 print:gap-4">
-        <div className="bg-slate-50 p-6 rounded-[2rem] border-4 border-slate-900 flex items-center gap-5 print:bg-white print:p-4 print:border-slate-300">
+      {/* Resumo de Amostragem */}
+      <div className="grid grid-cols-2 gap-4 print:gap-4">
+        <div className="bg-slate-50 p-6 rounded-[2rem] border-4 border-slate-900 flex items-center gap-5 print:p-4 print:bg-white print:border-slate-200">
            <div className="w-14 h-14 bg-white rounded-2xl flex items-center justify-center border-2 border-slate-200 print:w-10 print:h-10">
               <Users2 className="text-[#F05A22]" size={32} />
            </div>
@@ -90,7 +84,7 @@ const AuditResult: React.FC<AuditResultProps> = ({ audit, report, onClose }) => 
               <p className="text-xl font-black text-slate-900 uppercase tracking-tighter">{audit.entrevistas?.length || 0} Colaboradores</p>
            </div>
         </div>
-        <div className={`p-6 rounded-[2rem] border-4 border-slate-900 flex items-center gap-5 print:p-4 print:border-slate-300 ${isMetodologyValid ? 'bg-emerald-50' : 'bg-rose-50'}`}>
+        <div className={`p-6 rounded-[2rem] border-4 border-slate-900 flex items-center gap-5 print:p-4 print:border-slate-200 ${isMetodologyValid ? 'bg-emerald-50 print:bg-white' : 'bg-rose-50 print:bg-white'}`}>
            <div className={`w-14 h-14 rounded-2xl flex items-center justify-center border-2 print:w-10 print:h-10 ${isMetodologyValid ? 'bg-emerald-500 text-white' : 'bg-rose-500 text-white'}`}>
               {isMetodologyValid ? <ShieldCheck size={32} /> : <AlertOctagon size={32} />}
            </div>
@@ -103,7 +97,7 @@ const AuditResult: React.FC<AuditResultProps> = ({ audit, report, onClose }) => 
         </div>
       </div>
 
-      {/* Resultados e Risco */}
+      {/* Scores Principais */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 print:grid-cols-3 print:gap-4">
         <div className="bg-white p-8 rounded-[2.5rem] border-4 border-slate-900 shadow-[8px_8px_0px_0px_rgba(15,23,42,1)] flex flex-col items-center justify-center text-center space-y-4 print:shadow-none print:p-4 print:border-slate-300">
           <div className="text-4xl font-black text-slate-900 tracking-tighter">{report.indiceGeral}%</div>
@@ -112,7 +106,7 @@ const AuditResult: React.FC<AuditResultProps> = ({ audit, report, onClose }) => 
           </span>
         </div>
 
-        <div className="md:col-span-2 bg-slate-900 text-white p-10 rounded-[2.5rem] border-4 border-slate-900 shadow-[8px_8px_0px_0px_rgba(240,90,34,1)] print:bg-white print:text-slate-900 print:shadow-none print:p-4 print:border-slate-300">
+        <div className="md:col-span-2 bg-slate-900 text-white p-10 rounded-[2.5rem] border-4 border-slate-900 shadow-[8px_8px_0px_0px_rgba(240,90,34,1)] print:bg-white print:text-slate-900 print:shadow-none print:p-6 print:border-slate-300">
           <div className="space-y-4">
             <div className="flex items-center gap-4 text-[#F05A22]">
               <ShieldAlert size={32} />
@@ -123,27 +117,27 @@ const AuditResult: React.FC<AuditResultProps> = ({ audit, report, onClose }) => 
         </div>
       </div>
 
-      {/* Checklist Detalhado */}
+      {/* Checklist (Itens do Documento) */}
       <div className="bg-white p-8 rounded-[2.5rem] border-4 border-slate-900 shadow-[8px_8px_0px_0px_rgba(15,23,42,1)] space-y-6 print:shadow-none print:p-0 print:border-none">
-        <h3 className="text-xl font-black text-slate-900 flex items-center gap-3 uppercase tracking-tighter print:text-lg">
+        <h3 className="text-xl font-black text-slate-900 flex items-center gap-3 uppercase tracking-tighter print:text-[14px] print:mb-4">
           <ListCheck className="text-[#F05A22] print:hidden" size={28} />
-          Evidências de Auditoria (Checklist Completo)
+          Evidências de Auditoria (Itens de Verificação)
         </h3>
-        <div className="grid grid-cols-1 gap-3">
+        <div className="grid grid-cols-1 gap-2">
            {QUESTIONS.map(q => {
              const r = audit.respostas.find(res => res.pergunta_id === q.id);
              if (!r) return null;
              return (
-               <div key={q.id} className="flex items-start gap-4 p-4 bg-slate-50 rounded-2xl border-2 border-slate-100 print:bg-white print:p-3 print:border-slate-100 print:break-inside-avoid">
-                  <div className={`shrink-0 w-10 h-10 rounded-xl flex items-center justify-center font-black text-xs text-white border-2 border-slate-900 print:w-8 print:h-8 ${r.resposta === 'sim' ? 'bg-emerald-500' : r.resposta === 'nao' ? 'bg-rose-500' : 'bg-amber-500'}`}>
+               <div key={q.id} className="flex items-start gap-4 p-4 bg-slate-50 rounded-2xl border-2 border-slate-100 print:bg-white print:p-2 print:border-slate-100 print:break-inside-avoid">
+                  <div className={`shrink-0 w-8 h-8 rounded-lg flex items-center justify-center font-black text-[10px] text-white border-2 border-slate-900 ${r.resposta === 'sim' ? 'bg-emerald-500' : r.resposta === 'nao' ? 'bg-rose-500' : 'bg-amber-500'}`}>
                     {r.resposta.toUpperCase()}
                   </div>
                   <div className="flex-1 space-y-1">
-                     <p className="text-xs font-black text-slate-900 uppercase tracking-tight leading-tight print:text-[11px]">{q.texto}</p>
-                     {r.observacao && <p className="text-[10px] text-rose-600 font-black uppercase print:text-[9px]">⚠️ OBS: {r.observacao}</p>}
+                     <p className="text-[11px] font-black text-slate-900 uppercase tracking-tight leading-tight">{q.texto}</p>
+                     {r.observacao && <p className="text-[10px] text-rose-600 font-black uppercase">⚠️ OBS: {r.observacao}</p>}
                      {r.fotos && r.fotos.length > 0 && (
-                       <div className="flex gap-2 pt-2 print:gap-2">
-                          {r.fotos.map((f, i) => <img key={i} src={f} className="w-16 h-16 rounded-lg border-2 border-slate-300 object-cover print:w-24 print:h-24" />)}
+                       <div className="flex gap-2 pt-2">
+                          {r.fotos.map((f, i) => <img key={i} src={f} className="w-16 h-16 rounded-lg border-2 border-slate-300 object-cover print:w-20 print:h-20" />)}
                        </div>
                      )}
                   </div>
@@ -153,35 +147,35 @@ const AuditResult: React.FC<AuditResultProps> = ({ audit, report, onClose }) => 
         </div>
       </div>
 
-      {/* Amostragem Detalhada */}
-      <div className="bg-white p-8 rounded-[2.5rem] border-4 border-slate-900 shadow-[8px_8px_0px_0px_rgba(15,23,42,1)] space-y-6 print:shadow-none print:p-0 print:border-none print:pt-4">
-        <h3 className="text-xl font-black text-slate-900 flex items-center gap-3 uppercase tracking-tighter print:text-lg">
+      {/* Amostragem Detalhada (Entrevistas) */}
+      <div className="bg-white p-8 rounded-[2.5rem] border-4 border-slate-900 shadow-[8px_8px_0px_0px_rgba(15,23,42,1)] space-y-6 print:shadow-none print:p-0 print:border-none print:pt-6">
+        <h3 className="text-xl font-black text-slate-900 flex items-center gap-3 uppercase tracking-tighter print:text-[14px] print:mb-4">
           <UserCheck className="text-[#F05A22] print:hidden" size={28} />
-          Detalhamento das Entrevistas (Amostragem)
+          Detalhamento das Entrevistas Comportamentais
         </h3>
         <div className="space-y-4">
            {audit.entrevistas?.map((ent, idx) => (
-             <div key={ent.id} className="border-2 border-slate-100 rounded-3xl overflow-hidden print:break-inside-avoid print:border-slate-200">
-                <div className="bg-slate-900 text-white p-4 flex justify-between items-center print:bg-slate-100 print:text-slate-900">
+             <div key={ent.id} className="border-2 border-slate-100 rounded-3xl overflow-hidden print:break-inside-avoid print:border-slate-300">
+                <div className="bg-slate-900 text-white p-4 flex justify-between items-center print:bg-slate-50 print:text-slate-900">
                    <div className="flex items-center gap-4">
                       <span className="w-8 h-8 bg-[#F05A22] rounded-lg flex items-center justify-center font-black text-xs print:bg-slate-900 print:text-white">{idx + 1}</span>
                       <div className="flex flex-col">
                         <span className="text-[10px] font-black uppercase text-[#F05A22] print:text-slate-500">Colaborador</span>
-                        <span className="text-xs font-black uppercase tracking-tight">{ent.funcao || 'NÃO INFORMADO'}</span>
+                        <span className="text-xs font-black uppercase tracking-tight">{ent.funcao || 'FUNÇÃO NÃO INFORMADA'}</span>
                       </div>
                    </div>
                    <div className="flex items-center gap-2 text-right">
-                      <Building2 size={14} className="text-[#F05A22] print:text-slate-500" />
-                      <span className="text-[10px] font-black uppercase tracking-widest">{ent.empresa || 'NÃO INFORMADO'}</span>
+                      <Building2 size={14} className="text-[#F05A22]" />
+                      <span className="text-[10px] font-black uppercase tracking-widest">{ent.empresa || 'EMPRESA NÃO INFORMADA'}</span>
                    </div>
                 </div>
-                <div className="p-4 grid grid-cols-2 gap-4 bg-slate-50 print:bg-white print:grid-cols-2 print:gap-2">
+                <div className="p-4 grid grid-cols-2 gap-2 bg-slate-50 print:bg-white print:grid-cols-2">
                    {ent.respostas.map(r => (
-                     <div key={r.pergunta_id} className="flex justify-between items-center bg-white p-3 rounded-xl border border-slate-200 print:p-2 print:border-slate-100">
-                        <span className="text-[9px] font-black text-slate-500 uppercase flex-1 pr-2 print:text-[8px] leading-none">
+                     <div key={r.pergunta_id} className="flex justify-between items-center bg-white p-2 rounded-xl border border-slate-200 print:border-slate-100">
+                        <span className="text-[9px] font-black text-slate-500 uppercase flex-1 pr-2 leading-none">
                            {INTERVIEW_QUESTIONS.find(iq => iq.id === r.pergunta_id)?.texto}
                         </span>
-                        <span className={`text-[10px] font-black uppercase px-2 py-1 rounded-md print:text-[8px] ${r.resposta === 'sim' ? 'text-emerald-600 bg-emerald-50' : 'text-rose-600 bg-rose-50'}`}>
+                        <span className={`text-[9px] font-black uppercase px-2 py-1 rounded-md ${r.resposta === 'sim' ? 'text-emerald-600 bg-emerald-50' : 'text-rose-600 bg-rose-50'}`}>
                            {r.resposta}
                         </span>
                      </div>
@@ -192,26 +186,26 @@ const AuditResult: React.FC<AuditResultProps> = ({ audit, report, onClose }) => 
         </div>
       </div>
 
-      {/* Conclusão */}
-      <section className="bg-slate-900 p-10 rounded-[2.5rem] border-4 border-slate-900 text-white space-y-4 print:bg-white print:text-slate-900 print:p-6 print:border-slate-300 print:shadow-none print:break-inside-avoid print:mt-10">
-        <h3 className="text-xl font-black flex items-center gap-3 uppercase tracking-tighter print:text-lg">
+      {/* Parecer Final e Assinaturas */}
+      <section className="bg-slate-900 p-10 rounded-[2.5rem] border-4 border-slate-900 text-white space-y-4 print:bg-white print:text-slate-900 print:p-8 print:border-slate-900 print:shadow-none print:break-inside-avoid print:mt-12">
+        <h3 className="text-xl font-black flex items-center gap-3 uppercase tracking-tighter print:text-[16px]">
           <FileText className="text-[#F05A22]" size={32} />
-          Parecer Técnico Unità
+          Conclusão Técnica do Auditor
         </h3>
-        <p className="text-lg leading-relaxed font-black italic border-l-8 border-[#F05A22] pl-8 py-2 print:text-sm print:pl-4 print:border-slate-900">
+        <p className="text-lg leading-relaxed font-black italic border-l-8 border-[#F05A22] pl-8 py-2 print:text-[12px] print:border-slate-900 print:pl-4">
           "{report.conclusaoExecutiva}"
         </p>
         
-        {/* Espaço para Assinaturas no PDF */}
-        <div className="hidden print:block pt-16">
-           <div className="grid grid-cols-2 gap-24">
-              <div className="border-t-2 border-slate-900 pt-4 text-center">
-                 <p className="text-[10px] font-black uppercase tracking-widest">Responsável Auditoria</p>
-                 <p className="text-[8px] font-bold text-slate-400 mt-1 uppercase tracking-tighter">Assinado via AuditRisk v2.5</p>
+        {/* ASSINATURAS NO PDF */}
+        <div className="hidden print:block pt-20">
+           <div className="grid grid-cols-2 gap-20">
+              <div className="border-t-4 border-slate-900 pt-4 text-center">
+                 <p className="text-[12px] font-black uppercase tracking-widest">Responsável pela Auditoria</p>
+                 <p className="text-[9px] font-bold text-slate-400 mt-1 uppercase">Validado digitalmente via AuditRisk</p>
               </div>
-              <div className="border-t-2 border-slate-900 pt-4 text-center">
-                 <p className="text-[10px] font-black uppercase tracking-widest">Ciente da Unidade</p>
-                 <p className="text-[8px] font-bold text-slate-400 mt-1 uppercase tracking-tighter">Validação de Conformidade</p>
+              <div className="border-t-4 border-slate-900 pt-4 text-center">
+                 <p className="text-[12px] font-black uppercase tracking-widest">Responsável pela Obra (Ciente)</p>
+                 <p className="text-[9px] font-bold text-slate-400 mt-1 uppercase">Protocolo de Governança Unità</p>
               </div>
            </div>
         </div>
