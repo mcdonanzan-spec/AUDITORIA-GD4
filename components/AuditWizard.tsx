@@ -151,53 +151,25 @@ const AuditWizard: React.FC<AuditWizardProps> = ({ obras, currentUser, onAuditCo
     setLoading(true);
 
     try {
-      const blockScores = blockKeys.reduce((acc, b) => {
-        const qIds = QUESTIONS.filter(q => q.bloco === b).map(q => q.id);
-        const bResps = respostas.filter(r => qIds.includes(r.pergunta_id));
-        const validResps = bResps.filter(r => r.resposta !== 'n_a');
-        
-        let totalScore = 0;
-        if (b === 'B') {
-           const divergencia = Math.abs(Number(equipeCampo) - Number(equipeGd4));
-           const scoreEquipe = divergencia === 0 ? 100 : divergencia < 5 ? 50 : 0;
-           const scoreSub = subcontratacaoRegular === true ? 100 : 0;
-           totalScore = (scoreEquipe + scoreSub) / 2;
-        } else if (b === 'G') {
-           const totalResps = entrevistas.flatMap(e => e.respostas);
-           const validTotalResps = totalResps.filter(r => r.resposta !== 'n_a');
-           totalScore = validTotalResps.reduce((sum, r) => {
-             const s = r.resposta === 'sim' ? 100 : r.resposta === 'parcial' ? 50 : 0;
-             return sum + s;
-           }, 0) / (validTotalResps.length || 1);
-        } else {
-           totalScore = validResps.reduce((sum, r) => {
-            const score = r.resposta === 'sim' ? 100 : r.resposta === 'parcial' ? 50 : 0;
-            return sum + score;
-          }, 0) / (validResps.length || 1);
-        }
-        acc[BLOCKS[b as keyof typeof BLOCKS].toLowerCase().replace(/ /g, '_')] = Math.round(totalScore);
-        return acc;
-      }, {} as any);
-
+      // Otimização: Não enviamos as fotos (base64) para a IA para reduzir latência e custos de tokens
       const auditPayload = {
         obra: obras.find(o => o.id === selectedObra)?.nome || '',
         data: new Date().toISOString(),
-        auditor: currentUser.nome,
-        blocos: blockScores,
         amostragem: {
           total_efetivo: Number(equipeCampo),
-          efetivo_gd4: Number(equipeGd4),
           divergencia: Math.abs(Number(equipeCampo) - Number(equipeGd4)),
           quarteirizacao_irregular: !subcontratacaoRegular,
-          entrevistados: entrevistas.length,
-          cobertura: `${coveragePercent}%`,
-          meta_atingida: targetMet,
-          detalhes: entrevistas
+          entrevistados: entrevistas.length
         },
         respostas_detalhadas: respostas.map(r => ({
-           pergunta: QUESTIONS.find(q => q.id === r.pergunta_id)?.texto,
+           id: r.pergunta_id,
            resposta: r.resposta,
            obs: r.observacao
+        })),
+        entrevistas_resumo: entrevistas.map(e => ({
+           cargo: e.funcao,
+           empresa: e.empresa,
+           falhas: e.respostas.filter(r => r.resposta !== 'sim' && r.resposta !== 'n_a').length
         }))
       };
 
@@ -221,10 +193,10 @@ const AuditWizard: React.FC<AuditWizardProps> = ({ obras, currentUser, onAuditCo
       };
 
       onAuditComplete(newAudit, result);
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
       setStep('questions');
-      alert("Falha técnica ao consolidar relatório. Verifique sua conexão ou tente novamente.");
+      alert(err.message || "Falha técnica ao consolidar relatório. Verifique sua conexão ou tente novamente.");
     } finally {
       setLoading(false);
     }
@@ -306,7 +278,7 @@ const AuditWizard: React.FC<AuditWizardProps> = ({ obras, currentUser, onAuditCo
         </div>
         <div className="space-y-3">
           <h2 className="text-3xl font-black text-slate-900 uppercase tracking-tighter">Consolidando Matriz de Risco</h2>
-          <p className="text-slate-600 font-black text-sm uppercase tracking-widest">Processando Checklist Unità...</p>
+          <p className="text-slate-600 font-black text-sm uppercase tracking-widest">A IA Unità está realizando as projeções jurídicas...</p>
         </div>
       </div>
     );
