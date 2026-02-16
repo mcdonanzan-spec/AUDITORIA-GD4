@@ -9,10 +9,10 @@ let MOCK_OBRAS: Obra[] = [
 ];
 
 let MOCK_USERS: User[] = [
-  { id: 'u1', nome: 'Admin Master', email: 'admin@unita.eng.br', perfil: 'admin', status: 'ativo' },
-  { id: 'u2', nome: 'Auditor Senior', email: 'auditor@unita.eng.br', perfil: 'auditor', status: 'ativo' },
-  { id: 'u3', nome: 'Diretoria Regional', email: 'diretoria@unita.eng.br', perfil: 'diretoria', status: 'ativo' },
-  { id: 'u4', nome: 'Eng. Ricardo', email: 'obra@unita.eng.br', perfil: 'obra', status: 'ativo', obra_ids: ['1', '4'] },
+  { id: 'u1', nome: 'Admin Master', email: 'admin@unitaengenharia.com.br', perfil: 'admin', status: 'ativo' },
+  { id: 'u2', nome: 'Auditor Senior', email: 'auditor@unitaengenharia.com.br', perfil: 'auditor', status: 'ativo' },
+  { id: 'u3', nome: 'Diretoria Regional', email: 'diretoria@unitaengenharia.com.br', perfil: 'diretoria', status: 'ativo' },
+  { id: 'u4', nome: 'Eng. Ricardo', email: 'obra@unitaengenharia.com.br', perfil: 'obra', status: 'ativo', obra_ids: ['1', '4'] },
 ];
 
 let MOCK_AUDITS: Audit[] = [
