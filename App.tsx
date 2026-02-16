@@ -7,7 +7,7 @@ import AuditWizard from './components/AuditWizard';
 import AuditResult from './components/AuditResult';
 import AuditHistory from './components/AuditHistory';
 import ObrasManagement from './components/ObrasManagement';
-import { User, Audit, Obra, AIAnalysisResult } from './types';
+import { User, Audit, Obra, AIAnalysisResult, UserRole } from './types';
 import { getAudits, getObras, saveAudit } from './services/mockDb';
 
 const App: React.FC = () => {
@@ -35,17 +35,16 @@ const App: React.FC = () => {
     fetchData();
   }, []);
 
-  const handleLogin = (email: string) => {
-    let perfil: any = 'auditor';
-    if (email.includes('admin')) perfil = 'admin';
-    if (email.includes('diretoria')) perfil = 'diretoria';
-    if (email.includes('obra')) perfil = 'obra';
+  const handleLogin = (email: string, role: UserRole) => {
+    // Para o perfil de OBRA no demo, vinculamos à obra ID '4' (Condomínio Vista Mar)
+    const obraId = role === 'obra' ? '4' : undefined;
 
     setUser({
       id: 'user-' + Date.now(),
       nome: email.split('@')[0].toUpperCase(),
       email: email,
-      perfil: perfil
+      perfil: role,
+      obra_id: obraId
     });
   };
 
@@ -62,7 +61,6 @@ const App: React.FC = () => {
     setCurrentPage('result');
   };
 
-  // Fix: Added missing 'detalhamentoCalculo' property to satisfy AIAnalysisResult interface
   const handleViewAudit = (audit: Audit) => {
     const mockReport: AIAnalysisResult = {
       indiceGeral: audit.indice_geral || 0,
@@ -87,10 +85,19 @@ const App: React.FC = () => {
     return <Login onLogin={handleLogin} />;
   }
 
+  // FILTRAGEM DE SEGURANÇA POR PERFIL
+  const filteredAudits = user.perfil === 'obra' && user.obra_id 
+    ? audits.filter(a => a.obra_id === user.obra_id)
+    : audits;
+
+  const filteredObras = user.perfil === 'obra' && user.obra_id
+    ? obras.filter(o => o.id === user.obra_id)
+    : obras;
+
   if (loading) {
     return (
       <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center">
-        <div className="w-12 h-12 border-4 border-orange-500 border-t-transparent rounded-full animate-spin"></div>
+        <div className="w-12 h-12 border-4 border-[#F05A22] border-t-transparent rounded-full animate-spin"></div>
         <p className="mt-4 text-slate-500 font-bold uppercase tracking-widest text-xs">Iniciando Governança Unità...</p>
       </div>
     );
@@ -99,11 +106,11 @@ const App: React.FC = () => {
   const renderContent = () => {
     switch (currentPage) {
       case 'dashboard':
-        return <Dashboard audits={audits} obras={obras} onNavigate={setCurrentPage} />;
+        return <Dashboard audits={filteredAudits} obras={filteredObras} onNavigate={setCurrentPage} user={user} />;
       case 'new-audit':
-        return <AuditWizard obras={obras} currentUser={user} onAuditComplete={handleAuditComplete} onNavigate={setCurrentPage} />;
+        return <AuditWizard obras={filteredObras} currentUser={user} onAuditComplete={handleAuditComplete} onNavigate={setCurrentPage} />;
       case 'obras':
-        return <ObrasManagement obras={obras} audits={audits} onObraAdded={handleObraAdded} onSelectAudit={handleViewAudit} onNavigate={setCurrentPage} />;
+        return <ObrasManagement obras={filteredObras} audits={filteredAudits} onObraAdded={handleObraAdded} onSelectAudit={handleViewAudit} onNavigate={setCurrentPage} />;
       case 'result':
         return viewingAudit ? (
           <AuditResult 
@@ -111,11 +118,11 @@ const App: React.FC = () => {
             report={viewingAudit.report} 
             onClose={() => setCurrentPage('dashboard')} 
           />
-        ) : <Dashboard audits={audits} obras={obras} onNavigate={setCurrentPage} />;
+        ) : <Dashboard audits={filteredAudits} obras={filteredObras} onNavigate={setCurrentPage} user={user} />;
       case 'history':
-        return <AuditHistory audits={audits} obras={obras} onSelectAudit={handleViewAudit} onNavigate={setCurrentPage} />;
+        return <AuditHistory audits={filteredAudits} obras={filteredObras} onSelectAudit={handleViewAudit} onNavigate={setCurrentPage} />;
       default:
-        return <Dashboard audits={audits} obras={obras} onNavigate={setCurrentPage} />;
+        return <Dashboard audits={filteredAudits} obras={filteredObras} onNavigate={setCurrentPage} user={user} />;
     }
   };
 
