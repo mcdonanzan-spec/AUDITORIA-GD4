@@ -15,7 +15,10 @@ import {
   Coins,
   TrendingDown,
   Users,
-  Info
+  Info,
+  Database,
+  ArrowRightLeft,
+  Scale
 } from 'lucide-react';
 import { Audit, AIAnalysisResult } from '../types';
 import { QUESTIONS, INTERVIEW_QUESTIONS } from '../constants';
@@ -93,6 +96,7 @@ const AuditResult: React.FC<AuditResultProps> = ({ audit, report, onClose }) => 
   }, [audit]);
 
   const isMetodologyValid = coverage >= 10;
+  const divergenciaEfetivo = Math.abs((audit.equipe_campo || 0) - (audit.equipe_gd4 || 0));
 
   return (
     <div className="max-w-4xl mx-auto space-y-8 pb-24 animate-in fade-in duration-500">
@@ -151,57 +155,79 @@ const AuditResult: React.FC<AuditResultProps> = ({ audit, report, onClose }) => 
           </div>
         </div>
 
-        {/* INDICADORES PRINCIPAIS COM CICLO DE CORES E LEGENDAS */}
+        {/* INDICADORES PRINCIPAIS */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           <div className="bg-slate-50 p-6 rounded-[2rem] border-2 border-slate-200 flex flex-col items-center text-center relative overflow-hidden group">
              <Users className="text-[#F05A22] mb-2" size={24} />
              <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Efetivo Total</p>
              <p className="text-2xl font-black text-slate-900">{audit.equipe_campo || 0}</p>
-             <div className="absolute bottom-0 inset-x-0 h-1 bg-[#F05A22] transform scale-x-0 group-hover:scale-x-100 transition-transform"></div>
           </div>
           <div className="bg-slate-50 p-6 rounded-[2rem] border-2 border-slate-200 flex flex-col items-center text-center relative overflow-hidden group">
              <UserCheck className="text-emerald-500 mb-2" size={24} />
              <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Auditados In Loco</p>
              <p className="text-2xl font-black text-slate-900">{audit.entrevistas?.length || 0}</p>
-             <div className="absolute bottom-0 inset-x-0 h-1 bg-emerald-500 transform scale-x-0 group-hover:scale-x-100 transition-transform"></div>
           </div>
           
-          {/* CARD SCORE CONFORMIDADE DINÂMICO */}
           <div className={`${statusStyle.bg} p-6 rounded-[2rem] border-2 ${statusStyle.border} flex flex-col items-center text-center shadow-lg text-white group relative`}>
              <p className="text-[8px] font-black opacity-80 uppercase tracking-widest mb-1">Score Conformidade</p>
              <p className="text-3xl font-black leading-none mb-2">{report.indiceGeral}%</p>
-             <div className="mt-1 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                <Info size={10} />
-                <span className="text-[7px] font-black uppercase tracking-tighter">Faixa: {report.indiceGeral >= 85 ? '85-100%' : report.indiceGeral >= 70 ? '70-84%' : '< 70%'}</span>
-             </div>
           </div>
 
-          {/* CARD STATUS FINAL DINÂMICO */}
           <div className={`${statusStyle.bg} p-6 rounded-[2rem] border-2 ${statusStyle.border} flex flex-col items-center text-center shadow-lg text-white group relative`}>
              <p className="text-[8px] font-black opacity-80 uppercase tracking-widest mb-1">Status Final</p>
              <p className="text-lg font-black uppercase leading-none mb-2">{report.classificacao}</p>
-             <div className="bg-white/20 px-3 py-1 rounded-full flex items-center gap-1">
-                <span className="text-[7px] font-black uppercase tracking-tighter">
-                   {report.classificacao === 'REGULAR' ? 'CONFORME' : report.classificacao === 'ATENÇÃO' ? 'RISCO LATENTE' : 'INTERVENÇÃO'}
-                </span>
-             </div>
           </div>
         </div>
 
-        {/* LEGENDA DE CORES DO SISTEMA (DISCRETA) */}
-        <div className="flex justify-center gap-8 py-2">
-           <div className="flex items-center gap-2">
-              <div className="w-2 h-2 rounded-full bg-emerald-600"></div>
-              <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Regular (≥85%)</span>
-           </div>
-           <div className="flex items-center gap-2">
-              <div className="w-2 h-2 rounded-full bg-amber-500"></div>
-              <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Atenção (70-84%)</span>
-           </div>
-           <div className="flex items-center gap-2">
-              <div className="w-2 h-2 rounded-full bg-rose-600"></div>
-              <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Crítica (&lt;70%)</span>
-           </div>
+        {/* SEÇÃO: CONFERÊNCIA DE EFETIVO X GD4 (BLOCO B) */}
+        <div className="space-y-6 animate-in slide-in-from-bottom-4 duration-500">
+          <h3 className="text-xl font-black text-slate-900 flex items-center gap-3 uppercase tracking-tighter border-l-8 border-slate-900 pl-4">
+            Análise de Efetivo e Quarteirização
+          </h3>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {/* Comparativo de Efetivo */}
+            <div className="col-span-1 md:col-span-2 bg-slate-50 rounded-[2rem] border-4 border-slate-900 p-8 flex items-center justify-between shadow-[8px_8px_0px_0px_rgba(240,90,34,1)]">
+               <div className="space-y-6 w-full">
+                  <div className="flex items-center justify-between pb-4 border-b-2 border-slate-200">
+                     <div className="flex items-center gap-3">
+                        <Users className="text-[#F05A22]" size={20} />
+                        <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Efetivo Real (Campo)</span>
+                     </div>
+                     <span className="text-2xl font-black text-slate-900">{audit.equipe_campo}</span>
+                  </div>
+                  <div className="flex items-center justify-between pb-4 border-b-2 border-slate-200">
+                     <div className="flex items-center gap-3">
+                        <Database className="text-slate-900" size={20} />
+                        <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Efetivo no GD4 (Sistêmico)</span>
+                     </div>
+                     <span className="text-2xl font-black text-slate-900">{audit.equipe_gd4}</span>
+                  </div>
+                  <div className={`flex items-center justify-between pt-2 ${divergenciaEfetivo > 0 ? 'text-rose-600 animate-pulse' : 'text-emerald-600'}`}>
+                     <div className="flex items-center gap-3">
+                        <ArrowRightLeft size={20} />
+                        <span className="text-[10px] font-black uppercase tracking-widest">Divergência Detectada</span>
+                     </div>
+                     <span className="text-2xl font-black">{divergenciaEfetivo} {divergenciaEfetivo === 1 ? 'Pessoa' : 'Pessoas'}</span>
+                  </div>
+               </div>
+            </div>
+
+            {/* Status de Subcontratação */}
+            <div className={`rounded-[2rem] border-4 p-8 flex flex-col items-center justify-center text-center gap-4 shadow-[8px_8px_0px_0px_rgba(15,23,42,1)] ${audit.subcontratacao_identificada ? 'bg-rose-50 border-rose-600' : 'bg-emerald-50 border-emerald-600'}`}>
+               <Scale size={40} className={audit.subcontratacao_identificada ? 'text-rose-600' : 'text-emerald-600'} />
+               <div>
+                  <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">Quarteirização</p>
+                  <p className={`text-sm font-black uppercase ${audit.subcontratacao_identificada ? 'text-rose-900' : 'text-emerald-900'}`}>
+                     {audit.subcontratacao_identificada ? 'Irregularidade Identificada' : 'Totalmente Regularizada'}
+                  </p>
+               </div>
+               {audit.subcontratacao_identificada && (
+                 <div className="bg-rose-600 text-white px-3 py-1 rounded-lg text-[9px] font-black uppercase animate-bounce">
+                    Risco de Responsabilidade Solidária
+                 </div>
+               )}
+            </div>
+          </div>
         </div>
 
         {/* CARD DE EXPOSIÇÃO FINANCEIRA */}
@@ -234,12 +260,6 @@ const AuditResult: React.FC<AuditResultProps> = ({ audit, report, onClose }) => 
                     </div>
                  </div>
               </div>
-           </div>
-           <div className="px-10 pb-10">
-              <p className="text-xs text-slate-500 font-bold leading-relaxed border-t-2 border-slate-100 pt-6 italic">
-                Atenção: Projeção técnica calculada sobre o universo total de {audit.equipe_campo} colaboradores. 
-                <span className="text-slate-900 ml-1">O Score de {report.indiceGeral}% classifica a unidade em estado de {report.classificacao}.</span>
-              </p>
            </div>
         </div>
 
