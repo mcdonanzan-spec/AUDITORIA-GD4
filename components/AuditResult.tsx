@@ -153,13 +153,13 @@ const AuditResult: React.FC<AuditResultProps> = ({ audit, report, onClose }) => 
         <div className="bg-slate-900 rounded-[3rem] p-10 text-white space-y-8">
           <div className="flex justify-between items-center border-b border-slate-700 pb-6">
             <div className="flex items-center gap-4">
-              <div className="p-3 bg-[#F05A22] rounded-2xl"><Scale size={24} /></div>
+              <div className="p-3 bg-[#F05A22] rounded-2xl border border-slate-700"><Scale size={24} /></div>
               <div>
                 <p className="text-[10px] font-black uppercase tracking-widest text-[#F05A22]">Exposição Financeira Potencial</p>
                 <p className="text-[8px] opacity-50 uppercase">Cálculo de risco projetado sobre efetivo total</p>
               </div>
             </div>
-            <div className="bg-white text-slate-900 px-6 py-3 rounded-2xl flex items-center gap-3">
+            <div className="bg-white text-slate-900 px-6 py-3 rounded-2xl flex items-center gap-3 border-2 border-slate-900 shadow-sm">
               <AlertTriangle size={20} className="text-amber-500" />
               <div className="text-right">
                 <p className="text-[8px] font-black uppercase opacity-50 leading-none">Matriz de Risco</p>
@@ -173,17 +173,20 @@ const AuditResult: React.FC<AuditResultProps> = ({ audit, report, onClose }) => 
             <p className="text-[10px] font-bold text-slate-500 uppercase">Passivo Trabalhista e Previdenciário Estimado</p>
           </div>
 
-          {/* MEMÓRIA DE CÁLCULO */}
-          <div className="space-y-4 bg-slate-800/50 p-6 rounded-3xl border border-slate-700">
-             <p className="text-[10px] font-black uppercase tracking-widest flex items-center gap-2"><FileText size={14} className="text-slate-500" /> Memória de Cálculo e Base Legal</p>
-             <div className="space-y-4">
+          {/* MEMÓRIA DE CÁLCULO REFINADA */}
+          <div className="space-y-4 bg-slate-800/40 p-8 rounded-[2.5rem] border border-slate-700/50">
+             <p className="text-[10px] font-black uppercase tracking-[0.2em] flex items-center gap-2 mb-4 text-slate-400"><FileText size={14} className="text-[#F05A22]" /> Memória de Cálculo e Base Legal</p>
+             <div className="grid grid-cols-1 gap-4">
                {report.detalhamentoCalculo.map((item, idx) => (
-                 <div key={idx} className="flex justify-between items-start text-xs border-b border-slate-700 pb-3 last:border-0">
-                    <div className="space-y-1">
-                      <p className="font-black uppercase">{item.item}</p>
-                      <p className="text-[9px] opacity-60 flex items-center gap-1 leading-tight"><Scale size={10} /> {item.baseLegal} - {item.logica}</p>
+                 <div key={idx} className="flex justify-between items-start text-xs border-b border-slate-700/50 pb-4 last:border-0 last:pb-0">
+                    <div className="space-y-1.5 flex-1 pr-10">
+                      <p className="font-black uppercase text-slate-100 tracking-tight leading-snug">{item.item}</p>
+                      <div className="flex items-center gap-2 opacity-60">
+                         <Scale size={10} className="text-[#F05A22]" />
+                         <p className="text-[9px] font-bold uppercase tracking-widest">{item.baseLegal} {item.logica ? `| ${item.logica}` : ''}</p>
+                      </div>
                     </div>
-                    <p className="font-black text-[#F05A22]">{formatCurrency(item.valor)}</p>
+                    <p className="font-black text-[#F05A22] text-sm shrink-0">{formatCurrency(item.valor)}</p>
                  </div>
                ))}
              </div>
@@ -218,7 +221,7 @@ const AuditResult: React.FC<AuditResultProps> = ({ audit, report, onClose }) => 
         </div>
 
         {/* DETALHAMENTO AMOSTRAGEM */}
-        <div className="space-y-6 break-before-page">
+        <div className="space-y-6 break-before-page pt-10">
            <h3 className="text-xl font-black uppercase border-l-8 border-[#F05A22] pl-4 tracking-tighter">Detalhamento da Amostragem ({audit.entrevistas?.length} Colaboradores)</h3>
            <div className="grid grid-cols-1 gap-4">
              {audit.entrevistas?.map((ent, idx) => (

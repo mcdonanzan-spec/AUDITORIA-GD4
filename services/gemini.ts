@@ -2,10 +2,6 @@
 import { GoogleGenAI, Type } from "@google/genai";
 import { AIAnalysisResult } from "../types";
 
-/**
- * SANITIZAÇÃO SÊNIOR:
- * Removemos strings base64 pesadas antes de enviar para a IA.
- */
 const sanitizeDataForAI = (data: any) => {
   const cleanData = JSON.parse(JSON.stringify(data));
   
@@ -26,25 +22,31 @@ export const generateAuditReport = async (auditData: any): Promise<AIAnalysisRes
   
   const cleanPayload = sanitizeDataForAI(auditData);
 
-  const prompt = `ATUE COMO UM ESPECIALISTA EM RISCO JURÍDICO E COMPLIANCE DA UNITA ENGENHARIA.
-  ANALISE ESTES DADOS DE AUDITORIA: ${JSON.stringify(cleanPayload)}
+  const prompt = `ATUE COMO UM CONSULTOR SÊNIOR DE RISCO JURÍDICO E COMPLIANCE DA UNITA ENGENHARIA.
+  DADOS DA AUDITORIA: ${JSON.stringify(cleanPayload)}
   
-  SUA MISSÃO:
-  1. Calcule o Score de Conformidade (0-100%).
-  2. Identifique o Risco Jurídico (BAIXO, MÉDIO, ALTO, CRÍTICO).
-  3. Estime a Exposição Financeira Total considerando CLT e NRs.
-  4. Crie uma "Memória de Cálculo" detalhada com pelo menos 4 itens (ex: Falta de Registro, Verbas Rescisórias, Benefícios, Multas NRs).
+  SUA MISSÃO É GERAR UM RELATÓRIO DE GOVERNANÇA TÉCNICO E ARITMETICAMENTE PRECISO.
   
-  RETORNE APENAS JSON:
-  - indiceGeral: number
+  DIRETRIZES FINANCEIRAS (CRÍTICO):
+  1. Calcule a Exposição Financeira Total (Passivo Estimado).
+  2. VOCÊ DEVE LISTAR O DETALHAMENTO DE PELO MENOS 4 ITENS QUE COMPÕEM ESSE VALOR.
+  3. A SOMA DOS VALORES ('valor') DENTRO DE 'detalhamentoCalculo' DEVE SER EXATAMENTE IGUAL AO 'exposicaoFinanceira'.
+  4. CATEGORIAS PARA O DETALHAMENTO:
+     - Falta de Registro / CLT Art. 47 (Calcular sobre divergência de efetivo).
+     - Adicionais de Risco (Insalubridade/Periculosidade) não identificados.
+     - Multas NRs (NR-18, NR-35, NR-06) baseadas nos desvios de campo.
+     - Passivo de Benefícios (VT/VR) e Reflexos (FGTS/INSS).
+  
+  RETORNE APENAS JSON NO SEGUINTE FORMATO:
+  - indiceGeral: number (0-100)
   - classificacao: REGULAR, ATENÇÃO ou CRÍTICA
   - riscoJuridico: BAIXO, MÉDIO, ALTO ou CRÍTICO
-  - exposicaoFinanceira: number
-  - detalhamentoCalculo: array de {item, valor, baseLegal, logica}
+  - exposicaoFinanceira: number (TOTAL GERAL)
+  - detalhamentoCalculo: array de {item: string, valor: number, baseLegal: string, logica: string}
   - naoConformidades: array de strings
   - impactoJuridico: string
   - recomendacoes: array de strings
-  - conclusaoExecutiva: string (máximo 3 linhas, tom de diretoria)`;
+  - conclusaoExecutiva: string (tom executivo, curto e direto)`;
 
   try {
     const response = await ai.models.generateContent({
@@ -68,7 +70,8 @@ export const generateAuditReport = async (auditData: any): Promise<AIAnalysisRes
                   valor: { type: Type.NUMBER },
                   baseLegal: { type: Type.STRING },
                   logica: { type: Type.STRING }
-                }
+                },
+                required: ["item", "valor", "baseLegal", "logica"]
               }
             },
             naoConformidades: { type: Type.ARRAY, items: { type: Type.STRING } },
@@ -84,7 +87,15 @@ export const generateAuditReport = async (auditData: any): Promise<AIAnalysisRes
     const text = response.text?.trim();
     if (!text) throw new Error("Resposta vazia da IA");
     
-    return JSON.parse(text) as AIAnalysisResult;
+    const parsed = JSON.parse(text);
+
+    // Validação extra: Se a IA falhou na aritmética, forçamos o total a ser a soma dos itens
+    const somaItens = parsed.detalhamentoCalculo.reduce((acc: number, curr: any) => acc + curr.valor, 0);
+    if (somaItens !== parsed.exposicaoFinanceira && somaItens > 0) {
+      parsed.exposicaoFinanceira = somaItens;
+    }
+
+    return parsed as AIAnalysisResult;
   } catch (error) {
     console.error("Erro Crítico na IA:", error);
     return {
@@ -93,12 +104,12 @@ export const generateAuditReport = async (auditData: any): Promise<AIAnalysisRes
       riscoJuridico: "INDETERMINADO",
       exposicaoFinanceira: 0,
       detalhamentoCalculo: [
-        { item: "Falha de Processamento", valor: 0, baseLegal: "Timeout", logica: "Dados pesados ou instabilidade de rede" }
+        { item: "Erro de Processamento", valor: 0, baseLegal: "-", logica: "Ocorreu um erro ao calcular o passivo." }
       ],
-      naoConformidades: ["Ocorreu uma falha no processamento qualitativo."],
+      naoConformidades: ["Erro na análise quantitativa."],
       impactoJuridico: "Análise interrompida.",
-      recomendacoes: ["Tente gerar novamente sem exceder o limite de fotos."],
-      conclusaoExecutiva: "Sistema temporariamente indisponível para análise qualitativa completa."
+      recomendacoes: ["Recalcule a auditoria."],
+      conclusaoExecutiva: "Sistema temporariamente indisponível para análise financeira."
     };
   }
 };
