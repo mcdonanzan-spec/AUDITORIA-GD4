@@ -7,25 +7,29 @@ import AuditWizard from './components/AuditWizard';
 import AuditResult from './components/AuditResult';
 import AuditHistory from './components/AuditHistory';
 import ObrasManagement from './components/ObrasManagement';
+import UserManagement from './components/UserManagement';
 import { User, Audit, Obra, AIAnalysisResult, UserRole } from './types';
-import { getAudits, getObras, saveAudit } from './services/mockDb';
+import { getAudits, getObras, saveAudit, getUsers } from './services/mockDb';
 
 const App: React.FC = () => {
   const [user, setUser] = React.useState<User | null>(null);
   const [currentPage, setCurrentPage] = React.useState('dashboard');
   const [audits, setAudits] = React.useState<Audit[]>([]);
   const [obras, setObras] = React.useState<Obra[]>([]);
+  const [allUsers, setAllUsers] = React.useState<User[]>([]);
   const [viewingAudit, setViewingAudit] = React.useState<{ audit: Audit; report: AIAnalysisResult } | null>(null);
   const [loading, setLoading] = React.useState(true);
 
   const fetchData = async () => {
     try {
-      const [fetchedAudits, fetchedObras] = await Promise.all([
+      const [fetchedAudits, fetchedObras, fetchedUsers] = await Promise.all([
         getAudits(),
-        getObras()
+        getObras(),
+        getUsers()
       ]);
       setAudits(fetchedAudits);
       setObras(fetchedObras);
+      setAllUsers(fetchedUsers);
     } finally {
       setLoading(false);
     }
@@ -36,16 +40,20 @@ const App: React.FC = () => {
   }, []);
 
   const handleLogin = (email: string, role: UserRole) => {
-    // Para o perfil de OBRA no demo, vinculamos à obra ID '4' (Condomínio Vista Mar)
-    const obraId = role === 'obra' ? '4' : undefined;
-
-    setUser({
-      id: 'user-' + Date.now(),
-      nome: email.split('@')[0].toUpperCase(),
-      email: email,
-      perfil: role,
-      obra_id: obraId
-    });
+    // Busca o usuário mock correspondente ao perfil selecionado
+    const foundUser = allUsers.find(u => u.perfil === role);
+    if (foundUser) {
+      setUser(foundUser);
+    } else {
+      // Fallback caso não encontre (não deve ocorrer com o mock atual)
+      setUser({
+        id: 'u-temp-' + Date.now(),
+        nome: email.split('@')[0].toUpperCase(),
+        email: email,
+        perfil: role,
+        obra_ids: []
+      });
+    }
   };
 
   const handleLogout = () => {
@@ -85,20 +93,22 @@ const App: React.FC = () => {
     return <Login onLogin={handleLogin} />;
   }
 
-  // FILTRAGEM DE SEGURANÇA POR PERFIL
-  const filteredAudits = user.perfil === 'obra' && user.obra_id 
-    ? audits.filter(a => a.obra_id === user.obra_id)
-    : audits;
+  // LÓGICA DE FILTRAGEM DE SEGURANÇA POR ESCOPO
+  const isGlobal = ['admin', 'auditor', 'diretoria'].includes(user.perfil);
+  
+  const filteredObras = isGlobal 
+    ? obras 
+    : obras.filter(o => user.obra_ids?.includes(o.id));
 
-  const filteredObras = user.perfil === 'obra' && user.obra_id
-    ? obras.filter(o => o.id === user.obra_id)
-    : obras;
+  const filteredAudits = isGlobal
+    ? audits
+    : audits.filter(a => user.obra_ids?.includes(a.obra_id));
 
   if (loading) {
     return (
       <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center">
         <div className="w-12 h-12 border-4 border-[#F05A22] border-t-transparent rounded-full animate-spin"></div>
-        <p className="mt-4 text-slate-500 font-bold uppercase tracking-widest text-xs">Iniciando Governança Unità...</p>
+        <p className="mt-4 text-slate-500 font-bold uppercase tracking-widest text-xs">Sincronizando Escopo de Acesso...</p>
       </div>
     );
   }
@@ -121,6 +131,8 @@ const App: React.FC = () => {
         ) : <Dashboard audits={filteredAudits} obras={filteredObras} onNavigate={setCurrentPage} user={user} />;
       case 'history':
         return <AuditHistory audits={filteredAudits} obras={filteredObras} onSelectAudit={handleViewAudit} onNavigate={setCurrentPage} />;
+      case 'access':
+        return <UserManagement obras={obras} onNavigate={setCurrentPage} />;
       default:
         return <Dashboard audits={filteredAudits} obras={filteredObras} onNavigate={setCurrentPage} user={user} />;
     }

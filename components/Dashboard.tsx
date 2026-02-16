@@ -54,10 +54,10 @@ const Dashboard: React.FC<DashboardProps> = ({ audits, obras, onNavigate, user }
       <header className="flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div>
           <h1 className="text-4xl font-black text-slate-900 uppercase tracking-tighter">
-            {isObraProfile ? `Painel da Unidade` : `Painel Executivo Unità`}
+            {isObraProfile ? `Gestão Multicanteiro` : `Painel Executivo Unità`}
           </h1>
           <p className="text-slate-500 font-bold uppercase text-[10px] tracking-[0.2em] mt-1">
-            {isObraProfile ? obras[0]?.nome : 'Monitoramento de Risco e Governança Global'}
+            {isObraProfile ? `${obras.length} Unidades Sob sua Responsabilidade` : 'Monitoramento de Risco e Governança Global'}
           </p>
         </div>
         
@@ -75,28 +75,28 @@ const Dashboard: React.FC<DashboardProps> = ({ audits, obras, onNavigate, user }
       {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <StatCard 
-          label={isObraProfile ? "Score Atual" : "Índice Médio"} 
+          label={isObraProfile ? "Score Médio" : "Índice Médio Geral"} 
           value={`${avgScore}%`} 
           icon={<TrendingUp className="text-[#F05A22]" />} 
           color="bg-orange-50"
           onClick={() => onNavigate('history')}
         />
         <StatCard 
-          label={isObraProfile ? "Efetivo Campo" : "Canteiros Ativos"} 
-          value={isObraProfile ? (audits[0]?.equipe_campo || '0') : obras.filter(o => o.status === 'ativa').length} 
+          label={isObraProfile ? "Efetivo Total" : "Canteiros Ativos"} 
+          value={isObraProfile ? audits.reduce((acc, a) => acc + (a.equipe_campo || 0), 0) : obras.filter(o => o.status === 'ativa').length} 
           icon={<Building2 className="text-slate-900" />} 
           color="bg-slate-100"
           onClick={() => onNavigate(isObraProfile ? 'history' : 'obras')}
         />
         <StatCard 
-          label="Status de Risco" 
-          value={isObraProfile ? (audits[0]?.risco_juridico || 'N/A') : criticalAudits} 
-          icon={<AlertTriangle className={isObraProfile && audits[0]?.risco_juridico !== 'BAIXO' ? "text-rose-600" : "text-emerald-600"} />} 
-          color={isObraProfile && audits[0]?.risco_juridico !== 'BAIXO' ? "bg-rose-50" : "bg-emerald-50"}
+          label="Alertas Críticos" 
+          value={criticalAudits} 
+          icon={<AlertTriangle className={criticalAudits > 0 ? "text-rose-600" : "text-emerald-600"} />} 
+          color={criticalAudits > 0 ? "bg-rose-50" : "bg-emerald-50"}
           onClick={() => onNavigate('history')}
         />
         <StatCard 
-          label="Auditorias" 
+          label="Total Auditorias" 
           value={audits.length} 
           icon={<Calendar className="text-slate-900" />} 
           color="bg-slate-50"
@@ -106,47 +106,43 @@ const Dashboard: React.FC<DashboardProps> = ({ audits, obras, onNavigate, user }
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2 space-y-8">
-          {!isObraProfile && (
-            <div className="bg-white p-8 rounded-[2.5rem] border-4 border-slate-900 shadow-[8px_8px_0px_0px_rgba(15,23,42,1)]">
-              <h3 className="text-xl font-black text-slate-900 mb-8 uppercase tracking-tight">Ranking de Unidades</h3>
-              <div className="h-80 w-full">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={chartData}>
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                    <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fill: '#0f172a', fontSize: 10, fontWeight: 900}} />
-                    <YAxis domain={[0, 100]} axisLine={false} tickLine={false} tick={{fill: '#94a3b8', fontSize: 10, fontWeight: 700}} />
-                    <Tooltip 
-                      cursor={{fill: '#f8fafc'}} 
-                      contentStyle={{borderRadius: '16px', border: '4px solid #0f172a', fontWeight: '900', textTransform: 'uppercase'}}
-                    />
-                    <Bar dataKey="score" radius={[8, 8, 0, 0]} barSize={45}>
-                      {chartData.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={entry.score < 50 ? '#e11d48' : entry.score < 80 ? '#F05A22' : '#10b981'} />
-                      ))}
-                    </Bar>
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
+          <div className="bg-white p-8 rounded-[2.5rem] border-4 border-slate-900 shadow-[8px_8px_0px_0px_rgba(15,23,42,1)]">
+            <h3 className="text-xl font-black text-slate-900 mb-8 uppercase tracking-tight">Status de Conformidade</h3>
+            <div className="h-80 w-full">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={chartData}>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                  <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fill: '#0f172a', fontSize: 10, fontWeight: 900}} />
+                  <YAxis domain={[0, 100]} axisLine={false} tickLine={false} tick={{fill: '#94a3b8', fontSize: 10, fontWeight: 700}} />
+                  <Tooltip 
+                    cursor={{fill: '#f8fafc'}} 
+                    contentStyle={{borderRadius: '16px', border: '4px solid #0f172a', fontWeight: '900', textTransform: 'uppercase'}}
+                  />
+                  <Bar dataKey="score" radius={[8, 8, 0, 0]} barSize={45}>
+                    {chartData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.score < 50 ? '#e11d48' : entry.score < 80 ? '#F05A22' : '#10b981'} />
+                    ))}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
             </div>
-          )}
+          </div>
 
           <div className="bg-white rounded-[2.5rem] border-4 border-slate-900 shadow-[8px_8px_0px_0px_rgba(15,23,42,1)] overflow-hidden">
             <div className="p-8 border-b-4 border-slate-100 flex items-center justify-between bg-slate-50">
-              <h3 className="text-xl font-black text-slate-900 uppercase tracking-tight">
-                {isObraProfile ? 'Histórico da Unidade' : 'Monitoramento Global'}
-              </h3>
+              <h3 className="text-xl font-black text-slate-900 uppercase tracking-tight">Monitoramento em Tempo Real</h3>
               <button 
-                onClick={() => onNavigate(isObraProfile ? 'history' : 'obras')}
+                onClick={() => onNavigate('obras')}
                 className="text-white bg-slate-900 text-[10px] font-black uppercase tracking-widest px-4 py-2 rounded-xl hover:bg-[#F05A22] transition-colors"
               >
-                {isObraProfile ? 'Ver Tudo' : 'Gerenciar'}
+                Gerenciar
               </button>
             </div>
             <div className="overflow-x-auto">
               <table className="w-full text-left">
                 <thead className="bg-white text-[10px] font-black text-slate-400 uppercase tracking-widest">
                   <tr>
-                    <th className="px-8 py-5">Canteiro / Localização</th>
+                    <th className="px-8 py-5">Canteiro / Unidade</th>
                     <th className="px-8 py-5">Conformidade</th>
                     <th className="px-8 py-5">Risco GD4</th>
                     <th className="px-8 py-5 text-right">Ação</th>
@@ -201,7 +197,6 @@ const Dashboard: React.FC<DashboardProps> = ({ audits, obras, onNavigate, user }
         </div>
 
         <div className="space-y-8">
-          {/* Card de Alerta Personalizado */}
           <div className="bg-slate-900 text-white p-10 rounded-[2.5rem] border-4 border-slate-900 shadow-[8px_8px_0px_0px_rgba(240,90,34,1)] relative overflow-hidden group">
             <div className="relative z-10 space-y-6">
               <div className="w-14 h-14 bg-[#F05A22]/20 rounded-2xl flex items-center justify-center border-2 border-[#F05A22]/40">
@@ -211,19 +206,13 @@ const Dashboard: React.FC<DashboardProps> = ({ audits, obras, onNavigate, user }
                 <h4 className="text-[#F05A22] font-black uppercase text-[10px] tracking-widest">Governança Unità</h4>
                 <p className="text-lg leading-tight text-white font-black uppercase">
                   {isObraProfile 
-                    ? `Sua unidade está com conformidade de ${avgScore}%. Mantenha o GD4 atualizado.`
+                    ? `Você tem ${obras.length} obras vinculadas. Mantenha o compliance atualizado no GD4.`
                     : `Queda de conformidade detectada em 3 unidades nesta semana.`}
                 </p>
               </div>
-              {isObraProfile ? (
-                 <div className="pt-4 flex items-center gap-2 text-xs font-black text-emerald-400 uppercase tracking-widest">
-                   Status: {avgScore > 75 ? 'Excelente' : 'Atenção'}
-                 </div>
-              ) : (
-                <button onClick={() => onNavigate('new-audit')} className="pt-4 flex items-center gap-2 text-xs font-black text-[#F05A22] uppercase tracking-widest hover:underline">
-                  Ver Pontos Críticos <ChevronRight size={18} />
-                </button>
-              )}
+              <button onClick={() => onNavigate('history')} className="pt-4 flex items-center gap-2 text-xs font-black text-[#F05A22] uppercase tracking-widest hover:underline">
+                Análise Detalhada <ChevronRight size={18} />
+              </button>
             </div>
             <div className="absolute top-0 right-0 w-40 h-40 bg-[#F05A22]/10 blur-3xl -mr-16 -mt-16 rounded-full group-hover:bg-[#F05A22]/20 transition-all"></div>
           </div>
@@ -241,10 +230,10 @@ const Dashboard: React.FC<DashboardProps> = ({ audits, obras, onNavigate, user }
                     </div>
                     <div className="pb-4">
                       <p className="text-sm font-black text-slate-900 uppercase tracking-tight group-hover:text-[#F05A22] transition-colors">
-                        {isObraProfile ? 'Auditoria Mensal' : obra?.nome}
+                        {obra?.nome}
                       </p>
                       <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">
-                        Score: {audit.indice_geral}%
+                        Score: {audit.indice_geral}% | {audit.tipo}
                       </p>
                       <p className="text-[10px] font-black text-slate-900 bg-slate-100 px-2 py-1 rounded-lg inline-block mt-3">{new Date(audit.created_at).toLocaleDateString('pt-BR')}</p>
                     </div>

@@ -6,7 +6,7 @@ export interface User {
   nome: string;
   email: string;
   perfil: UserRole;
-  obra_id?: string;
+  obra_ids?: string[]; // Mudança de obra_id (único) para obra_ids (lista)
 }
 
 export interface Obra {

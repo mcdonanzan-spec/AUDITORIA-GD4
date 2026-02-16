@@ -7,7 +7,8 @@ import {
   LogOut, 
   Building2,
   Menu,
-  X
+  X,
+  ShieldAlert
 } from 'lucide-react';
 import { User } from '../types';
 
@@ -39,12 +40,12 @@ interface LayoutProps {
 const Layout: React.FC<LayoutProps> = ({ children, user, onLogout, currentPage, onPageChange }) => {
   const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false);
 
-  // Garantindo que todos os itens apareçam corretamente para as funções
   const menuItems = [
     { id: 'dashboard', label: 'Painel Geral', icon: LayoutDashboard, roles: ['admin', 'auditor', 'diretoria', 'obra'] },
     { id: 'new-audit', label: 'Nova Inspeção', icon: ClipboardCheck, roles: ['admin', 'auditor'] },
     { id: 'obras', label: 'Canteiros / Obras', icon: Building2, roles: ['admin', 'auditor', 'diretoria'] },
     { id: 'history', label: 'Base de Dados', icon: History, roles: ['admin', 'auditor', 'diretoria'] },
+    { id: 'access', label: 'Gestão de Acessos', icon: ShieldAlert, roles: ['admin'] },
   ];
 
   const allowedMenuItems = menuItems.filter(item => item.roles.includes(user.perfil));
