@@ -42,11 +42,17 @@ const AuditWizard: React.FC<AuditWizardProps> = ({ obras, currentUser, onAuditCo
 
   const [respostas, setRespostas] = React.useState<AuditResponse[]>([]);
   const [entrevistas, setEntrevistas] = React.useState<EntrevistaAmostral[]>([]);
-  const [ocorrencias, setOcorrencias] = React.useState<string>('');
 
   const blockKeys = Object.keys(BLOCKS) as Array<keyof typeof BLOCKS>;
   const currentBlockKey = blockKeys[currentBlockIdx];
   const currentBlockQuestions = QUESTIONS.filter(q => q.bloco === currentBlockKey);
+
+  const coveragePercent = React.useMemo(() => {
+    const total = Number(equipeCampo) || 1;
+    return Math.round((entrevistas.length / total) * 100);
+  }, [entrevistas.length, equipeCampo]);
+
+  const targetMet = coveragePercent >= 10;
 
   const handleResponseChange = (questionId: string, val: ResponseValue) => {
     setRespostas(prev => {
@@ -59,7 +65,6 @@ const AuditWizard: React.FC<AuditWizardProps> = ({ obras, currentUser, onAuditCo
   };
 
   const handleAddPhoto = (questionId: string) => {
-    // Simulação de adição de foto
     setRespostas(prev => prev.map(r => {
       if (r.pergunta_id === questionId) {
         const currentFotos = r.fotos || [];
@@ -114,13 +119,6 @@ const AuditWizard: React.FC<AuditWizardProps> = ({ obras, currentUser, onAuditCo
     });
   };
 
-  const coveragePercent = React.useMemo(() => {
-    const total = Number(equipeCampo) || 1;
-    return Math.round((entrevistas.length / total) * 100);
-  }, [entrevistas.length, equipeCampo]);
-
-  const targetMet = coveragePercent >= 10;
-
   const handleSubmit = async () => {
     setStep('processing');
     setLoading(true);
@@ -162,6 +160,7 @@ const AuditWizard: React.FC<AuditWizardProps> = ({ obras, currentUser, onAuditCo
         amostragem: {
           entrevistados: entrevistas.length,
           cobertura: `${coveragePercent}%`,
+          meta_atingida: targetMet,
           detalhes: entrevistas
         },
         respostas_detalhadas: respostas.map(r => ({
@@ -301,6 +300,16 @@ const AuditWizard: React.FC<AuditWizardProps> = ({ obras, currentUser, onAuditCo
             </div>
           </div>
         </div>
+
+        {currentBlockKey === 'G' && (
+          <div className="flex items-center gap-4 bg-white px-6 py-3 rounded-2xl border-4 border-slate-900 shadow-sm">
+             <div className="flex flex-col items-end">
+                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Cobertura Real</span>
+                <span className={`text-xl font-black ${targetMet ? 'text-emerald-600' : 'text-rose-600'}`}>{coveragePercent}% do efetivo</span>
+             </div>
+             <UserCheck size={32} className={targetMet ? 'text-emerald-500' : 'text-rose-600'} />
+          </div>
+        )}
       </div>
 
       <div className="space-y-6">
@@ -309,7 +318,7 @@ const AuditWizard: React.FC<AuditWizardProps> = ({ obras, currentUser, onAuditCo
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
               <div className="space-y-3">
                 <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest flex items-center gap-2">
-                  <Users size={16} className="text-[#F05A22]" /> Efetivo em Campo
+                  <Users size={16} className="text-[#F05A22]" /> Efetivo Real (Campo)
                 </label>
                 <input 
                   type="number" 
@@ -321,7 +330,7 @@ const AuditWizard: React.FC<AuditWizardProps> = ({ obras, currentUser, onAuditCo
               </div>
               <div className="space-y-3">
                 <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest flex items-center gap-2">
-                  <Database size={16} className="text-[#F05A22]" /> Efetivo no GD4
+                  <Database size={16} className="text-[#F05A22]" /> Efetivo no GD4 (Sistema)
                 </label>
                 <input 
                   type="number" 
