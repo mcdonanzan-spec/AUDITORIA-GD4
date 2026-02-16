@@ -11,7 +11,7 @@ export const generateAuditReport = async (auditData: any): Promise<AIAnalysisRes
   DADOS DA AUDITORIA:
   ${JSON.stringify(auditData, null, 2)}
   
-  O cálculo deve projetar as falhas encontradas na amostra para o efetivo total de ${auditData.amostragem.total_efetivo || 'pessoas informadas'}.
+  O cálculo deve projetar as falhas encontradas na amostra (${auditData.amostragem.entrevistados} pessoas) para o efetivo total de ${auditData.amostragem.total_efetivo || 'pessoas informadas'}.
   
   METODOLOGIA DE CÁLCULO E BASE LEGAL:
   1. TRABALHADOR PENDENTE/SEM REGISTRO: R$ 60.000,00 (Multa Art. 47 CLT + Passivo de verbas rescisórias).
@@ -24,49 +24,59 @@ export const generateAuditReport = async (auditData: any): Promise<AIAnalysisRes
   - indiceGeral: número.
   - classificacao: REGULAR, ATENÇÃO, CRÍTICA.
   - riscoJuridico: BAIXO, MÉDIO, ALTO, CRÍTICO.
-  - exposicaoFinanceira: soma total.
+  - exposicaoFinanceira: soma total numérica.
   - detalhamentoCalculo: [ { item, valor, baseLegal, logica } ]
   - naoConformidades: [ strings ]
   - impactoJuridico: string
   - recomendacoes: [ strings ]
   - conclusaoExecutiva: string
   
-  Retorne APENAS o JSON.`;
+  Retorne APENAS o JSON puro, sem blocos de código ou explicações adicionais.`;
 
-  const response = await ai.models.generateContent({
-    model: 'gemini-3-flash-preview',
-    contents: prompt,
-    config: {
-      responseMimeType: "application/json",
-      responseSchema: {
-        type: Type.OBJECT,
-        properties: {
-          indiceGeral: { type: Type.NUMBER },
-          classificacao: { type: Type.STRING },
-          riscoJuridico: { type: Type.STRING },
-          exposicaoFinanceira: { type: Type.NUMBER },
-          detalhamentoCalculo: {
-            type: Type.ARRAY,
-            items: {
-              type: Type.OBJECT,
-              properties: {
-                item: { type: Type.STRING },
-                valor: { type: Type.NUMBER },
-                baseLegal: { type: Type.STRING },
-                logica: { type: Type.STRING }
+  try {
+    const response = await ai.models.generateContent({
+      model: 'gemini-3-flash-preview',
+      contents: prompt,
+      config: {
+        responseMimeType: "application/json",
+        responseSchema: {
+          type: Type.OBJECT,
+          properties: {
+            indiceGeral: { type: Type.NUMBER },
+            classificacao: { type: Type.STRING },
+            riscoJuridico: { type: Type.STRING },
+            exposicaoFinanceira: { type: Type.NUMBER },
+            detalhamentoCalculo: {
+              type: Type.ARRAY,
+              items: {
+                type: Type.OBJECT,
+                properties: {
+                  item: { type: Type.STRING },
+                  valor: { type: Type.NUMBER },
+                  baseLegal: { type: Type.STRING },
+                  logica: { type: Type.STRING }
+                }
               }
-            }
+            },
+            naoConformidades: { type: Type.ARRAY, items: { type: Type.STRING } },
+            impactoJuridico: { type: Type.STRING },
+            recomendacoes: { type: Type.ARRAY, items: { type: Type.STRING } },
+            conclusaoExecutiva: { type: Type.STRING }
           },
-          naoConformidades: { type: Type.ARRAY, items: { type: Type.STRING } },
-          impactoJuridico: { type: Type.STRING },
-          recomendacoes: { type: Type.ARRAY, items: { type: Type.STRING } },
-          conclusaoExecutiva: { type: Type.STRING }
-        },
-        required: ["indiceGeral", "classificacao", "riscoJuridico", "exposicaoFinanceira", "detalhamentoCalculo", "naoConformidades", "impactoJuridico", "recomendacoes", "conclusaoExecutiva"]
+          required: ["indiceGeral", "classificacao", "riscoJuridico", "exposicaoFinanceira", "detalhamentoCalculo", "naoConformidades", "impactoJuridico", "recomendacoes", "conclusaoExecutiva"]
+        }
       }
-    }
-  });
+    });
 
-  const text = response.text || "{}";
-  return JSON.parse(text) as AIAnalysisResult;
+    // Limpeza rigorosa para garantir que o JSON.parse não falhe
+    let text = response.text?.trim() || "{}";
+    if (text.startsWith('```')) {
+      text = text.replace(/^```json/, '').replace(/```$/, '').trim();
+    }
+    
+    return JSON.parse(text) as AIAnalysisResult;
+  } catch (error) {
+    console.error("Erro na geração do relatório IA:", error);
+    throw error;
+  }
 };

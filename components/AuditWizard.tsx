@@ -137,7 +137,6 @@ const AuditWizard: React.FC<AuditWizardProps> = ({ obras, currentUser, onAuditCo
       const needsObs = r.resposta !== 'sim' && r.resposta !== 'n_a';
       if (needsObs && (!r.observacao || r.observacao.trim().length < 5)) return false;
 
-      // Validação dinâmica do número de fotos baseado no novo campo minPhotos
       if (q.requiresPhotos) {
         const minReq = q.minPhotos || 3;
         if ((r.fotos?.length || 0) < minReq) return false;
@@ -186,6 +185,10 @@ const AuditWizard: React.FC<AuditWizardProps> = ({ obras, currentUser, onAuditCo
         auditor: currentUser.nome,
         blocos: blockScores,
         amostragem: {
+          total_efetivo: Number(equipeCampo),
+          efetivo_gd4: Number(equipeGd4),
+          divergencia: Math.abs(Number(equipeCampo) - Number(equipeGd4)),
+          quarteirizacao_irregular: !subcontratacaoRegular,
           entrevistados: entrevistas.length,
           cobertura: `${coveragePercent}%`,
           meta_atingida: targetMet,
@@ -221,7 +224,7 @@ const AuditWizard: React.FC<AuditWizardProps> = ({ obras, currentUser, onAuditCo
     } catch (err) {
       console.error(err);
       setStep('questions');
-      alert("Erro ao processar auditoria.");
+      alert("Falha técnica ao consolidar relatório. Verifique sua conexão ou tente novamente.");
     } finally {
       setLoading(false);
     }
