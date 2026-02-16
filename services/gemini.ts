@@ -5,28 +5,29 @@ import { AIAnalysisResult } from "../types";
 export const generateAuditReport = async (auditData: any): Promise<AIAnalysisResult> => {
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
   
-  const prompt = `ATUE COMO UM SISTEMA DE AUDITORIA DE CONFORMIDADE JURÍDICA EM OBRAS.
-  DADOS DA AUDITORIA: ${JSON.stringify(auditData)}
+  // Usando gemini-3-pro-preview para tarefas complexas de auditoria e cálculo
+  const prompt = `ATUE COMO UM SISTEMA DE AUDITORIA DE CONFORMIDADE JURÍDICA E OPERACIONAL EM OBRAS.
+  DADOS DA AUDITORIA RECEBIDOS: ${JSON.stringify(auditData)}
   
   SUA TAREFA:
-  1. Calcular o Índice Geral (0-100) baseado no peso dos blocos.
-  2. Projetar Exposição Financeira (Passivo Trabalhista) baseado em CLT Art 47 (R$ 60k por irregular) e Súmula 331 TST (R$ 100k fixo para quarteirização).
-  3. Identificar riscos imediatos.
+  1. Analise os desvios e calcule o Índice Geral (0-100).
+  2. Projete a Exposição Financeira (Passivo Trabalhista) baseada em CLT e Súmulas do TST.
+  3. Identifique riscos críticos imediatos.
 
-  SAÍDA OBRIGATÓRIA EM JSON:
-  - indiceGeral: número
-  - classificacao: REGULAR, ATENÇÃO ou CRÍTICA
-  - riscoJuridico: BAIXO, MÉDIO, ALTO ou CRÍTICO
-  - exposicaoFinanceira: número total projetado
-  - detalhamentoCalculo: array de objetos {item, valor, baseLegal, logica}
-  - naoConformidades: array de strings
-  - impactoJuridico: texto técnico curto
-  - recomendacoes: array de strings técnicas
-  - conclusaoExecutiva: parágrafo formal para a diretoria.`;
+  RETORNE APENAS UM JSON VÁLIDO COM:
+  - indiceGeral: (número 0-100)
+  - classificacao: (REGULAR, ATENÇÃO ou CRÍTICA)
+  - riscoJuridico: (BAIXO, MÉDIO, ALTO ou CRÍTICO)
+  - exposicaoFinanceira: (número total projetado em Reais)
+  - detalhamentoCalculo: (array de {item, valor, baseLegal, logica})
+  - naoConformidades: (array de strings)
+  - impactoJuridico: (texto curto sobre o risco legal)
+  - recomendacoes: (array de strings)
+  - conclusaoExecutiva: (parágrafo técnico para diretoria)`;
 
   try {
     const response = await ai.models.generateContent({
-      model: 'gemini-3-flash-preview',
+      model: 'gemini-3-pro-preview',
       contents: prompt,
       config: {
         responseMimeType: "application/json",
@@ -59,10 +60,23 @@ export const generateAuditReport = async (auditData: any): Promise<AIAnalysisRes
       }
     });
 
-    const text = response.text?.trim() || "{}";
+    const text = response.text?.trim();
+    if (!text) throw new Error("Resposta vazia da IA");
+    
     return JSON.parse(text) as AIAnalysisResult;
   } catch (error) {
     console.error("Erro na IA:", error);
-    throw new Error("Falha ao processar análise de risco.");
+    // Fallback básico em caso de erro crítico para não travar o app
+    return {
+      indiceGeral: 0,
+      classificacao: "ERRO DE ANÁLISE",
+      riscoJuridico: "INDETERMINADO",
+      exposicaoFinanceira: 0,
+      detalhamentoCalculo: [],
+      naoConformidades: ["Não foi possível processar a análise automática."],
+      impactoJuridico: "Falha na conexão com o motor de IA.",
+      recomendacoes: ["Verifique a conexão e tente novamente."],
+      conclusaoExecutiva: "Erro técnico ao gerar o relatório consolidado."
+    };
   }
 };

@@ -32,32 +32,6 @@ const AuditResult: React.FC<AuditResultProps> = ({ audit, report, onClose }) => 
     return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
   };
 
-  const getStatusColors = (score: number) => {
-    if (score >= 85) return {
-      bg: 'bg-emerald-600',
-      light: 'bg-emerald-50',
-      border: 'border-emerald-700',
-      text: 'text-emerald-700',
-      icon: <ShieldCheck className="text-emerald-500" size={24} />
-    };
-    if (score >= 70) return {
-      bg: 'bg-amber-500',
-      light: 'bg-amber-50',
-      border: 'border-amber-600',
-      text: 'text-amber-700',
-      icon: <AlertOctagon className="text-amber-500" size={24} />
-    };
-    return {
-      bg: 'bg-rose-600',
-      light: 'bg-rose-50',
-      border: 'border-rose-700',
-      text: 'text-rose-700',
-      icon: <ShieldAlert className="text-rose-500" size={24} />
-    };
-  };
-
-  const statusStyle = getStatusColors(report.indiceGeral);
-
   const handleGeneratePDF = async () => {
     if (isGenerating) return;
     setIsGenerating(true);
@@ -79,193 +53,104 @@ const AuditResult: React.FC<AuditResultProps> = ({ audit, report, onClose }) => 
         logging: false,
         backgroundColor: '#FFFFFF',
         onclone: (clonedDoc: Document) => {
-          // FORÇA VISIBILIDADE TOTAL NO CLONE
-          const reportClone = clonedDoc.getElementById('relatorio-unita-premium');
-          if (reportClone) {
-            reportClone.style.opacity = '1';
-            reportClone.style.visibility = 'visible';
-            reportClone.style.display = 'block';
-            reportClone.style.transform = 'none';
+          // FORÇA VISIBILIDADE TOTAL: Remove Tailwind classes que podem estar com opacity-0 durante a geração
+          const clone = clonedDoc.getElementById('relatorio-unita-premium');
+          if (clone) {
+            clone.style.opacity = '1';
+            clone.style.visibility = 'visible';
+            clone.style.display = 'block';
             
-            // Remove animações de todos os elementos dentro do relatório
-            const allElements = reportClone.querySelectorAll('*');
+            const allElements = clone.querySelectorAll('*');
             allElements.forEach((el: any) => {
               el.style.opacity = '1';
               el.style.visibility = 'visible';
-              el.style.transform = 'none';
               el.style.animation = 'none';
               el.style.transition = 'none';
-              // Remove classes específicas do Tailwind que causam opacidade zero
               el.classList.remove('animate-in', 'fade-in', 'duration-500', 'translate-y-4');
             });
           }
         }
       },
-      jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
-      pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
+      jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
     };
 
     try {
-      // Pequeno delay para estabilização
-      await new Promise(r => setTimeout(r, 300));
+      // Pequeno delay para garantir que o DOM clonado estabilizou
+      await new Promise(r => setTimeout(r, 500));
       // @ts-ignore
       await html2pdf().set(opt).from(element).save();
     } catch (err) {
       console.error(err);
-      alert("Falha ao gerar PDF.");
+      alert("Falha técnica ao gerar o PDF. Verifique se o script html2pdf está carregado.");
     } finally {
       setIsGenerating(false);
     }
   };
 
-  const coverage = Math.round(((audit.entrevistas?.length || 0) / (audit.equipe_campo || 1)) * 100);
+  const statusStyle = report.indiceGeral >= 85 ? 'bg-emerald-600' : report.indiceGeral >= 70 ? 'bg-amber-500' : 'bg-rose-600';
 
   return (
-    <div className="max-w-4xl mx-auto space-y-8 pb-32 animate-in fade-in duration-500">
-      
-      <header className="flex flex-col md:flex-row md:items-center justify-between gap-4 print-hidden">
+    <div className="max-w-4xl mx-auto space-y-8 pb-32">
+      <header className="flex flex-col md:flex-row justify-between items-center gap-4 print-hidden">
         <div>
-          <button onClick={onClose} className="flex items-center gap-1 text-xs font-black text-slate-500 uppercase tracking-widest hover:text-[#F05A22] mb-2">
-            <ArrowLeft size={14} /> Voltar ao Painel
-          </button>
-          <h1 className="text-4xl font-black text-slate-900 uppercase tracking-tighter">Relatório Consolidado</h1>
-          <p className="text-slate-500 font-bold uppercase text-[10px] tracking-widest">Inteligência de Risco Unità S.A.</p>
+          <button onClick={onClose} className="text-[10px] font-black text-slate-500 uppercase flex items-center gap-1 hover:text-[#F05A22] transition-colors"><ArrowLeft size={14} /> Voltar ao Painel</button>
+          <h1 className="text-3xl font-black text-slate-900 uppercase tracking-tighter">Relatório de Governança</h1>
         </div>
         <button 
           onClick={handleGeneratePDF}
           disabled={isGenerating}
-          className="bg-[#F05A22] text-white px-10 py-5 rounded-2xl font-black text-sm uppercase tracking-widest hover:bg-slate-900 transition-all border-4 border-slate-900 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] flex items-center gap-3 active:translate-y-1 active:shadow-none disabled:opacity-50"
+          className="bg-[#F05A22] text-white px-10 py-5 rounded-2xl font-black text-sm border-4 border-slate-900 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] disabled:opacity-50 flex items-center gap-3 active:translate-y-1 active:shadow-none transition-all"
         >
           {isGenerating ? <Loader2 className="animate-spin" size={20} /> : <Download size={20} />}
-          Baixar Documento PDF
+          EXPORTAR RELATÓRIO PDF
         </button>
       </header>
 
-      {/* ÁREA DO RELATÓRIO COM ESTÉTICA PREMIUM BRUTALISTA */}
-      <div id="relatorio-unita-premium" className="bg-white p-4 md:p-10 space-y-12 text-slate-900 border-x-4 border-slate-50 opacity-100 visible">
-        
-        {/* HEADER PDF */}
-        <div className="flex justify-between items-start border-b-8 border-slate-900 pb-10 mb-10 bg-white">
-          <UnitaLogo className="scale-125 origin-left" />
+      <div id="relatorio-unita-premium" className="bg-white p-10 space-y-12 text-slate-900 border-x-4 border-slate-50 opacity-100 visible shadow-xl">
+        <div className="flex justify-between border-b-8 border-slate-900 pb-10">
+          <UnitaLogo className="scale-110 origin-left" />
           <div className="text-right">
-            <h2 className="text-3xl font-black uppercase tracking-tighter leading-none text-slate-900">Protocolo de Conformidade</h2>
-            <div className="mt-6 grid grid-cols-2 gap-x-8 text-[11px] font-black uppercase text-slate-500 text-left border-l-4 border-slate-900 pl-6">
-               <div>
-                  <p>Unidade: <span className="text-slate-900 font-black">{audit.obra_id}</span></p>
-                  <p>Protocolo: <span className="text-slate-900 font-black">AR-{audit.id.split('-')[1]}</span></p>
-               </div>
-               <div className="border-l-2 border-slate-100 pl-6">
-                  <p>Data: <span className="text-slate-900 font-black">{new Date(audit.created_at).toLocaleDateString('pt-BR')}</span></p>
-                  <p>Amostragem: <span className="text-[#F05A22] font-black">{coverage}% do Efetivo</span></p>
-               </div>
-            </div>
+            <h2 className="text-2xl font-black uppercase text-slate-900 leading-none">Análise de Risco Digital</h2>
+            <p className="text-[10px] font-black uppercase text-slate-500 mt-2">Protocolo Unità: AR-{audit.id.split('-')[1]}</p>
+            <p className="text-[10px] font-black uppercase text-slate-900 mt-1">Data: {new Date(audit.created_at).toLocaleDateString('pt-BR')}</p>
           </div>
         </div>
 
-        {/* INDICADORES DE IMPACTO */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 bg-white">
-          <div className="bg-slate-50 p-6 rounded-[2rem] border-4 border-slate-900 shadow-[6px_6px_0px_0px_rgba(15,23,42,1)] text-center">
-             <Users className="text-[#F05A22] mx-auto mb-2" size={28} />
-             <p className="text-[10px] font-black text-slate-400 uppercase">Efetivo Total</p>
-             <p className="text-3xl font-black">{audit.equipe_campo}</p>
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="bg-slate-50 p-6 rounded-[2rem] border-4 border-slate-900 text-center shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+             <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Índice Geral</p>
+             <p className="text-4xl font-black text-slate-900">{report.indiceGeral}%</p>
           </div>
-          <div className="bg-slate-50 p-6 rounded-[2rem] border-4 border-slate-900 shadow-[6px_6px_0px_0px_rgba(15,23,42,1)] text-center">
-             <UserCheck className="text-emerald-500 mx-auto mb-2" size={28} />
-             <p className="text-[10px] font-black text-slate-400 uppercase">Auditados</p>
-             <p className="text-3xl font-black">{audit.entrevistas?.length}</p>
-          </div>
-          <div className={`${statusStyle.bg} p-6 rounded-[2rem] border-4 border-slate-900 shadow-[6px_6px_0px_0px_rgba(15,23,42,1)] text-center text-white`}>
-             <p className="text-[10px] font-black opacity-80 uppercase">Scoring</p>
-             <p className="text-4xl font-black">{report.indiceGeral}%</p>
-          </div>
-          <div className={`${statusStyle.bg} p-6 rounded-[2rem] border-4 border-slate-900 shadow-[6px_6px_0px_0px_rgba(15,23,42,1)] text-center text-white`}>
-             <p className="text-[10px] font-black opacity-80 uppercase">Risco Jurídico</p>
+          <div className={`${statusStyle} p-6 rounded-[2rem] border-4 border-slate-900 text-center text-white shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]`}>
+             <p className="text-[10px] font-black opacity-80 uppercase tracking-widest">Risco Jurídico</p>
              <p className="text-xl font-black uppercase tracking-tighter">{report.riscoJuridico}</p>
           </div>
+          <div className="bg-slate-900 p-6 rounded-[2rem] border-4 border-slate-900 text-center text-white col-span-2 shadow-[4px_4px_0px_0px_rgba(240,90,34,1)]">
+             <p className="text-[10px] font-black opacity-50 uppercase tracking-widest">Exposição Financeira Estimada</p>
+             <p className="text-3xl font-black text-[#F05A22] tracking-tighter">{formatCurrency(report.exposicaoFinanceira)}</p>
+          </div>
         </div>
 
-        {/* EXPOSIÇÃO FINANCEIRA */}
-        <div className="bg-white rounded-[3rem] border-8 border-slate-900 overflow-hidden shadow-[12px_12px_0px_0px_rgba(240,90,34,1)]">
-           <div className="bg-slate-900 p-8 flex items-center justify-between">
-              <div className="flex items-center gap-4">
-                 <div className="w-14 h-14 bg-[#F05A22] rounded-2xl flex items-center justify-center text-white border-2 border-white/20">
-                    <Coins size={32} />
-                 </div>
-                 <div>
-                    <h3 className="text-white font-black uppercase text-sm tracking-widest">Exposição Financeira Estimada</h3>
-                    <p className="text-[#F05A22] font-black text-[10px] uppercase">Cálculo projetado sobre o passivo latente</p>
-                 </div>
-              </div>
-              <TrendingDown className="text-rose-500" size={40} />
-           </div>
-           
-           <div className="p-12 flex flex-col md:flex-row items-center justify-between gap-10 bg-white">
-              <div className="text-center md:text-left">
-                 <p className="text-7xl font-black text-slate-900 tracking-tighter">
-                   {formatCurrency(report.exposicaoFinanceira)}
-                 </p>
-                 <p className="text-xs font-black text-slate-400 uppercase tracking-[0.2em] mt-2">Passivo Trabalhista e Previdenciário</p>
-              </div>
-              <div className="flex-1 max-w-sm">
-                 <div className="p-8 rounded-3xl border-4 border-slate-900 bg-slate-50 space-y-3">
-                    <p className="text-[10px] font-black uppercase text-slate-500 tracking-widest">Impacto em Compliance</p>
-                    <p className="text-sm font-bold text-slate-900 leading-relaxed italic">"{report.impactoJuridico}"</p>
-                 </div>
-              </div>
-           </div>
-
-           <div className="px-12 pb-12 bg-white">
-              <div className="bg-slate-50 border-4 border-slate-100 rounded-[2rem] p-8 space-y-4">
-                 <h4 className="text-xs font-black text-slate-900 uppercase flex items-center gap-3">
-                    <Calculator size={20} className="text-[#F05A22]" /> Memória de Cálculo e Base Legal
-                 </h4>
-                 <div className="grid grid-cols-1 gap-4 mt-6">
-                    {report.detalhamentoCalculo?.map((calc, i) => (
-                      <div key={i} className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b-2 border-slate-200 pb-4 last:border-0 last:pb-0">
-                         <div className="flex-1">
-                            <p className="text-[12px] font-black text-slate-900 uppercase">{calc.item}</p>
-                            <div className="flex items-center gap-2 mt-1">
-                               <Gavel size={12} className="text-slate-400" />
-                               <p className="text-[10px] font-bold text-slate-500 uppercase">{calc.baseLegal}</p>
-                            </div>
-                         </div>
-                         <div className="text-right">
-                            <span className="text-lg font-black text-rose-600">{formatCurrency(calc.valor)}</span>
-                         </div>
-                      </div>
-                    ))}
-                 </div>
-              </div>
-           </div>
+        <div className="space-y-6 bg-slate-50 p-8 rounded-[2.5rem] border-4 border-slate-100">
+           <h3 className="text-xl font-black uppercase border-l-8 border-[#F05A22] pl-4 tracking-tighter">Conclusão Técnica Executiva</h3>
+           <p className="text-lg font-bold italic leading-relaxed text-slate-800">"{report.conclusaoExecutiva}"</p>
         </div>
 
-        {/* EVIDÊNCIAS E NÃO CONFORMIDADES */}
-        <div className="space-y-8 bg-white">
-          <h3 className="text-2xl font-black text-slate-900 flex items-center gap-4 uppercase tracking-tighter border-l-8 border-[#F05A22] pl-6">
-            Não Conformidades Identificadas
-          </h3>
-          <div className="grid grid-cols-1 gap-6">
+        <div className="space-y-6">
+          <h3 className="text-xl font-black uppercase border-l-8 border-rose-600 pl-4 tracking-tighter">Desvios Identificados (Não Conformidades)</h3>
+          <div className="space-y-4">
              {audit.respostas.filter(r => r.resposta !== 'sim' && r.resposta !== 'n_a').map((r, i) => (
-               <div key={i} className="flex items-start gap-6 p-8 bg-rose-50 rounded-[2.5rem] border-4 border-rose-200 shadow-[6px_6px_0px_0px_rgba(225,29,72,0.1)]">
-                  <div className="shrink-0 w-14 h-14 bg-rose-600 text-white rounded-2xl flex items-center justify-center font-black border-4 border-slate-900 text-2xl shadow-sm">
-                    !
-                  </div>
-                  <div className="flex-1 space-y-4">
-                     <p className="text-lg font-black text-slate-900 uppercase tracking-tight leading-tight">
-                       {QUESTIONS.find(q => q.id === r.pergunta_id)?.texto}
-                     </p>
-                     <div className="bg-white p-5 rounded-2xl border-4 border-rose-100 shadow-inner text-slate-900 font-bold">
-                        <p className="text-[10px] font-black text-rose-600 uppercase mb-2">Desvio Técnico:</p>
-                        <p className="text-sm uppercase italic">
-                           {r.observacao}
-                        </p>
+               <div key={i} className="p-8 bg-rose-50 border-4 border-rose-200 rounded-[2.5rem] flex items-start gap-6 shadow-sm">
+                  <div className="w-12 h-12 shrink-0 bg-rose-600 text-white rounded-2xl flex items-center justify-center font-black text-2xl border-2 border-slate-900">!</div>
+                  <div className="space-y-3">
+                     <p className="font-black text-slate-900 uppercase text-sm tracking-tight leading-tight">{QUESTIONS.find(q => q.id === r.pergunta_id)?.texto}</p>
+                     <div className="bg-white p-4 rounded-xl border-2 border-rose-100 font-bold text-slate-700 text-xs italic uppercase">
+                        Evidência: {r.observacao}
                      </div>
                      {r.fotos && r.fotos.length > 0 && (
-                       <div className="flex gap-4 pt-2 overflow-x-auto pb-2">
-                          {r.fotos.map((f, fi) => (
-                            <img key={fi} src={f} className="w-28 h-28 rounded-2xl border-4 border-white object-cover shadow-md" />
-                          ))}
-                       </div>
+                        <div className="flex gap-3 mt-4 overflow-hidden">
+                           {r.fotos.slice(0, 4).map((f, fi) => <img key={fi} src={f} className="w-24 h-24 rounded-2xl border-4 border-white shadow-lg object-cover" />)}
+                        </div>
                      )}
                   </div>
                </div>
@@ -273,35 +158,21 @@ const AuditResult: React.FC<AuditResultProps> = ({ audit, report, onClose }) => 
           </div>
         </div>
 
-        {/* CONCLUSÃO E ASSINATURA */}
-        <section className="bg-slate-900 text-white p-12 rounded-[3.5rem] border-8 border-slate-900 shadow-[15px_15px_0px_0px_rgba(240,90,34,1)] relative overflow-hidden">
-          <div className="relative z-10 space-y-10">
-            <div className="flex items-center gap-4">
-               <FileText className="text-[#F05A22]" size={48} />
-               <h3 className="text-4xl font-black uppercase tracking-tighter">Conclusão Executiva</h3>
-            </div>
-            
-            <p className="text-2xl leading-relaxed font-black italic border-l-8 border-[#F05A22] pl-10 py-4">
-              "{report.conclusaoExecutiva}"
-            </p>
+        <div className="pt-24 border-t-8 border-slate-900 grid grid-cols-2 gap-20">
+           <div className="text-center space-y-4">
+              <div className="h-px bg-slate-400 w-full"></div>
+              <p className="text-[10px] font-black uppercase text-slate-400 tracking-[0.4em]">Auditor Responsável</p>
+              <p className="text-xs font-black uppercase text-slate-900">Unità Engenharia S.A.</p>
+           </div>
+           <div className="text-center space-y-4">
+              <div className="h-px bg-slate-400 w-full"></div>
+              <p className="text-[10px] font-black uppercase text-slate-400 tracking-[0.4em]">Gerência de Obra</p>
+              <p className="text-xs font-black uppercase text-slate-900">Engenharia de Produção</p>
+           </div>
+        </div>
 
-            <div className="pt-24 grid grid-cols-2 gap-20">
-               <div className="flex flex-col items-center">
-                  <div className="w-full h-px bg-white/20 mb-6"></div>
-                  <p className="text-[12px] font-black uppercase tracking-widest text-[#F05A22]">Auditor Unità S.A.</p>
-                  <p className="text-[10px] text-white/50 uppercase font-bold mt-2 tracking-widest">Protocolo Digital</p>
-               </div>
-               <div className="flex flex-col items-center">
-                  <div className="w-full h-px bg-white/20 mb-6"></div>
-                  <p className="text-[12px] font-black uppercase tracking-widest text-white">Engenharia Residente</p>
-                  <p className="text-[10px] text-white/50 uppercase font-bold mt-2 tracking-widest">Ciente dos Riscos</p>
-               </div>
-            </div>
-          </div>
-        </section>
-
-        <div className="pt-10 text-center text-[10px] font-black text-slate-200 uppercase tracking-[0.6em]">
-           CONFIDENCIAL - USO INTERNO EXCLUSIVO UNITÀ S.A.
+        <div className="pt-10 text-center text-[9px] font-black text-slate-300 uppercase tracking-[0.5em]">
+           DOCUMENTO CONFIDENCIAL - PROPRIEDADE UNITA S.A.
         </div>
       </div>
     </div>
