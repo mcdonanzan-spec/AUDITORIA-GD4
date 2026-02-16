@@ -51,7 +51,6 @@ const AuditWizard: React.FC<AuditWizardProps> = ({ obras, currentUser, onAuditCo
   const currentBlockKey = blockKeys[currentBlockIdx];
   const currentBlockQuestions = QUESTIONS.filter(q => q.bloco === currentBlockKey);
 
-  // Lógica de Amostragem (Meta 10%)
   const totalEfetivo = Number(equipeCampo) || 0;
   const targetCount = Math.ceil(totalEfetivo * 0.1);
   const coveragePercent = totalEfetivo > 0 ? Math.round((entrevistas.length / totalEfetivo) * 100) : 0;
@@ -128,7 +127,6 @@ const AuditWizard: React.FC<AuditWizardProps> = ({ obras, currentUser, onAuditCo
     }
     
     if (currentBlockKey === 'G') {
-      // Requisito obrigatório de atingir 10% do efetivo
       return totalEfetivo > 0 && targetMet && entrevistas.every(e => e.funcao.trim() !== '' && e.empresa.trim() !== '');
     }
 
@@ -150,6 +148,7 @@ const AuditWizard: React.FC<AuditWizardProps> = ({ obras, currentUser, onAuditCo
     setLoading(true);
 
     try {
+      // Payload estruturado para a IA (O serviço gemini.ts fará a limpeza das imagens)
       const auditPayload = {
         obra: obras.find(o => o.id === selectedObra)?.nome || '',
         amostragem: {
@@ -158,17 +157,20 @@ const AuditWizard: React.FC<AuditWizardProps> = ({ obras, currentUser, onAuditCo
           quarteirizacao_irregular: !subcontratacaoRegular,
           entrevistados: entrevistas.length,
           cobertura: `${coveragePercent}%`,
-          meta_atingida: targetMet
         },
         respostas_check: respostas.map(r => ({
            pergunta: QUESTIONS.find(q => q.id === r.pergunta_id)?.texto,
            resposta: r.resposta,
-           obs: r.observacao || ''
+           obs: r.observacao || '',
+           fotos: r.fotos // Serão removidas no service para economizar tokens
         })),
         entrevistas: entrevistas.map(e => ({
            funcao: e.funcao,
            empresa: e.empresa,
-           erros: e.respostas.filter(r => r.resposta !== 'sim').length
+           respostas: e.respostas.map(er => ({
+             pergunta: INTERVIEW_QUESTIONS.find(iq => iq.id === er.pergunta_id)?.texto,
+             resposta: er.resposta
+           }))
         }))
       };
 
@@ -195,7 +197,7 @@ const AuditWizard: React.FC<AuditWizardProps> = ({ obras, currentUser, onAuditCo
     } catch (err) {
       console.error(err);
       setStep('questions');
-      alert("Erro na análise. Verifique sua conexão ou créditos da API.");
+      alert("Falha no processamento. Tente novamente.");
     } finally {
       setLoading(false);
     }
@@ -279,8 +281,8 @@ const AuditWizard: React.FC<AuditWizardProps> = ({ obras, currentUser, onAuditCo
     return (
       <div className="min-h-[500px] flex flex-col items-center justify-center text-center space-y-6">
         <Loader2 className="animate-spin text-[#F05A22]" size={64} />
-        <h2 className="text-2xl font-black text-slate-900 uppercase">Gerando Inteligência de Risco...</h2>
-        <p className="text-slate-500 font-bold uppercase text-xs tracking-widest">Aguarde a análise do motor Gemini</p>
+        <h2 className="text-2xl font-black text-slate-900 uppercase">Análise de Risco em Tempo Real...</h2>
+        <p className="text-slate-500 font-bold uppercase text-xs tracking-widest">Sincronizando com o motor de Governança Unità</p>
       </div>
     );
   }
@@ -324,7 +326,6 @@ const AuditWizard: React.FC<AuditWizardProps> = ({ obras, currentUser, onAuditCo
           </div>
         ) : currentBlockKey === 'G' ? (
           <div className="space-y-6">
-            {/* NOVO: Informativo de Meta de 10% */}
             <div className={`p-8 rounded-[2rem] border-4 border-slate-900 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] flex flex-col md:flex-row items-center justify-between gap-6 transition-all ${targetMet ? 'bg-emerald-50' : 'bg-amber-50'}`}>
               <div className="flex items-center gap-5">
                 <div className={`w-16 h-16 rounded-2xl flex items-center justify-center border-4 border-slate-900 shadow-sm ${targetMet ? 'bg-emerald-500 text-white' : 'bg-amber-500 text-white'}`}>

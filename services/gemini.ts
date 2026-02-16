@@ -2,28 +2,51 @@
 import { GoogleGenAI, Type } from "@google/genai";
 import { AIAnalysisResult } from "../types";
 
+/**
+ * SANITIZAÇÃO SÊNIOR:
+ * Removemos strings base64 pesadas antes de enviar para a IA.
+ * A IA precisa da lógica (texto/números), não dos bytes das imagens.
+ */
+const sanitizeDataForAI = (data: any) => {
+  const cleanData = JSON.parse(JSON.stringify(data));
+  
+  if (cleanData.respostas_check) {
+    cleanData.respostas_check = cleanData.respostas_check.map((r: any) => {
+      const { fotos, ...rest } = r;
+      return {
+        ...rest,
+        quantidade_evidencias: fotos ? fotos.length : 0
+      };
+    });
+  }
+  return cleanData;
+};
+
 export const generateAuditReport = async (auditData: any): Promise<AIAnalysisResult> => {
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
   
-  // Usando gemini-3-pro-preview para tarefas complexas de auditoria e cálculo
-  const prompt = `ATUE COMO UM SISTEMA DE AUDITORIA DE CONFORMIDADE JURÍDICA E OPERACIONAL EM OBRAS.
-  DADOS DA AUDITORIA RECEBIDOS: ${JSON.stringify(auditData)}
+  // Limpa os dados para garantir que o payload seja leve (< 50kb em vez de 10mb+)
+  const cleanPayload = sanitizeDataForAI(auditData);
+
+  const prompt = `ATUE COMO UM SISTEMA DE AUDITORIA DE CONFORMIDADE JURÍDICA E OPERACIONAL (UNITA ENGENHARIA).
+  DADOS HIGIENIZADOS DA AUDITORIA: ${JSON.stringify(cleanPayload)}
   
   SUA TAREFA:
-  1. Analise os desvios e calcule o Índice Geral (0-100).
-  2. Projete a Exposição Financeira (Passivo Trabalhista) baseada em CLT e Súmulas do TST.
-  3. Identifique riscos críticos imediatos.
+  1. Analise os desvios baseando-se nas observações e respostas.
+  2. Calcule o Índice Geral (0-100).
+  3. Estime a Exposição Financeira (Passivo Trabalhista) baseada em CLT e NRs.
+  4. Gere recomendações estratégicas.
 
-  RETORNE APENAS UM JSON VÁLIDO COM:
-  - indiceGeral: (número 0-100)
-  - classificacao: (REGULAR, ATENÇÃO ou CRÍTICA)
-  - riscoJuridico: (BAIXO, MÉDIO, ALTO ou CRÍTICO)
-  - exposicaoFinanceira: (número total projetado em Reais)
-  - detalhamentoCalculo: (array de {item, valor, baseLegal, logica})
-  - naoConformidades: (array de strings)
-  - impactoJuridico: (texto curto sobre o risco legal)
-  - recomendacoes: (array de strings)
-  - conclusaoExecutiva: (parágrafo técnico para diretoria)`;
+  RETORNE APENAS JSON VÁLIDO:
+  - indiceGeral: number
+  - classificacao: REGULAR, ATENÇÃO ou CRÍTICA
+  - riscoJuridico: BAIXO, MÉDIO, ALTO ou CRÍTICO
+  - exposicaoFinanceira: number (valor em Reais)
+  - detalhamentoCalculo: array de {item, valor, baseLegal, logica}
+  - naoConformidades: array de strings
+  - impactoJuridico: string
+  - recomendacoes: array de strings
+  - conclusaoExecutiva: string (tom executivo para diretoria)`;
 
   try {
     const response = await ai.models.generateContent({
@@ -65,18 +88,17 @@ export const generateAuditReport = async (auditData: any): Promise<AIAnalysisRes
     
     return JSON.parse(text) as AIAnalysisResult;
   } catch (error) {
-    console.error("Erro na IA:", error);
-    // Fallback básico em caso de erro crítico para não travar o app
+    console.error("Erro Crítico na IA:", error);
     return {
       indiceGeral: 0,
-      classificacao: "ERRO DE ANÁLISE",
+      classificacao: "ERRO TÉCNICO",
       riscoJuridico: "INDETERMINADO",
       exposicaoFinanceira: 0,
       detalhamentoCalculo: [],
-      naoConformidades: ["Não foi possível processar a análise automática."],
-      impactoJuridico: "Falha na conexão com o motor de IA.",
-      recomendacoes: ["Verifique a conexão e tente novamente."],
-      conclusaoExecutiva: "Erro técnico ao gerar o relatório consolidado."
+      naoConformidades: ["Ocorreu uma falha no processamento da IA devido ao tamanho dos dados ou conexão."],
+      impactoJuridico: "Análise interrompida.",
+      recomendacoes: ["Tente gerar o relatório novamente ou reduza o número de fotos."],
+      conclusaoExecutiva: "Sistema temporariamente indisponível para análise qualitativa."
     };
   }
 };
