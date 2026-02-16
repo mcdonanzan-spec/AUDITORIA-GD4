@@ -8,15 +8,13 @@ import {
   ShieldCheck, 
   Users, 
   Database, 
-  MessageSquareQuote, 
   Plus, 
   Trash2, 
   UserCheck, 
-  AlertCircle, 
   LayoutDashboard,
   Camera,
-  Briefcase,
-  AlertOctagon
+  AlertOctagon,
+  Info
 } from 'lucide-react';
 import { Obra, Question, ResponseValue, AuditResponse, Audit, AIAnalysisResult, EntrevistaAmostral } from '../types';
 import { QUESTIONS, INTERVIEW_QUESTIONS, BLOCKS } from '../constants';
@@ -148,9 +146,6 @@ const AuditWizard: React.FC<AuditWizardProps> = ({ obras, currentUser, onAuditCo
     setLoading(true);
 
     try {
-      // OTIMIZAÇÃO CRÍTICA: Não enviar as fotos em base64 para a IA.
-      // A IA não precisa ver as fotos para calcular o risco jurídico baseado nos dados de texto.
-      // Isso reduz o payload em 95%.
       const auditPayload = {
         obra: obras.find(o => o.id === selectedObra)?.nome || '',
         amostragem: {
@@ -202,9 +197,20 @@ const AuditWizard: React.FC<AuditWizardProps> = ({ obras, currentUser, onAuditCo
     }
   };
 
+  const getButtonStyles = (val: ResponseValue, active: boolean) => {
+    if (!active) return 'bg-white text-slate-400 border-slate-200';
+    switch (val) {
+      case 'sim': return 'bg-emerald-500 text-white border-slate-900 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]';
+      case 'parcial': return 'bg-amber-500 text-white border-slate-900 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]';
+      case 'nao': return 'bg-rose-500 text-white border-slate-900 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]';
+      case 'n_a': return 'bg-slate-500 text-white border-slate-900 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]';
+      default: return 'bg-slate-900 text-white border-slate-900';
+    }
+  };
+
   if (step === 'setup') {
     return (
-      <div className="max-w-2xl mx-auto space-y-6">
+      <div className="max-w-2xl mx-auto space-y-6 animate-in fade-in duration-500">
         <header className="flex flex-col items-center">
           <button 
             onClick={() => onNavigate('dashboard')}
@@ -269,7 +275,7 @@ const AuditWizard: React.FC<AuditWizardProps> = ({ obras, currentUser, onAuditCo
 
   if (step === 'processing') {
     return (
-      <div className="min-h-[500px] flex flex-col items-center justify-center text-center space-y-8 animate-pulse">
+      <div className="min-h-[500px] flex flex-col items-center justify-center text-center space-y-8 animate-in fade-in">
         <div className="relative">
           <div className="w-32 h-32 border-[12px] border-slate-200 border-t-[#F05A22] rounded-full animate-spin"></div>
           <div className="absolute inset-0 flex items-center justify-center">
@@ -285,7 +291,7 @@ const AuditWizard: React.FC<AuditWizardProps> = ({ obras, currentUser, onAuditCo
   }
 
   return (
-    <div className="max-w-5xl mx-auto space-y-8 pb-20">
+    <div className="max-w-5xl mx-auto space-y-8 pb-20 animate-in fade-in duration-500">
       <input type="file" accept="image/*" capture="environment" className="hidden" ref={fileInputRef} onChange={handleFileChange} />
       
       <div className="flex items-center justify-between">
@@ -335,18 +341,18 @@ const AuditWizard: React.FC<AuditWizardProps> = ({ obras, currentUser, onAuditCo
           </div>
         ) : currentBlockKey === 'G' ? (
           <div className="space-y-8">
-            <div className="flex justify-between items-center bg-slate-900 p-6 rounded-3xl text-white">
+            <div className="flex justify-between items-center bg-slate-900 p-6 rounded-3xl text-white border-4 border-slate-900 shadow-[6px_6px_0px_0px_rgba(15,23,42,1)]">
                <h4 className="font-black uppercase text-sm">Amostragem Operacional</h4>
-               <button onClick={addEntrevistado} className="bg-[#F05A22] px-6 py-3 rounded-2xl font-black text-xs uppercase flex items-center gap-2"><Plus size={18} /> Add Colaborador</button>
+               <button onClick={addEntrevistado} className="bg-[#F05A22] px-6 py-3 rounded-2xl font-black text-xs uppercase flex items-center gap-2 shadow-sm"><Plus size={18} /> Add Colaborador</button>
             </div>
             {entrevistas.map((ent, idx) => (
-              <div key={ent.id} className="bg-white rounded-[2.5rem] border-4 border-slate-900 overflow-hidden">
+              <div key={ent.id} className="bg-white rounded-[2.5rem] border-4 border-slate-900 overflow-hidden shadow-[8px_8px_0px_0px_rgba(15,23,42,1)]">
                  <div className="bg-slate-50 p-6 border-b-4 border-slate-900 flex justify-between items-center">
                     <div className="flex gap-4 flex-1">
                       <input placeholder="Função" className="bg-white border-2 border-slate-200 rounded-xl px-4 py-2 font-black text-xs flex-1 uppercase" value={ent.funcao} onChange={e => setEntrevistas(ev => ev.map(it => it.id === ent.id ? {...it, funcao: e.target.value} : it))} />
                       <input placeholder="Empresa" className="bg-white border-2 border-slate-200 rounded-xl px-4 py-2 font-black text-xs flex-1 uppercase" value={ent.empresa} onChange={e => setEntrevistas(ev => ev.map(it => it.id === ent.id ? {...it, empresa: e.target.value} : it))} />
                     </div>
-                    <button onClick={() => removeEntrevistado(ent.id)} className="p-3 text-rose-600"><Trash2 size={20} /></button>
+                    <button onClick={() => removeEntrevistado(ent.id)} className="p-3 text-rose-600 hover:bg-rose-50 rounded-xl transition-all"><Trash2 size={20} /></button>
                  </div>
                  <div className="p-8 grid grid-cols-1 md:grid-cols-2 gap-6">
                     {INTERVIEW_QUESTIONS.map(q => (
@@ -354,7 +360,13 @@ const AuditWizard: React.FC<AuditWizardProps> = ({ obras, currentUser, onAuditCo
                          <p className="text-[10px] font-black uppercase text-slate-500">{q.texto}</p>
                          <div className="flex gap-2">
                            {['sim', 'nao'].map(v => (
-                             <button key={v} onClick={() => updateEntrevista(ent.id, q.id, v as any)} className={`flex-1 py-2 rounded-xl font-black text-[10px] uppercase border-2 ${ent.respostas.find(r => r.pergunta_id === q.id)?.resposta === v ? 'bg-slate-900 text-white border-slate-900' : 'bg-white text-slate-400 border-slate-200'}`}>{v}</button>
+                             <button 
+                              key={v} 
+                              onClick={() => updateEntrevista(ent.id, q.id, v as any)} 
+                              className={`flex-1 py-3 rounded-xl font-black text-[10px] uppercase border-4 transition-all ${ent.respostas.find(r => r.pergunta_id === q.id)?.resposta === v ? (v === 'sim' ? 'bg-emerald-500 border-slate-900 text-white' : 'bg-rose-500 border-slate-900 text-white') : 'bg-white text-slate-400 border-slate-100'}`}
+                             >
+                              {v}
+                             </button>
                            ))}
                          </div>
                       </div>
@@ -367,22 +379,64 @@ const AuditWizard: React.FC<AuditWizardProps> = ({ obras, currentUser, onAuditCo
           currentBlockQuestions.map((q) => {
             const resp = respostas.find(r => r.pergunta_id === q.id);
             const needsObs = resp && resp.resposta !== 'sim' && resp.resposta !== 'n_a';
+            const numPhotos = resp?.fotos?.length || 0;
+            const minRequired = q.minPhotos || 3;
+            const photosMissing = q.requiresPhotos && numPhotos < minRequired;
+
             return (
               <div key={q.id} className="bg-white p-8 rounded-[2rem] border-4 border-slate-900 shadow-[8px_8px_0px_0px_rgba(15,23,42,1)] space-y-6">
                 <p className="text-slate-900 font-black text-xl uppercase tracking-tight leading-tight">{q.texto}</p>
                 <div className="flex gap-3">
                   {(['sim', 'parcial', 'nao', 'n_a'] as ResponseValue[]).map((val) => (
-                    <button key={val} onClick={() => handleResponseChange(q.id, val)} className={`flex-1 py-4 rounded-2xl font-black text-[10px] uppercase border-4 transition-all ${resp?.resposta === val ? 'bg-slate-900 text-white border-slate-900' : 'bg-slate-50 text-slate-400 border-slate-200'}`}>{val}</button>
+                    <button 
+                      key={val} 
+                      onClick={() => handleResponseChange(q.id, val)} 
+                      className={`flex-1 py-5 rounded-2xl font-black text-[10px] uppercase border-4 transition-all ${getButtonStyles(val, resp?.resposta === val)}`}
+                    >
+                      {val.replace('_', ' ')}
+                    </button>
                   ))}
                 </div>
+                
                 {q.requiresPhotos && (
-                  <div className="bg-slate-50 p-4 rounded-2xl border-4 border-slate-900 flex gap-4 overflow-x-auto">
-                    {resp?.fotos?.map((f, i) => <img key={i} src={f} className="w-16 h-16 rounded-xl object-cover border-2 border-slate-900" />)}
-                    <button onClick={() => triggerCamera(q.id)} className="w-16 h-16 rounded-xl border-4 border-dashed border-slate-300 flex items-center justify-center text-slate-400 hover:border-[#F05A22] hover:text-[#F05A22]"><Camera size={24} /></button>
+                  <div className={`p-6 rounded-2xl border-4 border-slate-900 flex flex-col gap-4 ${photosMissing ? 'bg-amber-50' : 'bg-slate-50'}`}>
+                    <div className="flex items-center justify-between">
+                       <div className="flex items-center gap-2 text-slate-500 font-black text-[10px] uppercase tracking-widest">
+                          <Info size={14} className="text-[#F05A22]" />
+                          Mínimo de {minRequired} fotos necessárias
+                       </div>
+                       <div className={`px-4 py-1 rounded-full text-[10px] font-black uppercase border-2 ${photosMissing ? 'bg-amber-500 text-white border-slate-900' : 'bg-emerald-500 text-white border-slate-900'}`}>
+                          {numPhotos} / {minRequired} capturadas
+                       </div>
+                    </div>
+                    <div className="flex gap-4 overflow-x-auto pb-2">
+                      {resp?.fotos?.map((f, i) => (
+                        <div key={i} className="relative group shrink-0">
+                          <img src={f} className="w-20 h-20 rounded-xl object-cover border-4 border-slate-900" />
+                          <button 
+                            onClick={() => {
+                              setRespostas(prev => prev.map(r => r.pergunta_id === q.id ? { ...r, fotos: r.fotos?.filter((_, idx) => idx !== i) } : r));
+                            }}
+                            className="absolute -top-2 -right-2 bg-rose-600 text-white rounded-full p-1 border-2 border-slate-900 shadow-sm"
+                          >
+                            <Trash2 size={12} />
+                          </button>
+                        </div>
+                      ))}
+                      <button onClick={() => triggerCamera(q.id)} className="w-20 h-20 rounded-xl border-4 border-dashed border-slate-300 flex items-center justify-center text-slate-300 hover:border-[#F05A22] hover:text-[#F05A22] transition-colors bg-white">
+                        <Camera size={28} />
+                      </button>
+                    </div>
                   </div>
                 )}
+                
                 {needsObs && (
-                  <textarea placeholder="Justifique o desvio..." className="w-full border-4 border-slate-900 rounded-2xl p-4 font-black bg-rose-50" value={resp.observacao || ''} onChange={e => handleObsChange(q.id, e.target.value)} />
+                  <textarea 
+                    placeholder="⚠️ Observação obrigatória: Justifique o desvio identificado..." 
+                    className="w-full border-4 border-slate-900 rounded-2xl p-5 font-black bg-rose-50 placeholder:text-rose-300 focus:ring-4 focus:ring-rose-500/10 outline-none transition-all" 
+                    value={resp.observacao || ''} 
+                    onChange={e => handleObsChange(q.id, e.target.value)} 
+                  />
                 )}
               </div>
             );
@@ -391,8 +445,8 @@ const AuditWizard: React.FC<AuditWizardProps> = ({ obras, currentUser, onAuditCo
       </div>
 
       <footer className="flex justify-between items-center py-10">
-        <button onClick={() => currentBlockIdx === 0 ? setStep('setup') : setCurrentBlockIdx(prev => prev - 1)} className="font-black uppercase text-xs tracking-widest flex items-center gap-2 hover:text-[#F05A22]"><ChevronLeft /> Voltar</button>
-        <button disabled={!isBlockComplete()} onClick={() => currentBlockIdx === blockKeys.length - 1 ? handleSubmit() : setCurrentBlockIdx(prev => prev + 1)} className="bg-[#F05A22] text-white px-16 py-6 rounded-2xl font-black text-sm uppercase tracking-widest border-4 border-slate-900 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] disabled:opacity-50">Próxima Etapa <ChevronRight className="inline" /></button>
+        <button onClick={() => currentBlockIdx === 0 ? setStep('setup') : setCurrentBlockIdx(prev => prev - 1)} className="font-black uppercase text-xs tracking-widest flex items-center gap-2 hover:text-[#F05A22] transition-colors"><ChevronLeft /> Voltar</button>
+        <button disabled={!isBlockComplete()} onClick={() => currentBlockIdx === blockKeys.length - 1 ? handleSubmit() : setCurrentBlockIdx(prev => prev + 1)} className="bg-[#F05A22] text-white px-16 py-6 rounded-2xl font-black text-sm uppercase tracking-widest border-4 border-slate-900 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] disabled:opacity-50 hover:bg-slate-900 active:translate-y-1 active:shadow-none transition-all">Próxima Etapa <ChevronRight className="inline" /></button>
       </footer>
     </div>
   );

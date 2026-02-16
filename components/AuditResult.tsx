@@ -7,20 +7,17 @@ import {
   Download,
   ShieldCheck,
   AlertOctagon,
-  Building2,
   UserCheck,
   Users,
   Loader2,
   Coins,
   TrendingDown,
-  Database,
   ArrowRightLeft,
-  Scale,
   Gavel,
   Calculator
 } from 'lucide-react';
 import { Audit, AIAnalysisResult } from '../types';
-import { QUESTIONS, INTERVIEW_QUESTIONS } from '../constants';
+import { QUESTIONS } from '../constants';
 import { UnitaLogo } from './Layout';
 
 interface AuditResultProps {
@@ -83,17 +80,23 @@ const AuditResult: React.FC<AuditResultProps> = ({ audit, report, onClose }) => 
         logging: false,
         backgroundColor: '#FFFFFF',
         onclone: (clonedDoc: Document) => {
-          // CORREÇÃO CRÍTICA: Força visibilidade total no documento clonado
-          const report = clonedDoc.getElementById('relatorio-unita-premium');
-          if (report) {
-            report.style.opacity = '1';
-            report.style.visibility = 'visible';
-            report.style.display = 'block';
-            // Remove classes de animação que podem causar transparência
-            const animatedElements = report.querySelectorAll('.animate-in, .fade-in');
-            animatedElements.forEach((el: any) => {
-              el.classList.remove('animate-in', 'fade-in', 'duration-500');
+          // CORREÇÃO CRÍTICA PARA PDF EM BRANCO:
+          // Força visibilidade total e remove delays de animação no clone de captura
+          const reportClone = clonedDoc.getElementById('relatorio-unita-premium');
+          if (reportClone) {
+            reportClone.style.opacity = '1';
+            reportClone.style.visibility = 'visible';
+            reportClone.style.display = 'block';
+            reportClone.style.transform = 'none';
+            
+            // Localiza e "limpa" todos os elementos animados que possam estar com opacidade zero
+            const anims = reportClone.querySelectorAll('.animate-in, .fade-in, .duration-500');
+            anims.forEach((el: any) => {
               el.style.opacity = '1';
+              el.style.visibility = 'visible';
+              el.style.transform = 'none';
+              el.style.animation = 'none';
+              el.style.transition = 'none';
             });
           }
         }
@@ -103,6 +106,8 @@ const AuditResult: React.FC<AuditResultProps> = ({ audit, report, onClose }) => 
     };
 
     try {
+      // Pequeno delay para garantir que o browser terminou layouts internos
+      await new Promise(r => setTimeout(r, 200));
       // @ts-ignore
       await html2pdf().set(opt).from(element).save();
     } catch (err) {
@@ -136,7 +141,7 @@ const AuditResult: React.FC<AuditResultProps> = ({ audit, report, onClose }) => 
         </button>
       </header>
 
-      {/* ÁREA DO RELATÓRIO COM ESTÉTICA PREMIUM */}
+      {/* ÁREA DO RELATÓRIO COM ESTÉTICA PREMIUM BRUTALISTA */}
       <div id="relatorio-unita-premium" className="bg-white p-4 md:p-10 space-y-12 text-slate-900 border-x-4 border-slate-50">
         
         {/* HEADER PDF */}
@@ -146,12 +151,12 @@ const AuditResult: React.FC<AuditResultProps> = ({ audit, report, onClose }) => 
             <h2 className="text-3xl font-black uppercase tracking-tighter leading-none text-slate-900">Protocolo de Conformidade</h2>
             <div className="mt-6 grid grid-cols-2 gap-x-8 text-[11px] font-black uppercase text-slate-500 text-left border-l-4 border-slate-900 pl-6">
                <div>
-                  <p>Unidade: <span className="text-slate-900">{audit.obra_id}</span></p>
-                  <p>ID Auditoria: <span className="text-slate-900">{audit.id.split('-')[1]}</span></p>
+                  <p>Unidade: <span className="text-slate-900 font-black">{audit.obra_id}</span></p>
+                  <p>Protocolo: <span className="text-slate-900 font-black">AR-{audit.id.split('-')[1]}</span></p>
                </div>
                <div className="border-l-2 border-slate-100 pl-6">
-                  <p>Data: <span className="text-slate-900">{new Date(audit.created_at).toLocaleDateString('pt-BR')}</span></p>
-                  <p>Amostragem: <span className="text-[#F05A22]">{coverage}% do Efetivo</span></p>
+                  <p>Data: <span className="text-slate-900 font-black">{new Date(audit.created_at).toLocaleDateString('pt-BR')}</span></p>
+                  <p>Amostragem: <span className="text-[#F05A22] font-black">{coverage}% do Efetivo</span></p>
                </div>
             </div>
           </div>
@@ -159,27 +164,27 @@ const AuditResult: React.FC<AuditResultProps> = ({ audit, report, onClose }) => 
 
         {/* INDICADORES DE IMPACTO */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 bg-white">
-          <div className="bg-slate-50 p-6 rounded-[2rem] border-4 border-slate-900 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] text-center">
+          <div className="bg-slate-50 p-6 rounded-[2rem] border-4 border-slate-900 shadow-[6px_6px_0px_0px_rgba(15,23,42,1)] text-center">
              <Users className="text-[#F05A22] mx-auto mb-2" size={28} />
              <p className="text-[10px] font-black text-slate-400 uppercase">Efetivo Total</p>
              <p className="text-3xl font-black">{audit.equipe_campo}</p>
           </div>
-          <div className="bg-slate-50 p-6 rounded-[2rem] border-4 border-slate-900 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] text-center">
+          <div className="bg-slate-50 p-6 rounded-[2rem] border-4 border-slate-900 shadow-[6px_6px_0px_0px_rgba(15,23,42,1)] text-center">
              <UserCheck className="text-emerald-500 mx-auto mb-2" size={28} />
              <p className="text-[10px] font-black text-slate-400 uppercase">Auditados</p>
              <p className="text-3xl font-black">{audit.entrevistas?.length}</p>
           </div>
-          <div className={`${statusStyle.bg} p-6 rounded-[2rem] border-4 border-slate-900 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] text-center text-white`}>
+          <div className={`${statusStyle.bg} p-6 rounded-[2rem] border-4 border-slate-900 shadow-[6px_6px_0px_0px_rgba(15,23,42,1)] text-center text-white`}>
              <p className="text-[10px] font-black opacity-80 uppercase">Scoring</p>
              <p className="text-4xl font-black">{report.indiceGeral}%</p>
           </div>
-          <div className={`${statusStyle.bg} p-6 rounded-[2rem] border-4 border-slate-900 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] text-center text-white`}>
+          <div className={`${statusStyle.bg} p-6 rounded-[2rem] border-4 border-slate-900 shadow-[6px_6px_0px_0px_rgba(15,23,42,1)] text-center text-white`}>
              <p className="text-[10px] font-black opacity-80 uppercase">Risco Jurídico</p>
              <p className="text-xl font-black uppercase tracking-tighter">{report.riscoJuridico}</p>
           </div>
         </div>
 
-        {/* EXPOSIÇÃO FINANCEIRA - CARD BRUTALISTA */}
+        {/* EXPOSIÇÃO FINANCEIRA */}
         <div className="bg-white rounded-[3rem] border-8 border-slate-900 overflow-hidden shadow-[12px_12px_0px_0px_rgba(240,90,34,1)]">
            <div className="bg-slate-900 p-8 flex items-center justify-between">
               <div className="flex items-center gap-4">
@@ -239,23 +244,26 @@ const AuditResult: React.FC<AuditResultProps> = ({ audit, report, onClose }) => 
           <h3 className="text-2xl font-black text-slate-900 flex items-center gap-4 uppercase tracking-tighter border-l-8 border-[#F05A22] pl-6">
             Não Conformidades Identificadas
           </h3>
-          <div className="grid grid-cols-1 gap-4">
+          <div className="grid grid-cols-1 gap-6">
              {audit.respostas.filter(r => r.resposta !== 'sim' && r.resposta !== 'n_a').map((r, i) => (
-               <div key={i} className="flex items-start gap-6 p-6 bg-rose-50 rounded-3xl border-4 border-rose-200 shadow-sm">
-                  <div className="shrink-0 w-12 h-12 bg-rose-600 text-white rounded-2xl flex items-center justify-center font-black border-4 border-slate-900">
+               <div key={i} className="flex items-start gap-6 p-8 bg-rose-50 rounded-[2.5rem] border-4 border-rose-200 shadow-[6px_6px_0px_0px_rgba(225,29,72,0.1)]">
+                  <div className="shrink-0 w-14 h-14 bg-rose-600 text-white rounded-2xl flex items-center justify-center font-black border-4 border-slate-900 text-2xl shadow-sm">
                     !
                   </div>
-                  <div className="flex-1 space-y-3">
-                     <p className="text-[14px] font-black text-slate-900 uppercase tracking-tight">
+                  <div className="flex-1 space-y-4">
+                     <p className="text-lg font-black text-slate-900 uppercase tracking-tight leading-tight">
                        {QUESTIONS.find(q => q.id === r.pergunta_id)?.texto}
                      </p>
-                     <p className="text-xs font-bold text-rose-800 bg-white/50 p-4 rounded-xl border border-rose-200 uppercase">
-                       <span className="text-rose-600 mr-2">DESVIO:</span> {r.observacao}
-                     </p>
+                     <div className="bg-white p-5 rounded-2xl border-4 border-rose-100 shadow-inner">
+                        <p className="text-[10px] font-black text-rose-600 uppercase mb-2">Desvio Técnico:</p>
+                        <p className="text-sm font-bold text-slate-700 uppercase italic">
+                           {r.observacao}
+                        </p>
+                     </div>
                      {r.fotos && r.fotos.length > 0 && (
-                       <div className="flex gap-4 pt-2">
+                       <div className="flex gap-4 pt-2 overflow-x-auto pb-2">
                           {r.fotos.map((f, fi) => (
-                            <img key={fi} src={f} className="w-24 h-24 rounded-2xl border-4 border-white object-cover shadow-md" />
+                            <img key={fi} src={f} className="w-28 h-28 rounded-2xl border-4 border-white object-cover shadow-md" />
                           ))}
                        </div>
                      )}
@@ -281,20 +289,20 @@ const AuditResult: React.FC<AuditResultProps> = ({ audit, report, onClose }) => 
                <div className="flex flex-col items-center">
                   <div className="w-full h-px bg-white/20 mb-6"></div>
                   <p className="text-[12px] font-black uppercase tracking-widest text-[#F05A22]">Auditor Unità S.A.</p>
-                  <p className="text-[10px] text-white/50 uppercase font-bold mt-2">Protocolo de Governança</p>
+                  <p className="text-[10px] text-white/50 uppercase font-bold mt-2 tracking-widest">Protocolo Digital</p>
                </div>
                <div className="flex flex-col items-center">
                   <div className="w-full h-px bg-white/20 mb-6"></div>
                   <p className="text-[12px] font-black uppercase tracking-widest text-white">Engenharia Residente</p>
-                  <p className="text-[10px] text-white/50 uppercase font-bold mt-2">Ciente dos Riscos</p>
+                  <p className="text-[10px] text-white/50 uppercase font-bold mt-2 tracking-widest">Ciente dos Riscos</p>
                </div>
             </div>
           </div>
-          <div className="absolute top-0 right-0 w-64 h-64 bg-[#F05A22]/10 blur-[100px] rounded-full"></div>
+          <div className="absolute top-0 right-0 w-64 h-64 bg-[#F05A22]/5 blur-[100px] rounded-full"></div>
         </section>
 
-        <div className="pt-10 text-center text-[10px] font-black text-slate-300 uppercase tracking-[0.6em]">
-           DOCUMENTO CONFIDENCIAL - USO INTERNO EXCLUSIVO
+        <div className="pt-10 text-center text-[10px] font-black text-slate-200 uppercase tracking-[0.6em]">
+           CONFIDENCIAL - USO INTERNO EXCLUSIVO UNITÀ S.A.
         </div>
       </div>
     </div>
