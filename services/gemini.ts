@@ -5,7 +5,6 @@ import { AIAnalysisResult } from "../types";
 /**
  * SANITIZAÇÃO SÊNIOR:
  * Removemos strings base64 pesadas antes de enviar para a IA.
- * A IA precisa da lógica (texto/números), não dos bytes das imagens.
  */
 const sanitizeDataForAI = (data: any) => {
   const cleanData = JSON.parse(JSON.stringify(data));
@@ -25,28 +24,27 @@ const sanitizeDataForAI = (data: any) => {
 export const generateAuditReport = async (auditData: any): Promise<AIAnalysisResult> => {
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
   
-  // Limpa os dados para garantir que o payload seja leve (< 50kb em vez de 10mb+)
   const cleanPayload = sanitizeDataForAI(auditData);
 
-  const prompt = `ATUE COMO UM SISTEMA DE AUDITORIA DE CONFORMIDADE JURÍDICA E OPERACIONAL (UNITA ENGENHARIA).
-  DADOS HIGIENIZADOS DA AUDITORIA: ${JSON.stringify(cleanPayload)}
+  const prompt = `ATUE COMO UM ESPECIALISTA EM RISCO JURÍDICO E COMPLIANCE DA UNITA ENGENHARIA.
+  ANALISE ESTES DADOS DE AUDITORIA: ${JSON.stringify(cleanPayload)}
   
-  SUA TAREFA:
-  1. Analise os desvios baseando-se nas observações e respostas.
-  2. Calcule o Índice Geral (0-100).
-  3. Estime a Exposição Financeira (Passivo Trabalhista) baseada em CLT e NRs.
-  4. Gere recomendações estratégicas.
-
-  RETORNE APENAS JSON VÁLIDO:
+  SUA MISSÃO:
+  1. Calcule o Score de Conformidade (0-100%).
+  2. Identifique o Risco Jurídico (BAIXO, MÉDIO, ALTO, CRÍTICO).
+  3. Estime a Exposição Financeira Total considerando CLT e NRs.
+  4. Crie uma "Memória de Cálculo" detalhada com pelo menos 4 itens (ex: Falta de Registro, Verbas Rescisórias, Benefícios, Multas NRs).
+  
+  RETORNE APENAS JSON:
   - indiceGeral: number
   - classificacao: REGULAR, ATENÇÃO ou CRÍTICA
   - riscoJuridico: BAIXO, MÉDIO, ALTO ou CRÍTICO
-  - exposicaoFinanceira: number (valor em Reais)
+  - exposicaoFinanceira: number
   - detalhamentoCalculo: array de {item, valor, baseLegal, logica}
   - naoConformidades: array de strings
   - impactoJuridico: string
   - recomendacoes: array de strings
-  - conclusaoExecutiva: string (tom executivo para diretoria)`;
+  - conclusaoExecutiva: string (máximo 3 linhas, tom de diretoria)`;
 
   try {
     const response = await ai.models.generateContent({
@@ -94,11 +92,13 @@ export const generateAuditReport = async (auditData: any): Promise<AIAnalysisRes
       classificacao: "ERRO TÉCNICO",
       riscoJuridico: "INDETERMINADO",
       exposicaoFinanceira: 0,
-      detalhamentoCalculo: [],
-      naoConformidades: ["Ocorreu uma falha no processamento da IA devido ao tamanho dos dados ou conexão."],
+      detalhamentoCalculo: [
+        { item: "Falha de Processamento", valor: 0, baseLegal: "Timeout", logica: "Dados pesados ou instabilidade de rede" }
+      ],
+      naoConformidades: ["Ocorreu uma falha no processamento qualitativo."],
       impactoJuridico: "Análise interrompida.",
-      recomendacoes: ["Tente gerar o relatório novamente ou reduza o número de fotos."],
-      conclusaoExecutiva: "Sistema temporariamente indisponível para análise qualitativa."
+      recomendacoes: ["Tente gerar novamente sem exceder o limite de fotos."],
+      conclusaoExecutiva: "Sistema temporariamente indisponível para análise qualitativa completa."
     };
   }
 };
