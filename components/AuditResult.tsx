@@ -29,7 +29,6 @@ const AuditResult: React.FC<AuditResultProps> = ({ audit, report, onClose }) => 
   const handleGeneratePDF = async () => {
     setIsGenerating(true);
     
-    // O elemento que queremos converter
     const element = document.getElementById('relatorio-tecnico-unita');
     
     if (!element) {
@@ -38,13 +37,12 @@ const AuditResult: React.FC<AuditResultProps> = ({ audit, report, onClose }) => 
       return;
     }
 
-    // Configurações do PDF
     const opt = {
-      margin: [10, 10, 10, 10], // Margens em mm
+      margin: [10, 10, 10, 10],
       filename: `Relatorio_Unita_${audit.obra_id}_${new Date().toLocaleDateString('pt-BR').replace(/\//g, '-')}.pdf`,
       image: { type: 'jpeg', quality: 0.98 },
       html2canvas: { 
-        scale: 2, // Aumenta a resolução
+        scale: 2,
         useCORS: true, 
         letterRendering: true,
         backgroundColor: '#FFFFFF'
@@ -53,11 +51,11 @@ const AuditResult: React.FC<AuditResultProps> = ({ audit, report, onClose }) => 
     };
 
     try {
-      // @ts-ignore - html2pdf vem do script no index.html
+      // @ts-ignore
       await html2pdf().set(opt).from(element).save();
     } catch (error) {
       console.error("Erro ao gerar PDF:", error);
-      alert("Falha ao gerar o documento. Tente novamente ou use o atalho Ctrl+P.");
+      alert("Falha ao gerar o documento.");
     } finally {
       setIsGenerating(false);
     }
@@ -74,7 +72,6 @@ const AuditResult: React.FC<AuditResultProps> = ({ audit, report, onClose }) => 
   return (
     <div className="max-w-4xl mx-auto space-y-8 pb-24 animate-in fade-in duration-500">
       
-      {/* HEADER DA WEB (INTERFACE DO USUÁRIO) */}
       <header className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <button onClick={onClose} className="flex items-center gap-1 text-xs font-black text-slate-500 uppercase tracking-widest hover:text-[#F05A22] mb-2">
@@ -105,13 +102,8 @@ const AuditResult: React.FC<AuditResultProps> = ({ audit, report, onClose }) => 
         </div>
       </header>
 
-      {/* 
-          CONTAINER DO RELATÓRIO (O QUE VAI PARA O PDF) 
-          Usamos padding interno alto para o canvas não cortar bordas
-      */}
       <div id="relatorio-tecnico-unita" className="bg-white p-2 md:p-4 space-y-10">
         
-        {/* CABEÇALHO DO DOCUMENTO NO PDF */}
         <div className="flex justify-between items-center border-b-8 border-slate-900 pb-10 mb-10">
           <UnitaLogo className="scale-125 origin-left" />
           <div className="text-right">
@@ -125,7 +117,6 @@ const AuditResult: React.FC<AuditResultProps> = ({ audit, report, onClose }) => 
           </div>
         </div>
 
-        {/* Blocos de Resumo */}
         <div className="grid grid-cols-2 gap-6">
           <div className="bg-slate-50 p-6 rounded-[2rem] border-4 border-slate-900 flex items-center gap-5">
              <div className="w-14 h-14 bg-white rounded-2xl flex items-center justify-center border-2 border-slate-200">
@@ -149,7 +140,6 @@ const AuditResult: React.FC<AuditResultProps> = ({ audit, report, onClose }) => 
           </div>
         </div>
 
-        {/* Scoring de Risco */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div className="bg-white p-8 rounded-[2.5rem] border-4 border-slate-900 shadow-md flex flex-col items-center justify-center text-center space-y-4">
             <div className="text-4xl font-black text-slate-900 tracking-tighter">{report.indiceGeral}%</div>
@@ -169,7 +159,6 @@ const AuditResult: React.FC<AuditResultProps> = ({ audit, report, onClose }) => 
           </div>
         </div>
 
-        {/* Itens de Verificação */}
         <div className="space-y-6">
           <h3 className="text-xl font-black text-slate-900 flex items-center gap-3 uppercase tracking-tighter border-l-8 border-[#F05A22] pl-4">
             Evidências do Checklist (Campo)
@@ -198,7 +187,6 @@ const AuditResult: React.FC<AuditResultProps> = ({ audit, report, onClose }) => 
           </div>
         </div>
 
-        {/* Entrevistas Detalhadas */}
         <div className="space-y-6">
           <h3 className="text-xl font-black text-slate-900 flex items-center gap-3 uppercase tracking-tighter border-l-8 border-[#F05A22] pl-4">
             Amostragem de Entrevistas Comportamentais
@@ -236,8 +224,8 @@ const AuditResult: React.FC<AuditResultProps> = ({ audit, report, onClose }) => 
           </div>
         </div>
 
-        {/* Parecer Final e Assinaturas */}
-        <section className="bg-white p-10 rounded-[2.5rem] border-4 border-slate-900 text-slate-900 space-y-6 break-inside-avoid mt-12">
+        {/* Parecer Final e Área de Assinatura Digital Certificada */}
+        <section className="bg-white p-10 rounded-[2.5rem] border-4 border-slate-900 text-slate-900 space-y-8 break-inside-avoid mt-12 relative overflow-hidden">
           <div className="flex items-center gap-3">
             <FileText className="text-[#F05A22]" size={32} />
             <h3 className="text-2xl font-black uppercase tracking-tighter">Conclusão Executiva</h3>
@@ -246,21 +234,41 @@ const AuditResult: React.FC<AuditResultProps> = ({ audit, report, onClose }) => 
             "{report.conclusaoExecutiva}"
           </p>
           
-          <div className="pt-24">
-             <div className="grid grid-cols-2 gap-20">
-                <div className="border-t-4 border-slate-900 pt-4 text-center">
-                   <p className="text-[12px] font-black uppercase tracking-widest">Auditor Unità S.A.</p>
-                   <p className="text-[9px] font-bold text-slate-400 mt-1 uppercase tracking-tighter">Responsável pela Coleta</p>
+          <div className="pt-20 space-y-16">
+             <div className="grid grid-cols-2 gap-16">
+                <div className="flex flex-col items-center">
+                   <div className="w-full h-24 border-b-2 border-slate-300 flex items-center justify-center mb-4 relative">
+                      <span className="text-[10px] text-slate-300 font-bold uppercase tracking-[0.4em] absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 select-none pointer-events-none">
+                         Espaço para assinatura Gov.br
+                      </span>
+                   </div>
+                   <p className="text-[12px] font-black uppercase tracking-widest text-slate-900">Auditor Unità S.A.</p>
+                   <p className="text-[9px] font-bold text-slate-400 mt-1 uppercase tracking-tighter italic">Responsável pela Coleta de Dados em Campo</p>
                 </div>
-                <div className="border-t-4 border-slate-900 pt-4 text-center">
-                   <p className="text-[12px] font-black uppercase tracking-widest">Responsável pela Obra</p>
-                   <p className="text-[9px] font-bold text-slate-400 mt-1 uppercase tracking-tighter">Ciente do Resultado</p>
+                <div className="flex flex-col items-center">
+                   <div className="w-full h-24 border-b-2 border-slate-300 flex items-center justify-center mb-4 relative">
+                      <span className="text-[10px] text-slate-300 font-bold uppercase tracking-[0.4em] absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 select-none pointer-events-none">
+                         Espaço para assinatura Gov.br
+                      </span>
+                   </div>
+                   <p className="text-[12px] font-black uppercase tracking-widest text-slate-900">Responsável pela Unidade</p>
+                   <p className="text-[9px] font-bold text-slate-400 mt-1 uppercase tracking-tighter italic">Ciente do Resultado e Matriz de Risco</p>
+                </div>
+             </div>
+
+             <div className="pt-8 border-t border-slate-100 flex justify-between items-center text-slate-400">
+                <div className="flex flex-col">
+                   <span className="text-[8px] font-black uppercase tracking-widest">Hash de Segurança AuditRisk</span>
+                   <span className="text-[10px] font-mono">{audit.id.toUpperCase()}</span>
+                </div>
+                <div className="text-right flex flex-col">
+                   <span className="text-[8px] font-black uppercase tracking-widest">Documento Válido para</span>
+                   <span className="text-[10px] font-black text-slate-900 uppercase tracking-tighter">Assinatura Digital Certificada (ICP-Brasil)</span>
                 </div>
              </div>
           </div>
         </section>
 
-        {/* Rodapé do PDF */}
         <div className="pt-10 text-center text-[9px] font-black text-slate-300 uppercase tracking-[0.4em]">
            UNITA ENGENHARIA S.A. - SISTEMA AUDITRISK v2.5
         </div>

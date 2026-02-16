@@ -26,6 +26,7 @@ export interface Question {
   texto: string;
   peso: number;
   requiresPhotos?: boolean;
+  minPhotos?: number; // Novo campo para validação específica
 }
 
 export type ResponseValue = 'sim' | 'parcial' | 'nao' | 'n_a';
@@ -34,13 +35,13 @@ export interface AuditResponse {
   pergunta_id: string;
   resposta: ResponseValue;
   observacao?: string;
-  fotos?: string[]; // Suporte a múltiplas fotos
+  fotos?: string[];
 }
 
 export interface EntrevistaAmostral {
   id: string;
   funcao: string;
-  empresa: string; // Novo campo empresa
+  empresa: string;
   respostas: {
     pergunta_id: string;
     resposta: ResponseValue;

@@ -127,21 +127,21 @@ const AuditWizard: React.FC<AuditWizardProps> = ({ obras, currentUser, onAuditCo
     }
     
     if (currentBlockKey === 'G') {
-      // Trava de 10% de amostragem
       return targetMet && entrevistas.length > 0 && entrevistas.every(e => e.funcao.trim() !== '' && e.empresa.trim() !== '');
     }
 
-    // Trava de justificativa obrigatória e fotos
     return currentBlockQuestions.every(q => {
       const r = respostas.find(resp => resp.pergunta_id === q.id);
       if (!r) return false;
       
-      // Se não for SIM nem N/A, a observação é obrigatória
       const needsObs = r.resposta !== 'sim' && r.resposta !== 'n_a';
       if (needsObs && (!r.observacao || r.observacao.trim().length < 5)) return false;
 
-      // Se exigir fotos, mínimo de 3
-      if (q.requiresPhotos && (r.fotos?.length || 0) < 3) return false;
+      // Validação dinâmica do número de fotos baseado no novo campo minPhotos
+      if (q.requiresPhotos) {
+        const minReq = q.minPhotos || 3;
+        if ((r.fotos?.length || 0) < minReq) return false;
+      }
       
       return true;
     });
@@ -487,6 +487,7 @@ const AuditWizard: React.FC<AuditWizardProps> = ({ obras, currentUser, onAuditCo
             const resp = respostas.find(r => r.pergunta_id === q.id);
             const needsObs = resp && resp.resposta !== 'sim' && resp.resposta !== 'n_a';
             const obsIsMissing = needsObs && (!resp.observacao || resp.observacao.trim().length < 5);
+            const minReq = q.minPhotos || 3;
             
             return (
               <div key={q.id} className="bg-white p-8 rounded-[2rem] border-4 border-slate-900 shadow-[8px_8px_0px_0px_rgba(15,23,42,1)] space-y-6 transition-all hover:-translate-y-1">
@@ -513,14 +514,14 @@ const AuditWizard: React.FC<AuditWizardProps> = ({ obras, currentUser, onAuditCo
                 </div>
 
                 {q.requiresPhotos && (
-                  <div className={`bg-slate-50 p-6 rounded-2xl border-4 space-y-4 transition-all ${((resp?.fotos?.length || 0) < 3) ? 'border-rose-400' : 'border-slate-900'}`}>
+                  <div className={`bg-slate-50 p-6 rounded-2xl border-4 space-y-4 transition-all ${((resp?.fotos?.length || 0) < minReq) ? 'border-rose-400' : 'border-slate-900'}`}>
                     <div className="flex justify-between items-center">
                       <p className="text-xs font-black text-slate-900 uppercase tracking-widest flex items-center gap-2">
                          <Camera size={16} className="text-[#F05A22]" /> 
-                         Evidências da Estrutura (Mínimo 3 Fotos)
+                         Evidência Fotográfica (Mínimo {minReq} {minReq === 1 ? 'Foto' : 'Fotos'})
                       </p>
-                      <span className={`text-xs font-black ${(resp?.fotos?.length || 0) < 3 ? 'text-rose-600 animate-pulse' : 'text-emerald-600'}`}>
-                        {resp?.fotos?.length || 0}/3
+                      <span className={`text-xs font-black ${(resp?.fotos?.length || 0) < minReq ? 'text-rose-600 animate-pulse' : 'text-emerald-600'}`}>
+                        {resp?.fotos?.length || 0}/{minReq}
                       </span>
                     </div>
                     <div className="flex gap-4 overflow-x-auto pb-2">
