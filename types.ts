@@ -7,7 +7,7 @@ export interface User {
   nome: string;
   email: string;
   perfil: UserRole;
-  status: UserStatus; // Novo campo
+  status: UserStatus;
   obra_ids?: string[];
 }
 
@@ -24,7 +24,7 @@ export type AuditType = 'mensal' | 'extraordinaria';
 
 export interface Question {
   id: string;
-  bloco: 'A' | 'B' | 'C' | 'D' | 'E' | 'F' | 'G';
+  bloco: 'A' | 'B' | 'C' | 'E' | 'F' | 'G';
   texto: string;
   peso: number;
   requiresPhotos?: boolean;
