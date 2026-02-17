@@ -110,6 +110,7 @@ const App: React.FC = () => {
           <AuditResult 
             audit={viewingAudit.audit} 
             report={viewingAudit.report} 
+            obraName={obras.find(o => o.id === viewingAudit.audit.obra_id)?.nome || viewingAudit.audit.obra_id}
             onClose={() => setCurrentPage('dashboard')} 
           />
         ) : <Dashboard audits={filteredAudits} obras={filteredObras} onNavigate={setCurrentPage} user={user} />;

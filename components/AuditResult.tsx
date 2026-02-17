@@ -21,10 +21,11 @@ import { UnitaLogo } from './Layout';
 interface AuditResultProps {
   audit: Audit;
   report: AIAnalysisResult;
+  obraName: string;
   onClose: () => void;
 }
 
-const AuditResult: React.FC<AuditResultProps> = ({ audit, report, onClose }) => {
+const AuditResult: React.FC<AuditResultProps> = ({ audit, report, obraName, onClose }) => {
   const [isGenerating, setIsGenerating] = React.useState(false);
 
   const formatCurrency = (value: number) => {
@@ -88,7 +89,7 @@ const AuditResult: React.FC<AuditResultProps> = ({ audit, report, onClose }) => 
         {/* METADADOS DA AUDITORIA */}
         <div className="grid grid-cols-2 gap-10 text-[10px] font-bold uppercase tracking-tight text-slate-500">
           <div className="space-y-2">
-            <p>Canteiro: <span className="text-slate-900">{audit.obra_id}</span></p>
+            <p>Canteiro: <span className="text-slate-900">{obraName}</span></p>
             <p>Protocolo: <span className="text-slate-900">AR-{audit.id.split('-')[1]}</span></p>
             <p>Data/Hora: <span className="text-slate-900">{new Date(audit.created_at).toLocaleString('pt-BR')}</span></p>
           </div>
