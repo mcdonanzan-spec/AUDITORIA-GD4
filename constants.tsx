@@ -11,9 +11,6 @@ export const QUESTIONS: Question[] = [
   { id: 'b3', bloco: 'B', texto: 'O efetivo em campo é integralmente composto por funcionários com RE validado no GD4?', peso: 20 },
   { id: 'b4', bloco: 'B', texto: 'A obra está livre de trabalhadores com status "pendente" circulando em frentes de serviço?', peso: 30 },
   
-  // BLOCO C - SUBCONTRATAÇÃO
-  { id: 'c1', bloco: 'C', texto: 'Toda subcontratação (quarteirização) possui contrato assinado digitalmente e autorizado no GD4?', peso: 30 },
-  
   // BLOCO E - TÉCNICO DE CAMPO
   { id: 'e1', bloco: 'E', texto: 'O controle de ponto dos empreiteiros é feito IN Loco na Obra?', peso: 40, requiresPhotos: true, minPhotos: 2 },
 
@@ -22,6 +19,9 @@ export const QUESTIONS: Question[] = [
   { id: 'f_h2', bloco: 'F', texto: 'A manutenção da documentação da MÃO DE OBRA PRÓPRIA está atualizada no sistema (Item 02 GRD)?', peso: 30 },
   { id: 'f_h3', bloco: 'F', texto: 'As certidões negativas (CND, CRF, CNDT) das contratadas estão dentro da validade no sistema?', peso: 20 },
   { id: 'f_h4', bloco: 'F', texto: 'Os treinamentos obrigatórios (NRs) dos funcionários próprios estão com certificados válidos no GD4?', peso: 25 },
+
+  // BLOCO H - DIAGNÓSTICO DE QUARTEIRIZAÇÃO (PÓS-AMOSTRAGEM)
+  { id: 'h1', bloco: 'H', texto: 'Toda subcontratação identificada através dos uniformes/entrevistas possui contrato autorizado no GD4?', peso: 50, requiresPhotos: true, minPhotos: 1 },
 ];
 
 export const INTERVIEW_QUESTIONS: Question[] = [
@@ -36,8 +36,8 @@ export const INTERVIEW_QUESTIONS: Question[] = [
 export const BLOCKS = {
   A: 'Portaria e Acesso',
   B: 'Gestão de Efetivo',
-  C: 'Subcontratação',
   E: 'Técnico de Campo',
   F: 'Governança GRD (01 e 02)',
-  G: 'Amostragem Operacional'
+  G: 'Amostragem Operacional',
+  H: 'Diagnóstico de Quarteirização'
 };

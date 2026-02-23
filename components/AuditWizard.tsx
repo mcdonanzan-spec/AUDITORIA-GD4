@@ -17,7 +17,8 @@ import {
   Info,
   Loader2,
   Target,
-  AlertCircle
+  AlertCircle,
+  FileSearch
 } from 'lucide-react';
 import { Obra, Question, ResponseValue, AuditResponse, Audit, AIAnalysisResult, EntrevistaAmostral } from '../types';
 import { QUESTIONS, INTERVIEW_QUESTIONS, BLOCKS } from '../constants';
@@ -123,11 +124,19 @@ const AuditWizard: React.FC<AuditWizardProps> = ({ obras, currentUser, onAuditCo
 
   const isBlockComplete = () => {
     if (currentBlockKey === 'B') {
-      return equipeCampo !== '' && equipeGd4 !== '' && subcontratacaoRegular !== null;
+      return equipeCampo !== '' && equipeGd4 !== '';
     }
     
     if (currentBlockKey === 'G') {
       return totalEfetivo > 0 && targetMet && entrevistas.every(e => e.funcao.trim() !== '' && e.empresa.trim() !== '');
+    }
+
+    if (currentBlockKey === 'H') {
+      const hResp = respostas.find(r => r.pergunta_id === 'h1');
+      if (!hResp || subcontratacaoRegular === null) return false;
+      if (hResp.resposta !== 'sim' && (!hResp.observacao || hResp.observacao.trim().length < 5)) return false;
+      if ((hResp.fotos?.length || 0) < 1) return false;
+      return true;
     }
 
     return currentBlockQuestions.every(q => {
@@ -148,7 +157,6 @@ const AuditWizard: React.FC<AuditWizardProps> = ({ obras, currentUser, onAuditCo
     setLoading(true);
 
     try {
-      // Payload estruturado para a IA (O serviço gemini.ts fará a limpeza das imagens)
       const auditPayload = {
         obra: obras.find(o => o.id === selectedObra)?.nome || '',
         amostragem: {
@@ -162,7 +170,7 @@ const AuditWizard: React.FC<AuditWizardProps> = ({ obras, currentUser, onAuditCo
            pergunta: QUESTIONS.find(q => q.id === r.pergunta_id)?.texto,
            resposta: r.resposta,
            obs: r.observacao || '',
-           fotos: r.fotos // Serão removidas no service para economizar tokens
+           fotos: r.fotos
         })),
         entrevistas: entrevistas.map(e => ({
            funcao: e.funcao,
@@ -306,6 +314,10 @@ const AuditWizard: React.FC<AuditWizardProps> = ({ obras, currentUser, onAuditCo
       <div className="space-y-6">
         {currentBlockKey === 'B' ? (
           <div className="bg-white p-8 rounded-[2.5rem] border-4 border-slate-900 shadow-[8px_8px_0px_0px_rgba(15,23,42,1)] space-y-10">
+            <div className="flex items-center gap-4 mb-4">
+               <Users className="text-[#F05A22]" />
+               <h3 className="text-lg font-black uppercase tracking-tight">Contagem de Efetivo</h3>
+            </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
               <div className="space-y-3">
                 <label className="text-[10px] font-black text-slate-500 uppercase">Efetivo Real em Campo</label>
@@ -316,13 +328,19 @@ const AuditWizard: React.FC<AuditWizardProps> = ({ obras, currentUser, onAuditCo
                 <input type="number" className="w-full bg-slate-50 border-4 border-slate-900 rounded-2xl px-6 py-5 font-black text-4xl text-slate-900 placeholder-slate-300 focus:outline-none" value={equipeGd4} onChange={e => setEquipeGd4(e.target.value)} />
               </div>
             </div>
-            <div className="space-y-4">
-              <p className="text-xs font-black uppercase text-slate-500">Subcontratação Identificada?</p>
-              <div className="flex gap-4">
-                <button onClick={() => setSubcontratacaoRegular(true)} className={`flex-1 py-6 rounded-2xl font-black border-4 transition-all ${subcontratacaoRegular === true ? 'bg-slate-900 text-white border-slate-900' : 'bg-white text-slate-400 border-slate-200'}`}>SIM</button>
-                <button onClick={() => setSubcontratacaoRegular(false)} className={`flex-1 py-6 rounded-2xl font-black border-4 transition-all ${subcontratacaoRegular === false ? 'bg-slate-900 text-white border-slate-900' : 'bg-white text-slate-400 border-slate-200'}`}>NÃO</button>
-              </div>
-            </div>
+            {currentBlockQuestions.map((q) => {
+               const resp = respostas.find(r => r.pergunta_id === q.id);
+               return (
+                 <div key={q.id} className="space-y-4 pt-6 border-t-2 border-slate-100">
+                   <p className="text-slate-900 font-black text-xl uppercase leading-tight tracking-tight">{q.texto}</p>
+                   <div className="flex gap-2">
+                     {(['sim', 'parcial', 'nao', 'n_a'] as ResponseValue[]).map((val) => (
+                       <button key={val} onClick={() => handleResponseChange(q.id, val)} className={`flex-1 py-5 rounded-2xl font-black text-[10px] border-4 transition-all ${getButtonStyles(val, resp?.resposta === val)}`}>{val.replace('_', ' ').toUpperCase()}</button>
+                     ))}
+                   </div>
+                 </div>
+               );
+            })}
           </div>
         ) : currentBlockKey === 'G' ? (
           <div className="space-y-6">
@@ -356,7 +374,7 @@ const AuditWizard: React.FC<AuditWizardProps> = ({ obras, currentUser, onAuditCo
             </div>
 
             <div className="flex justify-between items-center bg-slate-900 p-6 rounded-3xl text-white border-4 border-slate-900 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)]">
-               <span className="font-black uppercase text-xs tracking-widest">Checklist Amostral ({entrevistas.length})</span>
+               <span className="font-black uppercase text-xs tracking-widest">Coleta de Vestígios em Campo ({entrevistas.length})</span>
                <button onClick={addEntrevistado} className="bg-[#F05A22] px-6 py-3 rounded-2xl font-black text-xs uppercase flex items-center gap-2 border-2 border-slate-900 hover:bg-slate-900 transition-colors"><Plus size={18} /> Add Colaborador</button>
             </div>
 
@@ -382,6 +400,71 @@ const AuditWizard: React.FC<AuditWizardProps> = ({ obras, currentUser, onAuditCo
               </div>
             ))}
           </div>
+        ) : currentBlockKey === 'H' ? (
+           <div className="space-y-8">
+             <div className="bg-slate-900 text-white p-10 rounded-[3rem] border-4 border-slate-900 shadow-[10px_10px_0px_0px_rgba(240,90,34,1)]">
+                <div className="flex items-center gap-6 mb-8 border-b border-slate-700 pb-6">
+                   <div className="p-4 bg-[#F05A22] rounded-3xl"><FileSearch size={32} /></div>
+                   <div>
+                      <h3 className="text-2xl font-black uppercase tracking-tighter">Diagnóstico Final de Quarteirização</h3>
+                      <p className="text-[10px] font-black uppercase text-[#F05A22] tracking-[0.2em]">Cotejo: Amostragem vs Governança GD4</p>
+                   </div>
+                </div>
+                
+                <div className="space-y-8">
+                  <p className="text-sm font-bold uppercase text-slate-400 leading-relaxed italic">
+                    "Baseado nos vestígios colhidos na amostragem (uniformes, empresas citadas e benefícios), informe se toda a cadeia de subcontratação está formalizada."
+                  </p>
+                  
+                  <div className="space-y-4">
+                    <p className="text-xs font-black uppercase text-white">Veredito do Auditor:</p>
+                    <div className="flex gap-4">
+                      <button onClick={() => setSubcontratacaoRegular(true)} className={`flex-1 py-6 rounded-2xl font-black border-4 transition-all ${subcontratacaoRegular === true ? 'bg-[#F05A22] text-white border-slate-900 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]' : 'bg-slate-800 text-slate-500 border-slate-700'}`}>TUDO REGULARIZADO</button>
+                      <button onClick={() => setSubcontratacaoRegular(false)} className={`flex-1 py-6 rounded-2xl font-black border-4 transition-all ${subcontratacaoRegular === false ? 'bg-rose-600 text-white border-slate-900 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]' : 'bg-slate-800 text-slate-500 border-slate-700'}`}>QUARTEIRIZAÇÃO IRREGULAR</button>
+                    </div>
+                  </div>
+
+                  {currentBlockQuestions.map((q) => {
+                    const resp = respostas.find(r => r.pergunta_id === q.id);
+                    return (
+                      <div key={q.id} className="space-y-6 bg-slate-800/50 p-8 rounded-[2rem] border border-slate-700">
+                        <p className="text-white font-black text-lg uppercase leading-tight tracking-tight">{q.texto}</p>
+                        <div className="flex gap-2">
+                          {(['sim', 'nao'] as ResponseValue[]).map((val) => (
+                            <button key={val} onClick={() => handleResponseChange(q.id, val)} className={`flex-1 py-5 rounded-2xl font-black text-[10px] border-4 transition-all ${getButtonStyles(val, resp?.resposta === val)}`}>{val.toUpperCase()}</button>
+                          ))}
+                        </div>
+                        
+                        <div className={`p-5 border-4 rounded-2xl space-y-4 bg-slate-900 border-slate-700`}>
+                          <div className="flex justify-between items-center text-[10px] font-black uppercase">
+                             <span className="flex items-center gap-2 text-slate-400"><Camera size={14} className="text-[#F05A22]" /> Foto do Vestígio (Obrigatório)</span>
+                             <span className={`px-3 py-1 rounded-full border-2 border-slate-900 bg-[#F05A22] text-white`}>{resp?.fotos?.length || 0} / 1</span>
+                          </div>
+                          <div className="flex gap-3 overflow-x-auto pb-2">
+                             {resp?.fotos?.map((f, i) => (
+                               <div key={i} className="relative shrink-0">
+                                 <img src={f} className="w-20 h-20 rounded-xl border-4 border-slate-900 object-cover" />
+                                 <button onClick={() => setRespostas(prev => prev.map(r => r.pergunta_id === q.id ? {...r, fotos: r.fotos?.filter((_, idx) => idx !== i)} : r))} className="absolute -top-2 -right-2 bg-rose-600 text-white p-1 rounded-full border-2 border-slate-900 shadow-md"><Trash2 size={12} /></button>
+                               </div>
+                             ))}
+                             <button onClick={() => triggerCamera(q.id)} className="w-20 h-20 bg-slate-800 border-4 border-dashed border-slate-600 rounded-xl flex items-center justify-center text-slate-500 hover:text-[#F05A22] transition-colors"><Camera size={32} /></button>
+                          </div>
+                        </div>
+
+                        {(resp?.resposta === 'nao') && (
+                          <textarea 
+                            className="w-full border-4 border-slate-900 rounded-2xl p-5 font-black text-slate-900 bg-rose-50 placeholder-rose-300 focus:outline-none" 
+                            placeholder="DESCREVA O VESTÍGIO ENCONTRADO (Ex: Uniforme da Empresa X mas colaborador diz trabalhar para Y)..." 
+                            value={resp.observacao || ''} 
+                            onChange={e => handleObsChange(q.id, e.target.value)} 
+                          />
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+             </div>
+           </div>
         ) : (
           currentBlockQuestions.map((q) => {
             const resp = respostas.find(r => r.pergunta_id === q.id);
@@ -433,7 +516,7 @@ const AuditWizard: React.FC<AuditWizardProps> = ({ obras, currentUser, onAuditCo
 
       <footer className="flex justify-between py-10">
         <button onClick={() => currentBlockIdx === 0 ? setStep('setup') : setCurrentBlockIdx(prev => prev - 1)} className="font-black uppercase text-xs hover:text-[#F05A22] flex items-center gap-2"><ChevronLeft size={18} /> Anterior</button>
-        <button disabled={!isBlockComplete()} onClick={() => currentBlockIdx === blockKeys.length - 1 ? handleSubmit() : setCurrentBlockIdx(prev => prev + 1)} className="bg-[#F05A22] text-white px-12 py-5 rounded-2xl font-black text-sm border-4 border-slate-900 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] disabled:opacity-50 hover:bg-slate-900 transition-all active:translate-y-1 active:shadow-none">PRÓXIMO BLOCO <ChevronRight className="inline" size={18} /></button>
+        <button disabled={!isBlockComplete()} onClick={() => currentBlockIdx === blockKeys.length - 1 ? handleSubmit() : setCurrentBlockIdx(prev => prev + 1)} className="bg-[#F05A22] text-white px-12 py-5 rounded-2xl font-black text-sm border-4 border-slate-900 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] disabled:opacity-50 hover:bg-slate-900 transition-all active:translate-y-1 active:shadow-none">{currentBlockIdx === blockKeys.length - 1 ? 'FINALIZAR E ANALISAR' : 'PRÓXIMO BLOCO'} <ChevronRight className="inline" size={18} /></button>
       </footer>
     </div>
   );

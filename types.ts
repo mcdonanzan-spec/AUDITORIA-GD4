@@ -24,7 +24,7 @@ export type AuditType = 'mensal' | 'extraordinaria';
 
 export interface Question {
   id: string;
-  bloco: 'A' | 'B' | 'C' | 'E' | 'F' | 'G';
+  bloco: 'A' | 'B' | 'E' | 'F' | 'G' | 'H';
   texto: string;
   peso: number;
   requiresPhotos?: boolean;
