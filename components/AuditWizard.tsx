@@ -134,7 +134,9 @@ const AuditWizard: React.FC<AuditWizardProps> = ({ obras, currentUser, onAuditCo
     if (currentBlockKey === 'H') {
       const hResp = respostas.find(r => r.pergunta_id === 'h1');
       if (!hResp || subcontratacaoRegular === null) return false;
-      if (hResp.resposta !== 'sim' && (!hResp.observacao || hResp.observacao.trim().length < 5)) return false;
+      if (hResp.resposta === 'n_a') return true;
+      const needsObs = hResp.resposta === 'nao';
+      if (needsObs && (!hResp.observacao || hResp.observacao.trim().length < 5)) return false;
       if ((hResp.fotos?.length || 0) < 1) return false;
       return true;
     }
@@ -466,14 +468,14 @@ const AuditWizard: React.FC<AuditWizardProps> = ({ obras, currentUser, onAuditCo
                     return (
                       <div key={q.id} className="space-y-8 bg-slate-800/30 p-10 rounded-[2.5rem] border-2 border-slate-800">
                         <p className="text-white font-black text-xl uppercase leading-tight tracking-tight">{q.texto}</p>
-                        <div className="grid grid-cols-2 gap-4">
-                          {(['sim', 'nao'] as ResponseValue[]).map((val) => (
+                        <div className="grid grid-cols-3 gap-4">
+                          {(['sim', 'nao', 'n_a'] as ResponseValue[]).map((val) => (
                             <button 
                               key={val} 
                               onClick={() => handleResponseChange(q.id, val)} 
                               className={`py-6 rounded-2xl font-black text-xs border-4 transition-all tracking-widest ${getButtonStyles(val, resp?.resposta === val)}`}
                             >
-                              {val.toUpperCase()}
+                              {val === 'n_a' ? 'N A' : val.toUpperCase()}
                             </button>
                           ))}
                         </div>

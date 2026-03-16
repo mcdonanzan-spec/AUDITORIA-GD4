@@ -21,7 +21,7 @@ export const QUESTIONS: Question[] = [
   { id: 'f_h4', bloco: 'F', texto: 'Os treinamentos obrigatórios (NRs) dos funcionários próprios estão com certificados válidos no GD4?', peso: 25 },
 
   // BLOCO H - DIAGNÓSTICO DE QUARTEIRIZAÇÃO (PÓS-AMOSTRAGEM)
-  { id: 'h1', bloco: 'H', texto: 'Toda subcontratação identificada através dos uniformes/entrevistas possui contrato autorizado no GD4?', peso: 50, requiresPhotos: true, minPhotos: 1 },
+  { id: 'h1', bloco: 'H', texto: 'Toda quarteirização identificada através dos uniformes/entrevistas possui contrato autorizado no GD4?', peso: 50, requiresPhotos: true, minPhotos: 1 },
 ];
 
 export const INTERVIEW_QUESTIONS: Question[] = [
