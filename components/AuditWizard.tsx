@@ -313,34 +313,59 @@ const AuditWizard: React.FC<AuditWizardProps> = ({ obras, currentUser, onAuditCo
 
       <div className="space-y-6">
         {currentBlockKey === 'B' ? (
-          <div className="bg-white p-8 rounded-[2.5rem] border-4 border-slate-900 shadow-[8px_8px_0px_0px_rgba(15,23,42,1)] space-y-10">
-            <div className="flex items-center gap-4 mb-4">
-               <Users className="text-[#F05A22]" />
-               <h3 className="text-lg font-black uppercase tracking-tight">Contagem de Efetivo</h3>
+          <div className="bg-white p-10 rounded-[3rem] border-4 border-slate-900 shadow-[12px_12px_0px_0px_rgba(15,23,42,1)] space-y-12">
+            <div className="flex items-center gap-4 mb-2">
+               <div className="p-3 bg-slate-100 rounded-2xl border-2 border-slate-900 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+                 <Users className="text-[#F05A22]" size={28} />
+               </div>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-              <div className="space-y-3">
-                <label className="text-[10px] font-black text-slate-500 uppercase">Efetivo Real em Campo</label>
-                <input type="number" className="w-full bg-slate-50 border-4 border-slate-900 rounded-2xl px-6 py-5 font-black text-4xl text-slate-900 placeholder-slate-300 focus:outline-none" value={equipeCampo} onChange={e => setEquipeCampo(e.target.value)} />
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+              <div className="space-y-4">
+                <label className="text-[11px] font-black text-slate-500 uppercase tracking-widest block">Efetivo Real em Campo</label>
+                <div className="relative group">
+                  <input 
+                    type="number" 
+                    className="w-full bg-white border-4 border-slate-900 rounded-[1.5rem] px-8 py-6 font-black text-5xl text-slate-900 placeholder-slate-200 focus:outline-none transition-all focus:shadow-[6px_6px_0px_0px_rgba(240,90,34,1)]" 
+                    value={equipeCampo} 
+                    onChange={e => setEquipeCampo(e.target.value)} 
+                  />
+                </div>
               </div>
-              <div className="space-y-3">
-                <label className="text-[10px] font-black text-slate-500 uppercase">Efetivo no GD4</label>
-                <input type="number" className="w-full bg-slate-50 border-4 border-slate-900 rounded-2xl px-6 py-5 font-black text-4xl text-slate-900 placeholder-slate-300 focus:outline-none" value={equipeGd4} onChange={e => setEquipeGd4(e.target.value)} />
+              <div className="space-y-4">
+                <label className="text-[11px] font-black text-slate-500 uppercase tracking-widest block">Efetivo no GD4</label>
+                <div className="relative group">
+                  <input 
+                    type="number" 
+                    className="w-full bg-white border-4 border-slate-900 rounded-[1.5rem] px-8 py-6 font-black text-5xl text-slate-900 placeholder-slate-200 focus:outline-none transition-all focus:shadow-[6px_6px_0px_0px_rgba(240,90,34,1)]" 
+                    value={equipeGd4} 
+                    onChange={e => setEquipeGd4(e.target.value)} 
+                  />
+                </div>
               </div>
             </div>
-            {currentBlockQuestions.map((q) => {
-               const resp = respostas.find(r => r.pergunta_id === q.id);
-               return (
-                 <div key={q.id} className="space-y-4 pt-6 border-t-2 border-slate-100">
-                   <p className="text-slate-900 font-black text-xl uppercase leading-tight tracking-tight">{q.texto}</p>
-                   <div className="flex gap-2">
-                     {(['sim', 'parcial', 'nao', 'n_a'] as ResponseValue[]).map((val) => (
-                       <button key={val} onClick={() => handleResponseChange(q.id, val)} className={`flex-1 py-5 rounded-2xl font-black text-[10px] border-4 transition-all ${getButtonStyles(val, resp?.resposta === val)}`}>{val.replace('_', ' ').toUpperCase()}</button>
-                     ))}
+
+            <div className="space-y-10 pt-4">
+              {currentBlockQuestions.map((q) => {
+                 const resp = respostas.find(r => r.pergunta_id === q.id);
+                 return (
+                   <div key={q.id} className="space-y-6 pt-10 border-t-2 border-slate-100">
+                     <p className="text-slate-900 font-black text-xl uppercase leading-tight tracking-tight max-w-3xl">{q.texto}</p>
+                     <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                       {(['sim', 'parcial', 'nao', 'n_a'] as ResponseValue[]).map((val) => (
+                         <button 
+                           key={val} 
+                           onClick={() => handleResponseChange(q.id, val)} 
+                           className={`py-5 rounded-2xl font-black text-[11px] border-4 transition-all uppercase tracking-widest ${getButtonStyles(val, resp?.resposta === val)}`}
+                         >
+                           {val === 'n_a' ? 'N A' : val.toUpperCase()}
+                         </button>
+                       ))}
+                     </div>
                    </div>
-                 </div>
-               );
-            })}
+                 );
+              })}
+            </div>
           </div>
         ) : currentBlockKey === 'G' ? (
           <div className="space-y-6">
@@ -402,58 +427,91 @@ const AuditWizard: React.FC<AuditWizardProps> = ({ obras, currentUser, onAuditCo
           </div>
         ) : currentBlockKey === 'H' ? (
            <div className="space-y-8">
-             <div className="bg-slate-900 text-white p-10 rounded-[3rem] border-4 border-slate-900 shadow-[10px_10px_0px_0px_rgba(240,90,34,1)]">
-                <div className="flex items-center gap-6 mb-8 border-b border-slate-700 pb-6">
-                   <div className="p-4 bg-[#F05A22] rounded-3xl"><FileSearch size={32} /></div>
+             <div className="bg-[#0F172A] text-white p-10 rounded-[3rem] border-4 border-slate-900 shadow-[12px_12px_0px_0px_rgba(240,90,34,1)]">
+                <div className="flex items-center gap-6 mb-10 border-b border-slate-800 pb-8">
+                   <div className="p-5 bg-[#F05A22] rounded-[1.5rem] border-2 border-slate-900 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+                     <FileSearch size={36} className="text-white" />
+                   </div>
                    <div>
-                      <h3 className="text-2xl font-black uppercase tracking-tighter">Diagnóstico Final de Quarteirização</h3>
-                      <p className="text-[10px] font-black uppercase text-[#F05A22] tracking-[0.2em]">Cotejo: Amostragem vs Governança GD4</p>
+                      <h3 className="text-3xl font-black uppercase tracking-tighter leading-none mb-1">Diagnóstico Final de Quarteirização</h3>
+                      <p className="text-[11px] font-black uppercase text-[#F05A22] tracking-[0.3em]">Cotejo: Amostragem vs Governança GD4</p>
                    </div>
                 </div>
                 
-                <div className="space-y-8">
-                  <p className="text-sm font-bold uppercase text-slate-400 leading-relaxed italic">
+                <div className="space-y-12">
+                  <p className="text-sm font-bold uppercase text-slate-400 leading-relaxed italic border-l-4 border-[#F05A22] pl-6">
                     "Baseado nos vestígios colhidos na amostragem (uniformes, empresas citadas e benefícios), informe se toda a cadeia de subcontratação está formalizada."
                   </p>
                   
-                  <div className="space-y-4">
-                    <p className="text-xs font-black uppercase text-white">Veredito do Auditor:</p>
-                    <div className="flex gap-4">
-                      <button onClick={() => setSubcontratacaoRegular(true)} className={`flex-1 py-6 rounded-2xl font-black border-4 transition-all ${subcontratacaoRegular === true ? 'bg-[#F05A22] text-white border-slate-900 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]' : 'bg-slate-800 text-slate-500 border-slate-700'}`}>TUDO REGULARIZADO</button>
-                      <button onClick={() => setSubcontratacaoRegular(false)} className={`flex-1 py-6 rounded-2xl font-black border-4 transition-all ${subcontratacaoRegular === false ? 'bg-rose-600 text-white border-slate-900 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]' : 'bg-slate-800 text-slate-500 border-slate-700'}`}>QUARTEIRIZAÇÃO IRREGULAR</button>
+                  <div className="space-y-6">
+                    <p className="text-xs font-black uppercase text-white tracking-widest">Veredito do Auditor:</p>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <button 
+                        onClick={() => setSubcontratacaoRegular(true)} 
+                        className={`py-8 rounded-[1.5rem] font-black text-lg border-4 transition-all tracking-tighter ${subcontratacaoRegular === true ? 'bg-[#F05A22] text-white border-slate-900 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)]' : 'bg-slate-800/50 text-slate-500 border-slate-800 hover:border-slate-600'}`}
+                      >
+                        TUDO REGULARIZADO
+                      </button>
+                      <button 
+                        onClick={() => setSubcontratacaoRegular(false)} 
+                        className={`py-8 rounded-[1.5rem] font-black text-lg border-4 transition-all tracking-tighter ${subcontratacaoRegular === false ? 'bg-rose-600 text-white border-slate-900 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)]' : 'bg-slate-800/50 text-slate-500 border-slate-800 hover:border-slate-600'}`}
+                      >
+                        QUARTEIRIZAÇÃO IRREGULAR
+                      </button>
                     </div>
                   </div>
 
                   {currentBlockQuestions.map((q) => {
                     const resp = respostas.find(r => r.pergunta_id === q.id);
                     return (
-                      <div key={q.id} className="space-y-6 bg-slate-800/50 p-8 rounded-[2rem] border border-slate-700">
-                        <p className="text-white font-black text-lg uppercase leading-tight tracking-tight">{q.texto}</p>
-                        <div className="flex gap-2">
+                      <div key={q.id} className="space-y-8 bg-slate-800/30 p-10 rounded-[2.5rem] border-2 border-slate-800">
+                        <p className="text-white font-black text-xl uppercase leading-tight tracking-tight">{q.texto}</p>
+                        <div className="grid grid-cols-2 gap-4">
                           {(['sim', 'nao'] as ResponseValue[]).map((val) => (
-                            <button key={val} onClick={() => handleResponseChange(q.id, val)} className={`flex-1 py-5 rounded-2xl font-black text-[10px] border-4 transition-all ${getButtonStyles(val, resp?.resposta === val)}`}>{val.toUpperCase()}</button>
+                            <button 
+                              key={val} 
+                              onClick={() => handleResponseChange(q.id, val)} 
+                              className={`py-6 rounded-2xl font-black text-xs border-4 transition-all tracking-widest ${getButtonStyles(val, resp?.resposta === val)}`}
+                            >
+                              {val.toUpperCase()}
+                            </button>
                           ))}
                         </div>
                         
-                        <div className={`p-5 border-4 rounded-2xl space-y-4 bg-slate-900 border-slate-700`}>
-                          <div className="flex justify-between items-center text-[10px] font-black uppercase">
-                             <span className="flex items-center gap-2 text-slate-400"><Camera size={14} className="text-[#F05A22]" /> Foto do Vestígio (Obrigatório)</span>
-                             <span className={`px-3 py-1 rounded-full border-2 border-slate-900 bg-[#F05A22] text-white`}>{resp?.fotos?.length || 0} / 1</span>
+                        <div className="p-8 border-4 rounded-[2rem] space-y-6 bg-[#0F172A] border-slate-800">
+                          <div className="flex justify-between items-center">
+                             <span className="flex items-center gap-3 text-[11px] font-black uppercase text-slate-400 tracking-widest">
+                               <Camera size={18} className="text-[#F05A22]" /> Foto do Vestígio (Obrigatório)
+                             </span>
+                             <span className={`px-4 py-1.5 rounded-full border-2 border-slate-900 bg-[#F05A22] text-white font-black text-xs`}>
+                               {resp?.fotos?.length || 0} / 1
+                             </span>
                           </div>
-                          <div className="flex gap-3 overflow-x-auto pb-2">
+                          
+                          <div className="flex gap-4 overflow-x-auto pb-2">
                              {resp?.fotos?.map((f, i) => (
                                <div key={i} className="relative shrink-0">
-                                 <img src={f} className="w-20 h-20 rounded-xl border-4 border-slate-900 object-cover" />
-                                 <button onClick={() => setRespostas(prev => prev.map(r => r.pergunta_id === q.id ? {...r, fotos: r.fotos?.filter((_, idx) => idx !== i)} : r))} className="absolute -top-2 -right-2 bg-rose-600 text-white p-1 rounded-full border-2 border-slate-900 shadow-md"><Trash2 size={12} /></button>
+                                 <img src={f} className="w-28 h-28 rounded-2xl border-4 border-slate-900 object-cover" />
+                                 <button 
+                                   onClick={() => setRespostas(prev => prev.map(r => r.pergunta_id === q.id ? {...r, fotos: r.fotos?.filter((_, idx) => idx !== i)} : r))} 
+                                   className="absolute -top-3 -right-3 bg-rose-600 text-white p-2 rounded-full border-2 border-slate-900 shadow-xl hover:scale-110 transition-transform"
+                                 >
+                                   <Trash2 size={14} />
+                                 </button>
                                </div>
                              ))}
-                             <button onClick={() => triggerCamera(q.id)} className="w-20 h-20 bg-slate-800 border-4 border-dashed border-slate-600 rounded-xl flex items-center justify-center text-slate-500 hover:text-[#F05A22] transition-colors"><Camera size={32} /></button>
+                             <button 
+                               onClick={() => triggerCamera(q.id)} 
+                               className="w-28 h-28 bg-slate-800/50 border-4 border-dashed border-slate-700 rounded-2xl flex items-center justify-center text-slate-600 hover:text-[#F05A22] hover:border-[#F05A22] transition-all group"
+                             >
+                               <Camera size={40} className="group-hover:scale-110 transition-transform" />
+                             </button>
                           </div>
                         </div>
 
                         {(resp?.resposta === 'nao') && (
                           <textarea 
-                            className="w-full border-4 border-slate-900 rounded-2xl p-5 font-black text-slate-900 bg-rose-50 placeholder-rose-300 focus:outline-none" 
+                            className="w-full border-4 border-slate-900 rounded-[1.5rem] p-6 font-black text-slate-900 bg-rose-50 placeholder-rose-300 focus:outline-none focus:ring-4 ring-rose-200 transition-all" 
                             placeholder="DESCREVA O VESTÍGIO ENCONTRADO (Ex: Uniforme da Empresa X mas colaborador diz trabalhar para Y)..." 
                             value={resp.observacao || ''} 
                             onChange={e => handleObsChange(q.id, e.target.value)} 
