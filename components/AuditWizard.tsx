@@ -43,7 +43,7 @@ const AuditWizard: React.FC<AuditWizardProps> = ({ obras, currentUser, onAuditCo
   
   const [equipeCampo, setEquipeCampo] = React.useState<string>('');
   const [equipeGd4, setEquipeGd4] = React.useState<string>('');
-  const [subcontratacaoRegular, setSubcontratacaoRegular] = React.useState<boolean | null>(null);
+  const [subcontratacaoRegular, setSubcontratacaoRegular] = React.useState<boolean | 'n_a' | null>(null);
 
   const [respostas, setRespostas] = React.useState<AuditResponse[]>([]);
   const [entrevistas, setEntrevistas] = React.useState<EntrevistaAmostral[]>([]);
@@ -124,7 +124,15 @@ const AuditWizard: React.FC<AuditWizardProps> = ({ obras, currentUser, onAuditCo
 
   const isBlockComplete = () => {
     if (currentBlockKey === 'B') {
-      return equipeCampo !== '' && equipeGd4 !== '';
+      const basicFields = equipeCampo !== '' && equipeGd4 !== '';
+      const questionsFilled = currentBlockQuestions.every(q => {
+        const r = respostas.find(resp => resp.pergunta_id === q.id);
+        if (!r) return false;
+        const needsObs = r.resposta !== 'sim' && r.resposta !== 'n_a';
+        if (needsObs && (!r.observacao || r.observacao.trim().length < 5)) return false;
+        return true;
+      });
+      return basicFields && questionsFilled;
     }
     
     if (currentBlockKey === 'G') {
@@ -132,8 +140,11 @@ const AuditWizard: React.FC<AuditWizardProps> = ({ obras, currentUser, onAuditCo
     }
 
     if (currentBlockKey === 'H') {
+      if (subcontratacaoRegular === null) return false;
+      if (subcontratacaoRegular === 'n_a') return true;
+      
       const hResp = respostas.find(r => r.pergunta_id === 'h1');
-      if (!hResp || subcontratacaoRegular === null) return false;
+      if (!hResp) return false;
       if (hResp.resposta === 'n_a') return true;
       const needsObs = hResp.resposta === 'nao';
       if (needsObs && (!hResp.observacao || hResp.observacao.trim().length < 5)) return false;
@@ -164,7 +175,7 @@ const AuditWizard: React.FC<AuditWizardProps> = ({ obras, currentUser, onAuditCo
         amostragem: {
           total_efetivo: totalEfetivo,
           efetivo_gd4: Number(equipeGd4),
-          quarteirizacao_irregular: !subcontratacaoRegular,
+          quarteirizacao_irregular: subcontratacaoRegular === false,
           entrevistados: entrevistas.length,
           cobertura: `${coveragePercent}%`,
         },
@@ -199,7 +210,7 @@ const AuditWizard: React.FC<AuditWizardProps> = ({ obras, currentUser, onAuditCo
         entrevistas,
         equipe_campo: totalEfetivo,
         equipe_gd4: Number(equipeGd4),
-        subcontratacao_identificada: !subcontratacaoRegular,
+        subcontratacao_identificada: subcontratacaoRegular === false,
         created_at: new Date().toISOString()
       };
 
@@ -447,7 +458,7 @@ const AuditWizard: React.FC<AuditWizardProps> = ({ obras, currentUser, onAuditCo
                   
                   <div className="space-y-6">
                     <p className="text-xs font-black uppercase text-white tracking-widest">Veredito do Auditor:</p>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                       <button 
                         onClick={() => setSubcontratacaoRegular(true)} 
                         className={`py-8 rounded-[1.5rem] font-black text-lg border-4 transition-all tracking-tighter ${subcontratacaoRegular === true ? 'bg-[#F05A22] text-white border-slate-900 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)]' : 'bg-slate-800/50 text-slate-500 border-slate-800 hover:border-slate-600'}`}
@@ -459,6 +470,15 @@ const AuditWizard: React.FC<AuditWizardProps> = ({ obras, currentUser, onAuditCo
                         className={`py-8 rounded-[1.5rem] font-black text-lg border-4 transition-all tracking-tighter ${subcontratacaoRegular === false ? 'bg-rose-600 text-white border-slate-900 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)]' : 'bg-slate-800/50 text-slate-500 border-slate-800 hover:border-slate-600'}`}
                       >
                         QUARTEIRIZAÇÃO IRREGULAR
+                      </button>
+                      <button 
+                        onClick={() => {
+                          setSubcontratacaoRegular('n_a');
+                          handleResponseChange('h1', 'n_a');
+                        }} 
+                        className={`py-8 rounded-[1.5rem] font-black text-lg border-4 transition-all tracking-tighter ${subcontratacaoRegular === 'n_a' ? 'bg-slate-500 text-white border-slate-900 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)]' : 'bg-slate-800/50 text-slate-500 border-slate-800 hover:border-slate-600'}`}
+                      >
+                        NÃO SE APLICA
                       </button>
                     </div>
                   </div>

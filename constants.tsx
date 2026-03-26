@@ -8,8 +8,7 @@ export const QUESTIONS: Question[] = [
   { id: 'a2', bloco: 'A', texto: 'Todos os terceiros estão com a biometria facial cadastrada?', peso: 20 },
   
   // BLOCO B - GESTÃO DE EFETIVO
-  { id: 'b3', bloco: 'B', texto: 'O efetivo em campo é integralmente composto por funcionários com RE validado no GD4?', peso: 20 },
-  { id: 'b4', bloco: 'B', texto: 'A obra está livre de trabalhadores com status "pendente" circulando em frentes de serviço?', peso: 30 },
+  { id: 'b4', bloco: 'B', texto: 'A obra está 100% livre de trabalhadores com status "PENDENTE" ou "BLOQUEADO" circulando em frentes de serviço?', peso: 50 },
   
   // BLOCO E - TÉCNICO DE CAMPO
   { id: 'e1', bloco: 'E', texto: 'O controle de ponto dos empreiteiros é feito IN Loco na Obra?', peso: 40, requiresPhotos: true, minPhotos: 2 },
