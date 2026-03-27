@@ -8,7 +8,8 @@ import {
   Building2,
   Menu,
   X,
-  ShieldAlert
+  ShieldAlert,
+  BookOpen
 } from 'lucide-react';
 import { User } from '../types';
 
@@ -42,6 +43,7 @@ const Layout: React.FC<LayoutProps> = ({ children, user, onLogout, currentPage, 
 
   const menuItems = [
     { id: 'dashboard', label: 'Painel Geral', icon: LayoutDashboard, roles: ['admin', 'auditor', 'diretoria', 'obra'] },
+    { id: 'guide', label: 'Guia de Uso', icon: BookOpen, roles: ['admin', 'auditor', 'diretoria', 'obra'] },
     { id: 'new-audit', label: 'Nova Inspeção', icon: ClipboardCheck, roles: ['admin', 'auditor'] },
     { id: 'obras', label: 'Canteiros / Obras', icon: Building2, roles: ['admin', 'auditor', 'diretoria'] },
     { id: 'history', label: 'Base de Dados', icon: History, roles: ['admin', 'auditor', 'diretoria'] },

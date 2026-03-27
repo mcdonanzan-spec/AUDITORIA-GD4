@@ -5,7 +5,11 @@ import { Obra, Audit, User } from '../types';
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+if (!supabaseUrl || !supabaseAnonKey) {
+  console.error('Supabase credentials missing! Check your environment variables.');
+}
+
+export const supabase = createClient(supabaseUrl || '', supabaseAnonKey || '');
 
 export const getObras = async (): Promise<Obra[]> => {
   const { data, error } = await supabase
