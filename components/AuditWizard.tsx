@@ -377,15 +377,23 @@ const AuditWizard: React.FC<AuditWizardProps> = ({ obras, currentUser, onAuditCo
     <div className="max-w-5xl mx-auto space-y-8 pb-20 animate-in fade-in duration-500">
       <input type="file" accept="image/*" capture="environment" className="hidden" ref={fileInputRef} onChange={handleFileChange} />
       
-      <div className="flex items-center gap-6">
-        <div className="w-16 h-16 bg-slate-900 text-white rounded-[1.25rem] flex items-center justify-center font-black text-3xl border-4 border-[#F05A22] shadow-xl">{currentBlockKey}</div>
-        <div>
-           <h2 className="text-2xl font-black text-slate-900 uppercase tracking-tighter">{BLOCKS[currentBlockKey as keyof typeof BLOCKS]}</h2>
-           <div className="flex gap-2 mt-2">
-             {blockKeys.map((_, i) => (
-               <div key={i} className={`h-2 w-8 rounded-full border-2 border-slate-900 ${i <= currentBlockIdx ? 'bg-[#F05A22]' : 'bg-slate-200'}`} />
-             ))}
-           </div>
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+        <div className="flex items-center gap-6">
+          <div className="w-16 h-16 bg-slate-900 text-white rounded-[1.25rem] flex-shrink-0 flex items-center justify-center font-black text-3xl border-4 border-[#F05A22] shadow-xl">{currentBlockKey}</div>
+          <div className="min-w-0">
+             <h2 className="text-xl md:text-2xl font-black text-slate-900 uppercase tracking-tighter leading-tight break-words">{BLOCKS[currentBlockKey as keyof typeof BLOCKS]}</h2>
+             <div className="flex gap-2 mt-2">
+               {blockKeys.map((_, i) => (
+                 <div key={i} className={`h-1.5 w-6 md:w-8 rounded-full border-2 border-slate-900 ${i <= currentBlockIdx ? 'bg-[#F05A22]' : 'bg-slate-200'}`} />
+               ))}
+             </div>
+          </div>
+        </div>
+        <div className="bg-slate-900 px-6 py-3 rounded-2xl border-4 border-[#F05A22] shadow-lg self-start md:self-center">
+          <p className="text-[10px] font-black text-[#F05A22] uppercase tracking-[0.2em] mb-1">Unidade em Auditoria</p>
+          <p className="text-white font-black uppercase tracking-tight truncate max-w-[200px] md:max-w-xs text-sm">
+            {obras.find(o => o.id === selectedObra)?.nome || 'Não Selecionada'}
+          </p>
         </div>
       </div>
 
@@ -440,6 +448,15 @@ const AuditWizard: React.FC<AuditWizardProps> = ({ obras, currentUser, onAuditCo
                          </button>
                        ))}
                      </div>
+
+                     {resp && resp.resposta !== 'sim' && resp.resposta !== 'n_a' && (
+                        <textarea 
+                          className="w-full border-4 border-slate-900 rounded-2xl p-5 font-black text-slate-900 bg-rose-50 placeholder-rose-300 focus:outline-none" 
+                          placeholder="JUSTIFIQUE O DESVIO IDENTIFICADO (OBRIGATÓRIO)..." 
+                          value={resp.observacao || ''} 
+                          onChange={e => handleObsChange(q.id, e.target.value)} 
+                        />
+                      )}
                    </div>
                  );
               })}
@@ -483,10 +500,10 @@ const AuditWizard: React.FC<AuditWizardProps> = ({ obras, currentUser, onAuditCo
 
             {entrevistas.map((ent, idx) => (
               <div key={ent.id} className="bg-white p-8 rounded-[2.5rem] border-4 border-slate-900 space-y-6 shadow-[8px_8px_0px_0px_rgba(15,23,42,1)]">
-                 <div className="flex gap-4">
+                 <div className="flex flex-col md:flex-row gap-4">
                     <input placeholder="FUNÇÃO" className="flex-1 bg-slate-50 border-4 border-slate-900 rounded-xl px-4 py-3 font-black text-slate-900 uppercase placeholder-slate-300 focus:outline-none" value={ent.funcao} onChange={e => setEntrevistas(ev => ev.map(it => it.id === ent.id ? {...it, funcao: e.target.value} : it))} />
                     <input placeholder="EMPRESA" className="flex-1 bg-slate-50 border-4 border-slate-900 rounded-xl px-4 py-3 font-black text-slate-900 uppercase placeholder-slate-300 focus:outline-none" value={ent.empresa} onChange={e => setEntrevistas(ev => ev.map(it => it.id === ent.id ? {...it, empresa: e.target.value} : it))} />
-                    <button onClick={() => removeEntrevistado(ent.id)} className="text-rose-600 p-2 hover:bg-rose-50 rounded-xl transition-all"><Trash2 size={24} /></button>
+                    <button onClick={() => removeEntrevistado(ent.id)} className="text-rose-600 p-2 hover:bg-rose-50 rounded-xl transition-all self-end md:self-center"><Trash2 size={24} /></button>
                  </div>
                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {INTERVIEW_QUESTIONS.map(q => (
