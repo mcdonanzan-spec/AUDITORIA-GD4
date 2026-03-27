@@ -43,11 +43,7 @@ const UserManagement: React.FC<UserManagementProps> = ({ obras, onNavigate }) =>
   const handleToggleObra = (obraId: string) => {
     if (!editingUser) return;
     const currentIds = editingUser.obra_ids || [];
-    const nextIds = currentIds.includes(obraId) 
-      ? currentIds.filter(id => id !== id) // Small bug fix: id !== id was wrong
-      : [...currentIds, obraId];
     
-    // Fixed logic for toggle:
     const finalIds = currentIds.includes(obraId)
       ? currentIds.filter(id => id !== obraId)
       : [...currentIds, obraId];
@@ -58,17 +54,33 @@ const UserManagement: React.FC<UserManagementProps> = ({ obras, onNavigate }) =>
   const handleSave = async () => {
     if (!editingUser) return;
     setLoading(true);
-    const updated = { ...editingUser, status: 'ativo' as const };
-    await updateUser(updated);
-    await refreshUsers();
-    setEditingUser(null);
+    try {
+      const updated = { ...editingUser, status: 'ativo' as const };
+      await updateUser(updated);
+      await refreshUsers();
+      setEditingUser(null);
+      alert('Usuário aprovado/atualizado com sucesso!');
+    } catch (err: any) {
+      console.error('Erro ao salvar usuário:', err);
+      alert(`Erro ao salvar: ${err.message || 'Erro desconhecido'}`);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleReject = async (userId: string) => {
     if (window.confirm("Deseja recusar e excluir esta solicitação?")) {
       setLoading(true);
-      await deleteUser(userId);
-      await refreshUsers();
+      try {
+        await deleteUser(userId);
+        await refreshUsers();
+        alert('Solicitação removida.');
+      } catch (err: any) {
+        console.error('Erro ao excluir usuário:', err);
+        alert(`Erro ao excluir: ${err.message || 'Erro desconhecido'}`);
+      } finally {
+        setLoading(false);
+      }
     }
   };
 
@@ -245,9 +257,10 @@ const UserManagement: React.FC<UserManagementProps> = ({ obras, onNavigate }) =>
               <button onClick={() => setEditingUser(null)} className="flex-1 py-5 rounded-2xl font-black uppercase text-xs text-slate-500 border-2 border-slate-200 hover:bg-white transition-all">Cancelar</button>
               <button 
                 onClick={handleSave}
-                className="flex-[2] bg-[#F05A22] text-white py-5 rounded-2xl font-black uppercase text-xs tracking-widest shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] border-4 border-slate-900 active:translate-y-1 active:shadow-none transition-all"
+                disabled={loading}
+                className="flex-[2] bg-[#F05A22] text-white py-5 rounded-2xl font-black uppercase text-xs tracking-widest shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] border-4 border-slate-900 active:translate-y-1 active:shadow-none transition-all flex items-center justify-center gap-2"
               >
-                {editingUser.status === 'pendente' ? 'Aprovar Acesso' : 'Salvar Alterações'}
+                {loading ? <Loader2 className="animate-spin" /> : (editingUser.status === 'pendente' ? 'Aprovar Acesso' : 'Salvar Alterações')}
               </button>
             </div>
           </div>

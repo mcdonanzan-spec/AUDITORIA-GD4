@@ -83,7 +83,10 @@ export const updateUser = async (user: User): Promise<User> => {
     .update(user)
     .eq('id', user.id);
   
-  if (error) throw error;
+  if (error) {
+    console.error('Erro no Supabase (updateUser):', error);
+    throw error;
+  }
   return user;
 };
 
