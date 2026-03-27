@@ -50,15 +50,31 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
 
   const handleRequestAccess = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Check if Supabase is configured
+    if (!import.meta.env.VITE_SUPABASE_URL || !import.meta.env.VITE_SUPABASE_ANON_KEY) {
+      alert('Erro de Configuração: As chaves do Supabase não foram encontradas na Vercel/Ambiente. Verifique as Environment Variables.');
+      return;
+    }
+
     setLoading(true);
     console.log('Iniciando solicitação de acesso para:', email);
+    
+    // Safety timeout to prevent infinite loading
+    const timeoutId = setTimeout(() => {
+      if (loading) {
+        setLoading(false);
+        alert('A requisição está demorando muito. Verifique sua conexão ou se o banco de dados Supabase está ativo.');
+      }
+    }, 15000);
+
     try {
       const normalizedEmail = email.toLowerCase().trim();
       
-      // Double check if user already exists to prevent duplicates
       console.log('Verificando se usuário já existe...');
       const existingUser = await getUserByEmail(normalizedEmail);
       if (existingUser) {
+        clearTimeout(timeoutId);
         console.warn('Usuário já existe:', normalizedEmail);
         alert('Este e-mail já possui uma solicitação ou cadastro ativo.');
         setLoading(false);
@@ -67,7 +83,6 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
       }
 
       const userData = {
-        id: crypto.randomUUID ? crypto.randomUUID() : `user_${Date.now()}_${Math.random().toString(36).slice(2, 11)}`,
         nome: requestName.trim().toUpperCase(),
         email: normalizedEmail,
         perfil: requestProfile,
@@ -78,12 +93,20 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
       console.log('Enviando dados para o Supabase:', userData);
       await createUserRequest(userData);
       
+      clearTimeout(timeoutId);
       console.log('Solicitação enviada com sucesso!');
       setLoading(false);
       setView('pending');
     } catch (err: any) {
+      clearTimeout(timeoutId);
       console.error('Erro ao processar solicitação:', err);
-      alert(`Erro ao solicitar acesso: ${err.message || 'Erro desconhecido'}. Verifique o console para mais detalhes.`);
+      const errorMsg = err.message || 'Erro desconhecido';
+      
+      if (errorMsg.includes('PGRST301') || errorMsg.includes('JWT')) {
+        alert('Erro de Permissão (RLS): O banco de dados recusou a gravação. Certifique-se de que o RLS está desativado ou configurado para permitir inserções públicas na tabela "users".');
+      } else {
+        alert(`Erro ao solicitar acesso: ${errorMsg}. Verifique o console do navegador para detalhes técnicos.`);
+      }
       setLoading(false);
     }
   };
