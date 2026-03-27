@@ -24,7 +24,8 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
     setLoading(true);
     try {
       const users = await getUsers();
-      const existingUser = users.find(u => u.email.toLowerCase() === email.toLowerCase());
+      const normalizedEmail = email.toLowerCase().trim();
+      const existingUser = users.find(u => u.email.toLowerCase() === normalizedEmail);
 
       setTimeout(() => {
         setLoading(false);
@@ -49,10 +50,21 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
     e.preventDefault();
     setLoading(true);
     try {
+      const normalizedEmail = email.toLowerCase().trim();
+      
+      // Double check if user already exists to prevent duplicates
+      const users = await getUsers();
+      if (users.some(u => u.email.toLowerCase() === normalizedEmail)) {
+        alert('Este e-mail já possui uma solicitação ou cadastro ativo.');
+        setLoading(false);
+        setView('initial');
+        return;
+      }
+
       const userData = {
-        id: email.toLowerCase(),
-        nome: requestName,
-        email: email.toLowerCase(),
+        id: normalizedEmail,
+        nome: requestName.trim().toUpperCase(),
+        email: normalizedEmail,
         perfil: requestProfile,
         status: 'pendente',
         obra_ids: []

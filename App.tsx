@@ -53,10 +53,9 @@ const App: React.FC = () => {
     setViewingAudit(null);
   };
 
-  const handleAuditComplete = async (audit: Audit, report: AIAnalysisResult) => {
-    const saved = await saveAudit(audit);
-    setAudits(prev => [saved, ...prev]);
-    setViewingAudit({ audit: saved, report });
+  const handleAuditComplete = (audit: Audit, report: AIAnalysisResult) => {
+    setAudits(prev => [audit, ...prev]);
+    setViewingAudit({ audit, report });
     setCurrentPage('result');
   };
 

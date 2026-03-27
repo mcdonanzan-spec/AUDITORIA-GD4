@@ -49,6 +49,34 @@ const AuditWizard: React.FC<AuditWizardProps> = ({ obras, currentUser, onAuditCo
   const [respostas, setRespostas] = React.useState<AuditResponse[]>([]);
   const [entrevistas, setEntrevistas] = React.useState<EntrevistaAmostral[]>([]);
 
+  // PERSISTÊNCIA DE RASCUNHO
+  React.useEffect(() => {
+    const draft = localStorage.getItem(`audit_draft_${selectedObra}`);
+    if (draft) {
+      try {
+        const { respostas: r, entrevistas: e } = JSON.parse(draft);
+        if (r) setRespostas(r);
+        if (e) setEntrevistas(e);
+      } catch (err) {
+        console.error("Erro ao carregar rascunho:", err);
+      }
+    }
+  }, [selectedObra]);
+
+  React.useEffect(() => {
+    if (selectedObra && (respostas.length > 0 || entrevistas.length > 0)) {
+      localStorage.setItem(`audit_draft_${selectedObra}`, JSON.stringify({
+        respostas,
+        entrevistas,
+        timestamp: Date.now()
+      }));
+    }
+  }, [respostas, entrevistas, selectedObra]);
+
+  const clearDraft = () => {
+    if (selectedObra) localStorage.removeItem(`audit_draft_${selectedObra}`);
+  };
+
   const blockKeys = Object.keys(BLOCKS) as Array<keyof typeof BLOCKS>;
   const currentBlockKey = blockKeys[currentBlockIdx];
   const currentBlockQuestions = QUESTIONS.filter(q => q.bloco === currentBlockKey);
@@ -69,16 +97,50 @@ const AuditWizard: React.FC<AuditWizardProps> = ({ obras, currentUser, onAuditCo
     });
   };
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const compressImage = (base64Str: string): Promise<string> => {
+    return new Promise((resolve) => {
+      const img = new Image();
+      img.src = base64Str;
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        const MAX_WIDTH = 800;
+        const MAX_HEIGHT = 600;
+        let width = img.width;
+        let height = img.height;
+
+        if (width > height) {
+          if (width > MAX_WIDTH) {
+            height *= MAX_WIDTH / width;
+            width = MAX_WIDTH;
+          }
+        } else {
+          if (height > MAX_HEIGHT) {
+            width *= MAX_HEIGHT / height;
+            height = MAX_HEIGHT;
+          }
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        ctx?.drawImage(img, 0, 0, width, height);
+        resolve(canvas.toDataURL('image/jpeg', 0.7)); // Comprime para JPEG com 70% de qualidade
+      };
+    });
+  };
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file && activePhotoQuestionId) {
       const reader = new FileReader();
-      reader.onloadend = () => {
+      reader.onloadend = async () => {
         const base64String = reader.result as string;
+        const compressed = await compressImage(base64String);
+        
         setRespostas(prev => prev.map(r => {
           if (r.pergunta_id === activePhotoQuestionId) {
             const currentFotos = r.fotos || [];
-            return { ...r, fotos: [...currentFotos, base64String] };
+            return { ...r, fotos: [...currentFotos, compressed] };
           }
           return r;
         }));
@@ -216,6 +278,7 @@ const AuditWizard: React.FC<AuditWizardProps> = ({ obras, currentUser, onAuditCo
       };
 
       const savedAudit = await saveAudit(auditData as any);
+      clearDraft();
       onAuditComplete(savedAudit, result);
     } catch (err) {
       console.error(err);

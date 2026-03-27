@@ -14,6 +14,9 @@ import {
   Building2,
   Clock
 } from 'lucide-react';
+import { motion } from 'motion/react';
+// @ts-ignore
+import html2pdf from 'html2pdf.js';
 import { Audit, AIAnalysisResult } from '../types';
 import { QUESTIONS, INTERVIEW_QUESTIONS } from '../constants';
 import { UnitaLogo } from './Layout';
@@ -39,15 +42,14 @@ const AuditResult: React.FC<AuditResultProps> = ({ audit, report, obraName, onCl
     if (!element) return;
 
     const opt = {
-      margin: [0, 0, 0, 0],
+      margin: [0, 0, 0, 0] as [number, number, number, number],
       filename: `RELATORIO_UNITA_${audit.id}.pdf`,
-      image: { type: 'jpeg', quality: 0.98 },
+      image: { type: 'jpeg' as const, quality: 0.98 },
       html2canvas: { scale: 2, useCORS: true, letterRendering: true },
-      jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+      jsPDF: { unit: 'mm' as const, format: 'a4' as const, orientation: 'portrait' as const }
     };
 
     try {
-      // @ts-ignore
       await html2pdf().set(opt).from(element).save();
     } catch (err) {
       console.error(err);
@@ -59,7 +61,11 @@ const AuditResult: React.FC<AuditResultProps> = ({ audit, report, obraName, onCl
   const divergencia = Math.abs((audit.equipe_campo || 0) - (audit.equipe_gd4 || 0));
 
   return (
-    <div className="max-w-5xl mx-auto space-y-6 pb-20">
+    <motion.div 
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="max-w-5xl mx-auto space-y-6 pb-20"
+    >
       <header className="flex justify-between items-center print:hidden">
         <button onClick={onClose} className="flex items-center gap-2 font-black text-[10px] text-slate-500 uppercase tracking-widest hover:text-[#F05A22]">
           <ArrowLeft size={14} /> Voltar ao Painel
@@ -288,7 +294,7 @@ const AuditResult: React.FC<AuditResultProps> = ({ audit, report, obraName, onCl
            Documento Confidencial - Uso Interno
         </div>
       </div>
-    </div>
+    </motion.div>
   );
 };
 
