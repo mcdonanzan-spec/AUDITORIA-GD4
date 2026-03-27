@@ -58,22 +58,48 @@ export const saveAudit = async (audit: Audit): Promise<Audit> => {
 };
 
 export const getUsers = async (): Promise<User[]> => {
+  console.log('Buscando todos os usuários...');
   const { data, error } = await supabase
     .from('users')
     .select('*');
   
-  if (error) throw error;
+  if (error) {
+    console.error('Erro no Supabase (getUsers):', error);
+    throw error;
+  }
+  console.log('Total de usuários encontrados:', data?.length || 0);
   return data || [];
 };
 
-export const createUserRequest = async (user: User): Promise<User> => {
+export const getUserByEmail = async (email: string): Promise<User | null> => {
+  console.log('Buscando usuário por e-mail:', email);
+  const { data, error } = await supabase
+    .from('users')
+    .select('*')
+    .eq('email', email.toLowerCase().trim())
+    .maybeSingle();
+  
+  if (error) {
+    console.error('Erro no Supabase (getUserByEmail):', error);
+    throw error;
+  }
+  console.log('Resultado da busca por e-mail:', data ? 'Encontrado' : 'Não encontrado');
+  return data;
+};
+
+export const createUserRequest = async (user: Partial<User>): Promise<User> => {
+  console.log('Iniciando createUserRequest no Supabase...', user);
   const { data, error } = await supabase
     .from('users')
     .insert([user])
     .select()
     .single();
   
-  if (error) throw error;
+  if (error) {
+    console.error('Erro detalhado no Supabase (createUserRequest):', error);
+    throw error;
+  }
+  console.log('Usuário criado com sucesso:', data);
   return data;
 };
 

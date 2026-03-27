@@ -4,7 +4,7 @@ import React from 'react';
 import { Mail, Lock, Loader2, ShieldCheck, ChevronRight, User as UserIcon, Send, ArrowLeft, CheckCircle2 } from 'lucide-react';
 import { UnitaLogo } from './Layout';
 import { UserRole, User } from '../types';
-import { getUsers, createUserRequest } from '../services/supabase';
+import { getUsers, createUserRequest, getUserByEmail } from '../services/supabase';
 
 interface LoginProps {
   onLogin: (user: User) => void;
@@ -23,24 +23,26 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
 
     setLoading(true);
     try {
-      const users = await getUsers();
       const normalizedEmail = email.toLowerCase().trim();
-      const existingUser = users.find(u => u.email.toLowerCase() === normalizedEmail);
+      console.log('Verificando acesso para:', normalizedEmail);
+      const existingUser = await getUserByEmail(normalizedEmail);
 
       setTimeout(() => {
         setLoading(false);
         if (existingUser) {
+          console.log('Usuário encontrado:', existingUser.status);
           if (existingUser.status === 'pendente') {
             setView('pending');
           } else {
             onLogin(existingUser);
           }
         } else {
+          console.log('Usuário não encontrado, redirecionando para solicitação.');
           setView('request');
         }
-      }, 800);
+      }, 500);
     } catch (err: any) {
-      console.error(err);
+      console.error('Erro ao conectar ao banco de dados:', err);
       alert(`Erro ao conectar ao banco de dados: ${err.message || 'Erro desconhecido'}`);
       setLoading(false);
     }
@@ -49,12 +51,15 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
   const handleRequestAccess = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
+    console.log('Iniciando solicitação de acesso para:', email);
     try {
       const normalizedEmail = email.toLowerCase().trim();
       
       // Double check if user already exists to prevent duplicates
-      const users = await getUsers();
-      if (users.some(u => u.email.toLowerCase() === normalizedEmail)) {
+      console.log('Verificando se usuário já existe...');
+      const existingUser = await getUserByEmail(normalizedEmail);
+      if (existingUser) {
+        console.warn('Usuário já existe:', normalizedEmail);
         alert('Este e-mail já possui uma solicitação ou cadastro ativo.');
         setLoading(false);
         setView('initial');
@@ -62,23 +67,23 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
       }
 
       const userData = {
-        id: normalizedEmail,
+        id: crypto.randomUUID ? crypto.randomUUID() : `user_${Date.now()}_${Math.random().toString(36).slice(2, 11)}`,
         nome: requestName.trim().toUpperCase(),
         email: normalizedEmail,
         perfil: requestProfile,
-        status: 'pendente',
+        status: 'pendente' as const,
         obra_ids: []
       };
 
-      await createUserRequest(userData as any);
+      console.log('Enviando dados para o Supabase:', userData);
+      await createUserRequest(userData);
       
-      setTimeout(() => {
-        setLoading(false);
-        setView('pending');
-      }, 1000);
+      console.log('Solicitação enviada com sucesso!');
+      setLoading(false);
+      setView('pending');
     } catch (err: any) {
-      console.error(err);
-      alert(`Erro ao solicitar acesso: ${err.message || 'Erro desconhecido'}`);
+      console.error('Erro ao processar solicitação:', err);
+      alert(`Erro ao solicitar acesso: ${err.message || 'Erro desconhecido'}. Verifique o console para mais detalhes.`);
       setLoading(false);
     }
   };
