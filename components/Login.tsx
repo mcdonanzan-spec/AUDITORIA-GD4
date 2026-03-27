@@ -3,7 +3,7 @@ import React from 'react';
 import { Mail, Lock, Loader2, ShieldCheck, ChevronRight, User as UserIcon, Send, ArrowLeft, CheckCircle2 } from 'lucide-react';
 import { UnitaLogo } from './Layout';
 import { UserRole, User } from '../types';
-import { getUsers, createUserRequest } from '../services/mockDb';
+import { getUsers, createUserRequest } from '../services/supabase';
 
 interface LoginProps {
   onLogin: (user: User) => void;
@@ -42,8 +42,7 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
     e.preventDefault();
     setLoading(true);
 
-    const newUser: User = {
-      id: `u-req-${Date.now()}`,
+    const userData = {
       nome: requestName,
       email: email,
       perfil: requestProfile,
@@ -51,7 +50,7 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
       obra_ids: []
     };
 
-    await createUserRequest(newUser);
+    await createUserRequest(userData as any);
     
     setTimeout(() => {
       setLoading(false);

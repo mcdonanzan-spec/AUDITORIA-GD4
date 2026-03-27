@@ -16,7 +16,7 @@ import {
   Trash2,
   Clock
 } from 'lucide-react';
-import { getUsers, updateUser, deleteUser } from '../services/mockDb';
+import { getUsers, updateUser, deleteUser } from '../services/supabase';
 
 interface UserManagementProps {
   obras: Obra[];

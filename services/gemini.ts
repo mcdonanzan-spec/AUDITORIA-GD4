@@ -18,7 +18,7 @@ const sanitizeDataForAI = (data: any) => {
 };
 
 export const generateAuditReport = async (auditData: any): Promise<AIAnalysisResult> => {
-  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+  const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
   
   const cleanPayload = sanitizeDataForAI(auditData);
 

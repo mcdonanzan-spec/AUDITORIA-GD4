@@ -23,6 +23,7 @@ import {
 import { Obra, Question, ResponseValue, AuditResponse, Audit, AIAnalysisResult, EntrevistaAmostral } from '../types';
 import { QUESTIONS, INTERVIEW_QUESTIONS, BLOCKS } from '../constants';
 import { generateAuditReport } from '../services/gemini';
+import { saveAudit } from '../services/supabase';
 
 interface AuditWizardProps {
   obras: Obra[];
@@ -197,8 +198,7 @@ const AuditWizard: React.FC<AuditWizardProps> = ({ obras, currentUser, onAuditCo
 
       const result = await generateAuditReport(auditPayload);
 
-      const newAudit: Audit = {
-        id: `aud-${Date.now()}`,
+      const auditData = {
         obra_id: selectedObra,
         auditor_id: currentUser.id,
         data: new Date().toISOString().split('T')[0],
@@ -211,10 +211,12 @@ const AuditWizard: React.FC<AuditWizardProps> = ({ obras, currentUser, onAuditCo
         equipe_campo: totalEfetivo,
         equipe_gd4: Number(equipeGd4),
         subcontratacao_identificada: subcontratacaoRegular === false,
+        relatorio_ia: JSON.stringify(result),
         created_at: new Date().toISOString()
       };
 
-      onAuditComplete(newAudit, result);
+      const savedAudit = await saveAudit(auditData as any);
+      onAuditComplete(savedAudit, result);
     } catch (err) {
       console.error(err);
       setStep('questions');

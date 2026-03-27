@@ -2,7 +2,7 @@
 import React from 'react';
 import { Obra, Audit } from '../types';
 import { Building2, Plus, Search, MapPin, User as UserIcon, X, Loader2, ChevronRight, History, LayoutDashboard } from 'lucide-react';
-import { addObra } from '../services/mockDb';
+import { addObra } from '../services/supabase';
 
 interface ObrasManagementProps {
   obras: Obra[];
@@ -28,16 +28,21 @@ const ObrasManagement: React.FC<ObrasManagementProps> = ({ obras, audits, onObra
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    const obra: Obra = {
-      ...newObra,
-      id: `obra-${Date.now()}`,
-      created_at: new Date().toISOString()
-    };
-    await addObra(obra);
-    onObraAdded(obra);
-    setLoading(false);
-    setIsModalOpen(false);
-    setNewObra({ nome: '', regional: '', engenheiro_responsavel: '', status: 'ativa' });
+    try {
+      const obraData = {
+        ...newObra,
+        created_at: new Date().toISOString()
+      };
+      const savedObra = await addObra(obraData as any);
+      onObraAdded(savedObra);
+      setIsModalOpen(false);
+      setNewObra({ nome: '', regional: '', engenheiro_responsavel: '', status: 'ativa' });
+    } catch (err) {
+      console.error(err);
+      alert("Erro ao cadastrar obra.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   const filtered = obras.filter(o => o.nome.toLowerCase().includes(searchTerm.toLowerCase()));

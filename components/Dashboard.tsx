@@ -207,7 +207,9 @@ const Dashboard: React.FC<DashboardProps> = ({ audits, obras, onNavigate, user }
                 <p className="text-lg leading-tight text-white font-black uppercase">
                   {isObraProfile 
                     ? `Você tem ${obras.length} obras vinculadas. Mantenha o compliance atualizado no GD4.`
-                    : `Queda de conformidade detectada em 3 unidades nesta semana.`}
+                    : audits.filter(a => a.classificacao === 'CRÍTICA').length > 0 
+                      ? `${audits.filter(a => a.classificacao === 'CRÍTICA').length} unidades com alertas críticos detectados.`
+                      : "Todas as unidades monitoradas estão dentro dos parâmetros de conformidade."}
                 </p>
               </div>
               <button onClick={() => onNavigate('history')} className="pt-4 flex items-center gap-2 text-xs font-black text-[#F05A22] uppercase tracking-widest hover:underline">

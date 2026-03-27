@@ -9,7 +9,7 @@ import AuditHistory from './components/AuditHistory';
 import ObrasManagement from './components/ObrasManagement';
 import UserManagement from './components/UserManagement';
 import { User, Audit, Obra, AIAnalysisResult, UserRole } from './types';
-import { getAudits, getObras, saveAudit, getUsers } from './services/mockDb';
+import { getAudits, getObras, saveAudit, getUsers } from './services/supabase';
 
 const App: React.FC = () => {
   const [user, setUser] = React.useState<User | null>(null);
@@ -54,18 +54,20 @@ const App: React.FC = () => {
   };
 
   const handleViewAudit = (audit: Audit) => {
-    const mockReport: AIAnalysisResult = {
+    // Se o relatório já estiver salvo na auditoria, usamos ele
+    // Caso contrário, criamos um resumo básico dos dados salvos
+    const report: AIAnalysisResult = audit.relatorio_ia ? JSON.parse(audit.relatorio_ia) : {
       indiceGeral: audit.indice_geral || 0,
       classificacao: audit.classificacao || 'N/A',
       riscoJuridico: audit.risco_juridico || 'N/A',
       exposicaoFinanceira: 0,
-      naoConformidades: ["Histórico de auditoria carregado."],
-      impactoJuridico: "Análise histórica consolidada.",
-      recomendacoes: ["Revisar pontos críticos da última medição."],
-      conclusaoExecutiva: "Esta é uma visualização de histórico. Os detalhes completos estão arquivados no GD4.",
+      naoConformidades: ["Relatório detalhado não disponível para esta auditoria histórica."],
+      impactoJuridico: "Análise baseada nos registros de conformidade salvos.",
+      recomendacoes: ["Revisar os dados de campo no histórico."],
+      conclusaoExecutiva: "Esta auditoria foi realizada antes da implementação do motor de IA ou o relatório não foi processado.",
       detalhamentoCalculo: []
     };
-    setViewingAudit({ audit, report: mockReport });
+    setViewingAudit({ audit, report });
     setCurrentPage('result');
   };
 
