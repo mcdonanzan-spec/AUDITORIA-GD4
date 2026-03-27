@@ -1,4 +1,5 @@
 
+// v1.0.1 - Melhoria na robustez das funções de inserção
 import { createClient } from '@supabase/supabase-js';
 import { Obra, Audit, User } from '../types';
 

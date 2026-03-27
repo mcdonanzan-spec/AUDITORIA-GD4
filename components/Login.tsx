@@ -1,4 +1,5 @@
 
+// v1.0.1 - Atualização de logs de erro e fluxo de acesso
 import React from 'react';
 import { Mail, Lock, Loader2, ShieldCheck, ChevronRight, User as UserIcon, Send, ArrowLeft, CheckCircle2 } from 'lucide-react';
 import { UnitaLogo } from './Layout';
