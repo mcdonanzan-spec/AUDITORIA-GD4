@@ -232,32 +232,32 @@ const AuditWizard: React.FC<AuditWizardProps> = ({ obras, currentUser, onAuditCo
     setStep('processing');
     setLoading(true);
 
-    try {
-      const auditPayload = {
-        obra: obras.find(o => o.id === selectedObra)?.nome || '',
-        amostragem: {
-          total_efetivo: totalEfetivo,
-          efetivo_gd4: Number(equipeGd4),
-          quarteirizacao_irregular: subcontratacaoRegular === false,
-          entrevistados: entrevistas.length,
-          cobertura: `${coveragePercent}%`,
-        },
-        respostas_check: respostas.map(r => ({
-           pergunta: QUESTIONS.find(q => q.id === r.pergunta_id)?.texto,
-           resposta: r.resposta,
-           obs: r.observacao || '',
-           fotos: r.fotos
-        })),
-        entrevistas: entrevistas.map(e => ({
-           funcao: e.funcao,
-           empresa: e.empresa,
-           respostas: e.respostas.map(er => ({
-             pergunta: INTERVIEW_QUESTIONS.find(iq => iq.id === er.pergunta_id)?.texto,
-             resposta: er.resposta
-           }))
-        }))
-      };
+    const auditPayload = {
+      obra: obras.find(o => o.id === selectedObra)?.nome || '',
+      amostragem: {
+        total_efetivo: totalEfetivo,
+        efetivo_gd4: Number(equipeGd4),
+        quarteirizacao_irregular: subcontratacaoRegular === false,
+        entrevistados: entrevistas.length,
+        cobertura: `${coveragePercent}%`,
+      },
+      respostas_check: respostas.map(r => ({
+         pergunta: QUESTIONS.find(q => q.id === r.pergunta_id)?.texto,
+         resposta: r.resposta,
+         obs: r.observacao || '',
+         fotos: r.fotos
+      })),
+      entrevistas: entrevistas.map(e => ({
+         funcao: e.funcao,
+         empresa: e.empresa,
+         respostas: e.respostas.map(er => ({
+           pergunta: INTERVIEW_QUESTIONS.find(iq => iq.id === er.pergunta_id)?.texto,
+           resposta: er.resposta
+         }))
+      }))
+    };
 
+    try {
       const result = await generateAuditReport(auditPayload);
 
       const auditData = {
@@ -280,10 +280,18 @@ const AuditWizard: React.FC<AuditWizardProps> = ({ obras, currentUser, onAuditCo
       const savedAudit = await saveAudit(auditData as any);
       clearDraft();
       onAuditComplete(savedAudit, result);
-    } catch (err) {
-      console.error(err);
+    } catch (err: any) {
+      console.error("Erro no processamento da auditoria:", err);
       setStep('questions');
-      alert("Falha no processamento. Tente novamente.");
+      
+      let errorMessage = "Falha no processamento. Tente novamente.";
+      if (err.message?.includes("Timeout")) {
+        errorMessage = "A análise da IA demorou muito. Tente novamente com menos fotos ou uma conexão melhor.";
+      } else if (err.message?.includes("row size limit") || err.message?.includes("Payload Too Large")) {
+        errorMessage = "A auditoria contém muitos dados (provavelmente muitas fotos). Tente remover algumas fotos.";
+      }
+      
+      alert(errorMessage);
     } finally {
       setLoading(false);
     }

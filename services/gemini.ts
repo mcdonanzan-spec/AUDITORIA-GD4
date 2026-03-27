@@ -1,20 +1,19 @@
 
-import { GoogleGenAI, Type } from "@google/genai";
+import { GoogleGenAI, Type, ThinkingLevel } from "@google/genai";
 import { AIAnalysisResult } from "../types";
 
 const sanitizeDataForAI = (data: any) => {
-  const cleanData = JSON.parse(JSON.stringify(data));
-  
-  if (cleanData.respostas_check) {
-    cleanData.respostas_check = cleanData.respostas_check.map((r: any) => {
+  // Evita o deep clone via JSON.stringify que processaria todas as fotos em base64
+  return {
+    ...data,
+    respostas_check: data.respostas_check?.map((r: any) => {
       const { fotos, ...rest } = r;
       return {
         ...rest,
         quantidade_evidencias: fotos ? fotos.length : 0
       };
-    });
-  }
-  return cleanData;
+    })
+  };
 };
 
 export const generateAuditReport = async (auditData: any): Promise<AIAnalysisResult> => {
@@ -49,10 +48,16 @@ export const generateAuditReport = async (auditData: any): Promise<AIAnalysisRes
   - conclusaoExecutiva: string (tom executivo, curto e direto)`;
 
   try {
-    const response = await ai.models.generateContent({
-      model: 'gemini-3-pro-preview',
+    // Timeout de 25 segundos para evitar que a UI fique travada indefinidamente
+    const timeoutPromise = new Promise((_, reject) => 
+      setTimeout(() => reject(new Error("Timeout na análise da IA")), 25000)
+    );
+
+    const aiPromise = ai.models.generateContent({
+      model: 'gemini-3-flash-preview',
       contents: prompt,
       config: {
+        thinkingConfig: { thinkingLevel: ThinkingLevel.LOW },
         responseMimeType: "application/json",
         responseSchema: {
           type: Type.OBJECT,
@@ -83,6 +88,8 @@ export const generateAuditReport = async (auditData: any): Promise<AIAnalysisRes
         }
       }
     });
+
+    const response = await Promise.race([aiPromise, timeoutPromise]) as any;
 
     const text = response.text?.trim();
     if (!text) throw new Error("Resposta vazia da IA");
