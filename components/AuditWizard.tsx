@@ -244,8 +244,8 @@ const AuditWizard: React.FC<AuditWizardProps> = ({ obras, currentUser, onAuditCo
       respostas_check: respostas.map(r => ({
          pergunta: QUESTIONS.find(q => q.id === r.pergunta_id)?.texto,
          resposta: r.resposta,
-         obs: r.observacao || '',
-         fotos: r.fotos
+         obs: r.observacao || ''
+         // Removendo fotos do payload da IA para evitar estouro de limite e lentidão
       })),
       entrevistas: entrevistas.map(e => ({
          funcao: e.funcao,
@@ -338,7 +338,7 @@ const AuditWizard: React.FC<AuditWizardProps> = ({ obras, currentUser, onAuditCo
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-3">
               <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block">Tipo</label>
               <select 
@@ -407,7 +407,7 @@ const AuditWizard: React.FC<AuditWizardProps> = ({ obras, currentUser, onAuditCo
 
       <div className="space-y-6">
         {currentBlockKey === 'B' ? (
-          <div className="bg-white p-10 rounded-[3rem] border-4 border-slate-900 shadow-[12px_12px_0px_0px_rgba(15,23,42,1)] space-y-12">
+          <div className="bg-white p-6 md:p-10 rounded-[2rem] md:rounded-[3rem] border-4 border-slate-900 shadow-[12px_12px_0px_0px_rgba(15,23,42,1)] space-y-8 md:space-y-12">
             <div className="flex items-center gap-4 mb-2">
                <div className="p-3 bg-slate-100 rounded-2xl border-2 border-slate-900 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
                  <Users className="text-[#F05A22]" size={28} />
@@ -420,7 +420,7 @@ const AuditWizard: React.FC<AuditWizardProps> = ({ obras, currentUser, onAuditCo
                 <div className="relative group">
                   <input 
                     type="number" 
-                    className="w-full bg-white border-4 border-slate-900 rounded-[1.5rem] px-8 py-6 font-black text-5xl text-slate-900 placeholder-slate-200 focus:outline-none transition-all focus:shadow-[6px_6px_0px_0px_rgba(240,90,34,1)]" 
+                    className="w-full bg-white border-4 border-slate-900 rounded-[1.5rem] px-8 py-6 font-black text-3xl md:text-5xl text-slate-900 placeholder-slate-200 focus:outline-none transition-all focus:shadow-[6px_6px_0px_0px_rgba(240,90,34,1)]" 
                     value={equipeCampo} 
                     onChange={e => setEquipeCampo(e.target.value)} 
                   />
@@ -431,7 +431,7 @@ const AuditWizard: React.FC<AuditWizardProps> = ({ obras, currentUser, onAuditCo
                 <div className="relative group">
                   <input 
                     type="number" 
-                    className="w-full bg-white border-4 border-slate-900 rounded-[1.5rem] px-8 py-6 font-black text-5xl text-slate-900 placeholder-slate-200 focus:outline-none transition-all focus:shadow-[6px_6px_0px_0px_rgba(240,90,34,1)]" 
+                    className="w-full bg-white border-4 border-slate-900 rounded-[1.5rem] px-8 py-6 font-black text-3xl md:text-5xl text-slate-900 placeholder-slate-200 focus:outline-none transition-all focus:shadow-[6px_6px_0px_0px_rgba(240,90,34,1)]" 
                     value={equipeGd4} 
                     onChange={e => setEquipeGd4(e.target.value)} 
                   />
@@ -530,7 +530,7 @@ const AuditWizard: React.FC<AuditWizardProps> = ({ obras, currentUser, onAuditCo
           </div>
         ) : currentBlockKey === 'H' ? (
            <div className="space-y-8">
-             <div className="bg-[#0F172A] text-white p-10 rounded-[3rem] border-4 border-slate-900 shadow-[12px_12px_0px_0px_rgba(240,90,34,1)]">
+             <div className="bg-[#0F172A] text-white p-6 md:p-10 rounded-[2rem] md:rounded-[3rem] border-4 border-slate-900 shadow-[12px_12px_0px_0px_rgba(240,90,34,1)]">
                 <div className="flex items-center gap-6 mb-10 border-b border-slate-800 pb-8">
                    <div className="p-5 bg-[#F05A22] rounded-[1.5rem] border-2 border-slate-900 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
                      <FileSearch size={36} className="text-white" />
@@ -644,7 +644,7 @@ const AuditWizard: React.FC<AuditWizardProps> = ({ obras, currentUser, onAuditCo
             const photoStatus = q.requiresPhotos ? (numPhotos >= minReq ? 'complete' : 'pending') : 'none';
 
             return (
-              <div key={q.id} className="bg-white p-8 rounded-[2rem] border-4 border-slate-900 shadow-[8px_8px_0px_0px_rgba(15,23,42,1)] space-y-6">
+              <div key={q.id} className="bg-white p-6 md:p-8 rounded-[1.5rem] md:rounded-[2rem] border-4 border-slate-900 shadow-[8px_8px_0px_0px_rgba(15,23,42,1)] space-y-6">
                 <p className="text-slate-900 font-black text-xl uppercase leading-tight tracking-tight">{q.texto}</p>
                 <div className="flex gap-2">
                   {(['sim', 'parcial', 'nao', 'n_a'] as ResponseValue[]).map((val) => (

@@ -103,20 +103,8 @@ export const generateAuditReport = async (auditData: any): Promise<AIAnalysisRes
     }
 
     return parsed as AIAnalysisResult;
-  } catch (error) {
+  } catch (error: any) {
     console.error("Erro Crítico na IA:", error);
-    return {
-      indiceGeral: 0,
-      classificacao: "ERRO TÉCNICO",
-      riscoJuridico: "INDETERMINADO",
-      exposicaoFinanceira: 0,
-      detalhamentoCalculo: [
-        { item: "Erro de Processamento", valor: 0, baseLegal: "-", logica: "Ocorreu um erro ao calcular o passivo." }
-      ],
-      naoConformidades: ["Erro na análise quantitativa."],
-      impactoJuridico: "Análise interrompida.",
-      recomendacoes: ["Recalcule a auditoria."],
-      conclusaoExecutiva: "Sistema temporariamente indisponível para análise financeira."
-    };
+    throw error;
   }
 };
