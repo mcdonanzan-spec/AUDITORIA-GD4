@@ -21,41 +21,53 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
     if (!email) return;
 
     setLoading(true);
-    const users = await getUsers();
-    const existingUser = users.find(u => u.email.toLowerCase() === email.toLowerCase());
+    try {
+      const users = await getUsers();
+      const existingUser = users.find(u => u.email.toLowerCase() === email.toLowerCase());
 
-    setTimeout(() => {
-      setLoading(false);
-      if (existingUser) {
-        if (existingUser.status === 'pendente') {
-          setView('pending');
+      setTimeout(() => {
+        setLoading(false);
+        if (existingUser) {
+          if (existingUser.status === 'pendente') {
+            setView('pending');
+          } else {
+            onLogin(existingUser);
+          }
         } else {
-          onLogin(existingUser);
+          setView('request');
         }
-      } else {
-        setView('request');
-      }
-    }, 800);
+      }, 800);
+    } catch (err: any) {
+      console.error(err);
+      alert(`Erro ao conectar ao banco de dados: ${err.message || 'Erro desconhecido'}`);
+      setLoading(false);
+    }
   };
 
   const handleRequestAccess = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
+    try {
+      const userData = {
+        id: email.toLowerCase(),
+        nome: requestName,
+        email: email.toLowerCase(),
+        perfil: requestProfile,
+        status: 'pendente',
+        obra_ids: []
+      };
 
-    const userData = {
-      nome: requestName,
-      email: email,
-      perfil: requestProfile,
-      status: 'pendente',
-      obra_ids: []
-    };
-
-    await createUserRequest(userData as any);
-    
-    setTimeout(() => {
+      await createUserRequest(userData as any);
+      
+      setTimeout(() => {
+        setLoading(false);
+        setView('pending');
+      }, 1000);
+    } catch (err: any) {
+      console.error(err);
+      alert(`Erro ao solicitar acesso: ${err.message || 'Erro desconhecido'}`);
       setLoading(false);
-      setView('pending');
-    }, 1000);
+    }
   };
 
   return (
