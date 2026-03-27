@@ -21,14 +21,17 @@ export const getObras = async (): Promise<Obra[]> => {
   return data || [];
 };
 
-export const addObra = async (obra: Obra): Promise<Obra> => {
+export const addObra = async (obra: Partial<Obra>): Promise<Obra> => {
   const { data, error } = await supabase
     .from('obras')
     .insert([obra])
     .select()
     .single();
   
-  if (error) throw error;
+  if (error) {
+    console.error('Erro no Supabase (addObra):', error);
+    throw error;
+  }
   return data;
 };
 

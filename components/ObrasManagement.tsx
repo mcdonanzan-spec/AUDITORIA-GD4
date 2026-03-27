@@ -29,17 +29,13 @@ const ObrasManagement: React.FC<ObrasManagementProps> = ({ obras, audits, onObra
     e.preventDefault();
     setLoading(true);
     try {
-      const obraData = {
-        ...newObra,
-        created_at: new Date().toISOString()
-      };
-      const savedObra = await addObra(obraData as any);
+      const savedObra = await addObra(newObra);
       onObraAdded(savedObra);
       setIsModalOpen(false);
       setNewObra({ nome: '', regional: '', engenheiro_responsavel: '', status: 'ativa' });
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
-      alert("Erro ao cadastrar obra.");
+      alert(`Erro ao cadastrar obra: ${err.message || 'Erro desconhecido'}`);
     } finally {
       setLoading(false);
     }
