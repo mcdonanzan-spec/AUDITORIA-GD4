@@ -6,6 +6,11 @@ import { Obra, Audit, User } from '../types';
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
+console.log('Configuração Supabase:', {
+  url: supabaseUrl ? `${supabaseUrl.substring(0, 15)}...` : 'AUSENTE',
+  key: supabaseAnonKey ? 'PRESENTE (OCULTA)' : 'AUSENTE'
+});
+
 if (!supabaseUrl || !supabaseAnonKey) {
   console.error('Supabase credentials missing! Check your environment variables.');
 }

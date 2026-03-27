@@ -62,11 +62,9 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
     
     // Safety timeout to prevent infinite loading
     const timeoutId = setTimeout(() => {
-      if (loading) {
-        setLoading(false);
-        alert('A requisição está demorando muito. Verifique sua conexão ou se o banco de dados Supabase está ativo.');
-      }
-    }, 15000);
+      setLoading(false);
+      alert('A conexão com o banco de dados expirou (Timeout). Isso geralmente acontece por:\n1. RLS bloqueando no Supabase\n2. Chaves incorretas na Vercel\n3. Tabela "users" não encontrada.\n\nVerifique o console (F12) para detalhes.');
+    }, 12000);
 
     try {
       const normalizedEmail = email.toLowerCase().trim();
