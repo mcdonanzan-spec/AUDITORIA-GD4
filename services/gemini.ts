@@ -48,13 +48,13 @@ export const generateAuditReport = async (auditData: any): Promise<AIAnalysisRes
   - conclusaoExecutiva: string (tom executivo, curto e direto)`;
 
   try {
-    // Timeout de 25 segundos para evitar que a UI fique travada indefinidamente
+    // Timeout de 60 segundos para evitar que a UI fique travada indefinidamente, dando mais tempo para análises complexas
     const timeoutPromise = new Promise((_, reject) => 
-      setTimeout(() => reject(new Error("Timeout na análise da IA")), 25000)
+      setTimeout(() => reject(new Error("Timeout na análise da IA")), 60000)
     );
 
     const aiPromise = ai.models.generateContent({
-      model: 'gemini-3-flash-preview',
+      model: 'gemini-3.1-pro-preview', // Mudando para o modelo Pro para maior precisão técnica
       contents: prompt,
       config: {
         thinkingConfig: { thinkingLevel: ThinkingLevel.LOW },
