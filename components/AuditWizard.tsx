@@ -52,30 +52,59 @@ const AuditWizard: React.FC<AuditWizardProps> = ({ obras, currentUser, onAuditCo
 
   // PERSISTÊNCIA DE RASCUNHO
   React.useEffect(() => {
-    const draft = localStorage.getItem(`audit_draft_${selectedObra}`);
-    if (draft) {
-      try {
-        const { respostas: r, entrevistas: e } = JSON.parse(draft);
-        if (r) setRespostas(r);
-        if (e) setEntrevistas(e);
-      } catch (err) {
-        console.error("Erro ao carregar rascunho:", err);
+    // Reset state when obra changes to avoid cross-contamination
+    setRespostas([]);
+    setEntrevistas([]);
+    setEquipeCampo('');
+    setEquipeGd4('');
+    setSubcontratacaoRegular(null);
+    setCurrentBlockIdx(0);
+    setError(null);
+
+    if (selectedObra) {
+      const draft = localStorage.getItem(`audit_draft_${selectedObra}`);
+      if (draft) {
+        try {
+          const parsed = JSON.parse(draft);
+          if (parsed.respostas) setRespostas(parsed.respostas);
+          if (parsed.entrevistas) setEntrevistas(parsed.entrevistas);
+          if (parsed.equipeCampo) setEquipeCampo(parsed.equipeCampo);
+          if (parsed.equipeGd4) setEquipeGd4(parsed.equipeGd4);
+          if (parsed.subcontratacaoRegular !== undefined) setSubcontratacaoRegular(parsed.subcontratacaoRegular);
+          if (parsed.currentBlockIdx !== undefined) setCurrentBlockIdx(parsed.currentBlockIdx);
+        } catch (err) {
+          console.error("Erro ao carregar rascunho:", err);
+        }
       }
     }
   }, [selectedObra]);
 
   React.useEffect(() => {
-    if (selectedObra && (respostas.length > 0 || entrevistas.length > 0)) {
-      localStorage.setItem(`audit_draft_${selectedObra}`, JSON.stringify({
-        respostas,
-        entrevistas,
-        timestamp: Date.now()
-      }));
+    if (selectedObra && (respostas.length > 0 || entrevistas.length > 0 || equipeCampo || equipeGd4)) {
+      try {
+        localStorage.setItem(`audit_draft_${selectedObra}`, JSON.stringify({
+          respostas,
+          entrevistas,
+          equipeCampo,
+          equipeGd4,
+          subcontratacaoRegular,
+          currentBlockIdx,
+          timestamp: Date.now()
+        }));
+      } catch (err) {
+        console.warn("Falha ao salvar rascunho (provavelmente limite de armazenamento):", err);
+      }
     }
-  }, [respostas, entrevistas, selectedObra]);
+  }, [respostas, entrevistas, selectedObra, equipeCampo, equipeGd4, subcontratacaoRegular, currentBlockIdx]);
 
   const clearDraft = () => {
     if (selectedObra) localStorage.removeItem(`audit_draft_${selectedObra}`);
+    setRespostas([]);
+    setEntrevistas([]);
+    setEquipeCampo('');
+    setEquipeGd4('');
+    setSubcontratacaoRegular(null);
+    setCurrentBlockIdx(0);
   };
 
   const blockKeys = Object.keys(BLOCKS) as Array<keyof typeof BLOCKS>;
@@ -370,7 +399,37 @@ const AuditWizard: React.FC<AuditWizardProps> = ({ obras, currentUser, onAuditCo
             onClick={() => setStep('questions')}
             className="w-full bg-[#F05A22] text-white py-6 rounded-2xl font-black text-lg hover:bg-slate-900 disabled:opacity-50 transition-all border-4 border-slate-900 shadow-[0_8px_0_0_rgb(0,0,0)] active:translate-y-1 active:shadow-none"
           >
-            CONFIRMAR ENTRADA EM CAMPO
+            {localStorage.getItem(`audit_draft_${selectedObra}`) ? 'CONTINUAR RASCUNHO' : 'CONFIRMAR ENTRADA EM CAMPO'}
+          </button>
+
+          {selectedObra && localStorage.getItem(`audit_draft_${selectedObra}`) && (
+            <button
+              onClick={() => {
+                if (confirm('Deseja apagar o rascunho salvo desta obra e começar do zero?')) {
+                  clearDraft();
+                }
+              }}
+              className="w-full text-rose-600 font-black text-xs uppercase tracking-widest hover:underline"
+            >
+              Apagar Rascunho desta Obra
+            </button>
+          )}
+
+          <button
+            onClick={() => {
+              if (confirm('Deseja apagar TODOS os rascunhos salvos no navegador? Isso não pode ser desfeito.')) {
+                Object.keys(localStorage).forEach(key => {
+                  if (key.startsWith('audit_draft_')) {
+                    localStorage.removeItem(key);
+                  }
+                });
+                clearDraft();
+                alert('Todos os rascunhos foram removidos.');
+              }
+            }}
+            className="w-full text-slate-400 font-black text-[10px] uppercase tracking-widest hover:text-slate-600"
+          >
+            Limpar Todos os Rascunhos do Sistema
           </button>
         </div>
       </div>
@@ -379,10 +438,28 @@ const AuditWizard: React.FC<AuditWizardProps> = ({ obras, currentUser, onAuditCo
 
   if (step === 'processing') {
     return (
-      <div className="min-h-[500px] flex flex-col items-center justify-center text-center space-y-6">
-        <Loader2 className="animate-spin text-[#F05A22]" size={64} />
-        <h2 className="text-2xl font-black text-slate-900 uppercase">Análise de Risco em Tempo Real...</h2>
-        <p className="text-slate-500 font-bold uppercase text-xs tracking-widest">Sincronizando com o motor de Governança Unità</p>
+      <div className="min-h-[500px] flex flex-col items-center justify-center text-center p-6 space-y-8 animate-in fade-in duration-500">
+        <div className="relative">
+          <div className="absolute inset-0 bg-[#F05A22] blur-3xl opacity-20 animate-pulse" />
+          <Loader2 className="animate-spin text-[#F05A22] relative z-10" size={80} />
+        </div>
+        <div className="space-y-4 max-w-md">
+          <h2 className="text-3xl font-black text-slate-900 uppercase tracking-tighter leading-none">Análise de Risco em Tempo Real...</h2>
+          <p className="text-slate-500 font-bold uppercase text-xs tracking-widest leading-relaxed">O motor de Governança Unità está processando seus dados e gerando o relatório estratégico.</p>
+        </div>
+        
+        <div className="pt-8 flex flex-col items-center gap-4">
+          <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em]">Isso pode levar até 60 segundos</p>
+          <button 
+            onClick={() => {
+              setLoading(false);
+              setStep('questions');
+            }}
+            className="text-slate-400 font-black text-xs uppercase tracking-widest hover:text-rose-600 transition-colors border-b-2 border-transparent hover:border-rose-600 pb-1"
+          >
+            Cancelar Processamento
+          </button>
+        </div>
       </div>
     );
   }
@@ -412,13 +489,28 @@ const AuditWizard: React.FC<AuditWizardProps> = ({ obras, currentUser, onAuditCo
       </div>
 
       {error && (
-        <div className="bg-rose-50 border-4 border-rose-500 p-6 rounded-2xl flex items-center gap-4 animate-in slide-in-from-top duration-300">
-          <AlertOctagon className="text-rose-500 shrink-0" size={32} />
-          <div className="flex-1">
-            <p className="text-rose-900 font-black uppercase text-sm">Erro no Processamento</p>
-            <p className="text-rose-700 text-xs font-bold">{error}</p>
+        <div className="bg-rose-50 border-4 border-rose-500 p-6 rounded-2xl flex flex-col md:flex-row items-center gap-4 animate-in slide-in-from-top duration-300">
+          <div className="flex items-center gap-4 flex-1">
+            <AlertOctagon className="text-rose-500 shrink-0" size={32} />
+            <div className="flex-1">
+              <p className="text-rose-900 font-black uppercase text-sm">Erro no Processamento</p>
+              <p className="text-rose-700 text-xs font-bold">{error}</p>
+            </div>
           </div>
-          <button onClick={() => setError(null)} className="text-rose-400 hover:text-rose-600 font-black text-xs uppercase">Fechar</button>
+          <div className="flex gap-3 w-full md:w-auto">
+            <button 
+              onClick={() => {
+                if (confirm('Deseja realmente limpar os dados e reiniciar esta auditoria?')) {
+                  clearDraft();
+                  setError(null);
+                }
+              }} 
+              className="flex-1 md:flex-none bg-rose-600 text-white px-4 py-2 rounded-xl font-black text-[10px] uppercase border-2 border-slate-900"
+            >
+              Reiniciar
+            </button>
+            <button onClick={() => setError(null)} className="flex-1 md:flex-none text-rose-400 hover:text-rose-600 font-black text-xs uppercase">Fechar</button>
+          </div>
         </div>
       )}
 
@@ -701,8 +793,21 @@ const AuditWizard: React.FC<AuditWizardProps> = ({ obras, currentUser, onAuditCo
         )}
       </div>
 
-      <footer className="flex justify-between py-10">
-        <button onClick={() => currentBlockIdx === 0 ? setStep('setup') : setCurrentBlockIdx(prev => prev - 1)} className="font-black uppercase text-xs hover:text-[#F05A22] flex items-center gap-2"><ChevronLeft size={18} /> Anterior</button>
+      <footer className="flex justify-between items-center py-10">
+        <div className="flex gap-6 items-center">
+          <button onClick={() => currentBlockIdx === 0 ? setStep('setup') : setCurrentBlockIdx(prev => prev - 1)} className="font-black uppercase text-xs hover:text-[#F05A22] flex items-center gap-2"><ChevronLeft size={18} /> Anterior</button>
+          <button 
+            onClick={() => {
+              if (confirm('Deseja realmente apagar todo o progresso desta auditoria e recomeçar?')) {
+                clearDraft();
+                setStep('setup');
+              }
+            }}
+            className="text-rose-400 hover:text-rose-600 font-black uppercase text-[10px] tracking-widest"
+          >
+            Reiniciar
+          </button>
+        </div>
         <button disabled={!isBlockComplete()} onClick={() => currentBlockIdx === blockKeys.length - 1 ? handleSubmit() : setCurrentBlockIdx(prev => prev + 1)} className="bg-[#F05A22] text-white px-12 py-5 rounded-2xl font-black text-sm border-4 border-slate-900 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] disabled:opacity-50 hover:bg-slate-900 transition-all active:translate-y-1 active:shadow-none">{currentBlockIdx === blockKeys.length - 1 ? 'FINALIZAR E ANALISAR' : 'PRÓXIMO BLOCO'} <ChevronRight className="inline" size={18} /></button>
       </footer>
     </div>

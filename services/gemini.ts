@@ -97,19 +97,31 @@ export const generateAuditReport = async (auditData: any): Promise<AIAnalysisRes
     });
 
     const response = await Promise.race([aiPromise, timeoutPromise]) as any;
+    
+    console.log("Resposta bruta da IA:", response);
 
     const text = response.text?.trim();
-    if (!text) throw new Error("Resposta vazia da IA");
-    
-    const parsed = JSON.parse(text);
-
-    // Validação extra: Se a IA falhou na aritmética, forçamos o total a ser a soma dos itens
-    const somaItens = parsed.detalhamentoCalculo.reduce((acc: number, curr: any) => acc + curr.valor, 0);
-    if (somaItens !== parsed.exposicaoFinanceira && somaItens > 0) {
-      parsed.exposicaoFinanceira = somaItens;
+    if (!text) {
+      console.error("Resposta da IA está vazia ou indefinida.");
+      throw new Error("A IA não retornou dados. Tente novamente.");
     }
+    
+    try {
+      // Remove possíveis blocos de código se a IA os incluiu por engano
+      const jsonStr = text.replace(/```json/g, '').replace(/```/g, '').trim();
+      const parsed = JSON.parse(jsonStr);
 
-    return parsed as AIAnalysisResult;
+      // Validação extra: Se a IA falhou na aritmética, forçamos o total a ser a soma dos itens
+      const somaItens = parsed.detalhamentoCalculo?.reduce((acc: number, curr: any) => acc + (curr.valor || 0), 0) || 0;
+      if (somaItens !== parsed.exposicaoFinanceira && somaItens > 0) {
+        parsed.exposicaoFinanceira = somaItens;
+      }
+
+      return parsed as AIAnalysisResult;
+    } catch (parseErr) {
+      console.error("Erro ao processar JSON da IA:", parseErr, "Texto recebido:", text);
+      throw new Error("Falha ao processar o relatório gerado. Tente novamente.");
+    }
   } catch (error: any) {
     console.error("Erro Crítico na IA:", error);
     throw error;
