@@ -36,6 +36,7 @@ const AuditWizard: React.FC<AuditWizardProps> = ({ obras, currentUser, onAuditCo
   const [step, setStep] = React.useState<'setup' | 'questions' | 'processing'>('setup');
   const [currentBlockIdx, setCurrentBlockIdx] = React.useState(0);
   const [loading, setLoading] = React.useState(false);
+  const [error, setError] = React.useState<string | null>(null);
   const fileInputRef = React.useRef<HTMLInputElement>(null);
   const [activePhotoQuestionId, setActivePhotoQuestionId] = React.useState<string | null>(null);
   
@@ -229,6 +230,7 @@ const AuditWizard: React.FC<AuditWizardProps> = ({ obras, currentUser, onAuditCo
   };
 
   const handleSubmit = async () => {
+    setError(null);
     setStep('processing');
     setLoading(true);
 
@@ -285,13 +287,18 @@ const AuditWizard: React.FC<AuditWizardProps> = ({ obras, currentUser, onAuditCo
       setStep('questions');
       
       let errorMessage = "Falha no processamento. Tente novamente.";
-      if (err.message?.includes("Timeout")) {
-        errorMessage = "A análise da IA demorou muito. Tente novamente com menos fotos ou uma conexão melhor.";
-      } else if (err.message?.includes("row size limit") || err.message?.includes("Payload Too Large")) {
-        errorMessage = "A auditoria contém muitos dados (provavelmente muitas fotos). Tente remover algumas fotos.";
+      
+      if (err.message?.includes("Configuração da API Key") || err.message?.includes("API_KEY")) {
+        errorMessage = "A chave da API do Gemini não foi configurada corretamente. Entre em contato com o administrador.";
+      } else if (err.message?.includes("Timeout")) {
+        errorMessage = "A análise da IA demorou muito para responder. Tente novamente com menos fotos ou observações mais curtas.";
+      } else if (err.message?.includes("row size limit") || err.message?.includes("Payload Too Large") || err.status === 413) {
+        errorMessage = "O relatório é muito grande para ser salvo. Tente reduzir o número de fotos ou o tamanho das observações.";
+      } else if (err.message) {
+        errorMessage = `Erro: ${err.message}`;
       }
       
-      alert(errorMessage);
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -404,6 +411,17 @@ const AuditWizard: React.FC<AuditWizardProps> = ({ obras, currentUser, onAuditCo
           </p>
         </div>
       </div>
+
+      {error && (
+        <div className="bg-rose-50 border-4 border-rose-500 p-6 rounded-2xl flex items-center gap-4 animate-in slide-in-from-top duration-300">
+          <AlertOctagon className="text-rose-500 shrink-0" size={32} />
+          <div className="flex-1">
+            <p className="text-rose-900 font-black uppercase text-sm">Erro no Processamento</p>
+            <p className="text-rose-700 text-xs font-bold">{error}</p>
+          </div>
+          <button onClick={() => setError(null)} className="text-rose-400 hover:text-rose-600 font-black text-xs uppercase">Fechar</button>
+        </div>
+      )}
 
       <div className="space-y-6">
         {currentBlockKey === 'B' ? (

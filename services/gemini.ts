@@ -17,7 +17,14 @@ const sanitizeDataForAI = (data: any) => {
 };
 
 export const generateAuditReport = async (auditData: any): Promise<AIAnalysisResult> => {
-  const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+  const apiKey = process.env.GEMINI_API_KEY || process.env.API_KEY;
+  
+  if (!apiKey) {
+    console.error("GEMINI_API_KEY não encontrada no ambiente.");
+    throw new Error("Configuração de IA incompleta. Verifique a chave de API.");
+  }
+
+  const ai = new GoogleGenAI({ apiKey });
   
   const cleanPayload = sanitizeDataForAI(auditData);
 
@@ -54,7 +61,7 @@ export const generateAuditReport = async (auditData: any): Promise<AIAnalysisRes
     );
 
     const aiPromise = ai.models.generateContent({
-      model: 'gemini-3.1-pro-preview', // Mudando para o modelo Pro para maior precisão técnica
+      model: 'gemini-3-flash-preview', // Flash é mais rápido e estável para esta tarefa
       contents: prompt,
       config: {
         thinkingConfig: { thinkingLevel: ThinkingLevel.LOW },
