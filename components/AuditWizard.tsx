@@ -265,7 +265,6 @@ const AuditWizard: React.FC<AuditWizardProps> = ({ obras, currentUser, onAuditCo
       const auditData = {
         obra_id: selectedObra,
         auditor_id: currentUser.id,
-        data: new Date().toISOString().split('T')[0],
         tipo: auditType,
         indice_geral: result.indiceGeral,
         classificacao: result.classificacao,

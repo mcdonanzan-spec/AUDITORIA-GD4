@@ -55,7 +55,6 @@ export interface Audit {
   id: string;
   obra_id: string;
   auditor_id: string;
-  data: string;
   tipo: AuditType;
   indice_geral?: number;
   classificacao?: string;
