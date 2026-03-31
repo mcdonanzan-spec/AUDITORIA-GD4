@@ -59,7 +59,7 @@ export interface Audit {
   indice_geral?: number;
   classificacao?: string;
   risco_juridico?: string;
-  respostas: AuditResponse[];
+  respostas?: AuditResponse[];
   entrevistas?: EntrevistaAmostral[];
   equipe_campo?: number;
   equipe_gd4?: number;

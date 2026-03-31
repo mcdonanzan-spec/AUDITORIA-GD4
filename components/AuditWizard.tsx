@@ -43,6 +43,10 @@ const AuditWizard: React.FC<AuditWizardProps> = ({ obras, currentUser, onAuditCo
   const [selectedObra, setSelectedObra] = React.useState<string>('');
   const [auditType, setAuditType] = React.useState<'mensal' | 'extraordinaria'>('mensal');
   
+  const [showClearConfirm, setShowClearConfirm] = React.useState(false);
+  const [showClearAllConfirm, setShowClearAllConfirm] = React.useState(false);
+  const [showRestartConfirm, setShowRestartConfirm] = React.useState(false);
+
   const [equipeCampo, setEquipeCampo] = React.useState<string>('');
   const [equipeGd4, setEquipeGd4] = React.useState<string>('');
   const [subcontratacaoRegular, setSubcontratacaoRegular] = React.useState<boolean | 'n_a' | null>(null);
@@ -296,24 +300,35 @@ const AuditWizard: React.FC<AuditWizardProps> = ({ obras, currentUser, onAuditCo
         auditor_id: currentUser.id,
         tipo: auditType,
         indice_geral: result.indiceGeral,
-        classificacao: result.classificacao,
         risco_juridico: result.riscoJuridico,
-        respostas,
-        // Removendo 'entrevistas' pois a coluna não existe no banco de dados
-        // entrevistas, 
-        equipe_campo: totalEfetivo,
-        equipe_gd4: Number(equipeGd4),
-        subcontratacao_identificada: subcontratacaoRegular === false,
+        // Movemos todos os campos que não têm coluna no banco para o JSON do relatório
         relatorio_ia: JSON.stringify({
           ...result,
-          entrevistas_raw: entrevistas // Salvamos as entrevistas dentro do campo JSON do relatório
+          entrevistas_raw: entrevistas,
+          respostas_raw: respostas,
+          equipe_campo_raw: totalEfetivo,
+          equipe_gd4_raw: Number(equipeGd4),
+          subcontratacao_identificada_raw: subcontratacaoRegular === false,
+          classificacao_raw: result.classificacao // Também salvamos a classificação aqui
         }),
         created_at: new Date().toISOString()
       };
 
       const savedAudit = await saveAudit(auditData as any);
+      
+      // Re-hidratamos o objeto salvo para que o frontend tenha acesso aos dados originais
+      const hydratedAudit = {
+        ...savedAudit,
+        classificacao: result.classificacao,
+        respostas,
+        entrevistas,
+        equipe_campo: totalEfetivo,
+        equipe_gd4: Number(equipeGd4),
+        subcontratacao_identificada: subcontratacaoRegular === false
+      };
+
       clearDraft();
-      onAuditComplete(savedAudit, result);
+      onAuditComplete(hydratedAudit, result);
     } catch (err: any) {
       console.error("Erro no processamento da auditoria:", err);
       setStep('questions');
@@ -407,35 +422,77 @@ const AuditWizard: React.FC<AuditWizardProps> = ({ obras, currentUser, onAuditCo
           </button>
 
           {selectedObra && localStorage.getItem(`audit_draft_${selectedObra}`) && (
-            <button
-              onClick={() => {
-                if (confirm('Deseja apagar o rascunho salvo desta obra e começar do zero?')) {
-                  clearDraft();
-                }
-              }}
-              className="w-full text-rose-600 font-black text-xs uppercase tracking-widest hover:underline"
-            >
-              Apagar Rascunho desta Obra
-            </button>
+            <div className="space-y-3">
+              {!showClearConfirm ? (
+                <button
+                  onClick={() => setShowClearConfirm(true)}
+                  className="w-full text-rose-600 font-black text-xs uppercase tracking-widest hover:underline"
+                >
+                  Apagar Rascunho desta Obra
+                </button>
+              ) : (
+                <div className="flex flex-col items-center gap-2 p-4 bg-rose-50 border-2 border-rose-200 rounded-2xl animate-in fade-in zoom-in duration-200">
+                  <p className="text-[10px] font-black text-rose-600 uppercase">Tem certeza? Isso apagará o progresso desta obra.</p>
+                  <div className="flex gap-4 w-full">
+                    <button 
+                      onClick={() => {
+                        clearDraft();
+                        setShowClearConfirm(false);
+                        window.location.reload();
+                      }}
+                      className="flex-1 bg-rose-600 text-white py-2 rounded-lg font-black text-[10px] uppercase"
+                    >
+                      Sim, Apagar
+                    </button>
+                    <button 
+                      onClick={() => setShowClearConfirm(false)}
+                      className="flex-1 bg-slate-200 text-slate-600 py-2 rounded-lg font-black text-[10px] uppercase"
+                    >
+                      Cancelar
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
           )}
 
-          <button
-            onClick={() => {
-              if (confirm('Deseja apagar TODOS os rascunhos salvos no navegador? Isso não pode ser desfeito.')) {
-                Object.keys(localStorage).forEach(key => {
-                  if (key.startsWith('audit_draft_')) {
-                    localStorage.removeItem(key);
-                  }
-                });
-                clearDraft();
-                alert('Todos os rascunhos foram removidos.');
-                window.location.reload(); // Recarrega para limpar qualquer estado residual
-              }
-            }}
-            className="w-full text-slate-400 font-black text-[10px] uppercase tracking-widest hover:text-slate-600"
-          >
-            Limpar Todos os Rascunhos do Sistema
-          </button>
+          <div className="pt-4">
+            {!showClearAllConfirm ? (
+              <button
+                onClick={() => setShowClearAllConfirm(true)}
+                className="w-full text-slate-400 font-black text-[10px] uppercase tracking-widest hover:text-slate-600"
+              >
+                Limpar Todos os Rascunhos do Sistema
+              </button>
+            ) : (
+              <div className="flex flex-col items-center gap-2 p-4 bg-slate-100 border-2 border-slate-200 rounded-2xl animate-in fade-in zoom-in duration-200">
+                <p className="text-[9px] font-black text-slate-600 uppercase text-center">Apagar TODOS os rascunhos de todas as obras?</p>
+                <div className="flex gap-4 w-full">
+                  <button 
+                    onClick={() => {
+                      Object.keys(localStorage).forEach(key => {
+                        if (key.startsWith('audit_draft_')) {
+                          localStorage.removeItem(key);
+                        }
+                      });
+                      clearDraft();
+                      setShowClearAllConfirm(false);
+                      window.location.reload();
+                    }}
+                    className="flex-1 bg-slate-900 text-white py-2 rounded-lg font-black text-[9px] uppercase"
+                  >
+                    Sim, Limpar Tudo
+                  </button>
+                  <button 
+                    onClick={() => setShowClearAllConfirm(false)}
+                    className="flex-1 bg-white text-slate-400 py-2 rounded-lg font-black text-[9px] uppercase border border-slate-200"
+                  >
+                    Cancelar
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       </div>
     );
@@ -503,18 +560,34 @@ const AuditWizard: React.FC<AuditWizardProps> = ({ obras, currentUser, onAuditCo
             </div>
           </div>
           <div className="flex gap-3 w-full md:w-auto">
-            <button 
-              onClick={() => {
-                if (confirm('Deseja realmente limpar os dados e reiniciar esta auditoria?')) {
-                  clearDraft();
-                  setError(null);
-                  setStep('setup'); // Volta para o início
-                }
-              }} 
-              className="flex-1 md:flex-none bg-rose-600 text-white px-4 py-2 rounded-xl font-black text-[10px] uppercase border-2 border-slate-900"
-            >
-              Reiniciar
-            </button>
+            {!showRestartConfirm ? (
+              <button 
+                onClick={() => setShowRestartConfirm(true)} 
+                className="flex-1 md:flex-none bg-rose-600 text-white px-4 py-2 rounded-xl font-black text-[10px] uppercase border-2 border-slate-900"
+              >
+                Reiniciar
+              </button>
+            ) : (
+              <div className="flex gap-2">
+                <button 
+                  onClick={() => {
+                    clearDraft();
+                    setError(null);
+                    setShowRestartConfirm(false);
+                    setStep('setup');
+                  }}
+                  className="bg-rose-700 text-white px-3 py-2 rounded-lg font-black text-[9px] uppercase border border-slate-900"
+                >
+                  Confirmar
+                </button>
+                <button 
+                  onClick={() => setShowRestartConfirm(false)}
+                  className="bg-white text-slate-600 px-3 py-2 rounded-lg font-black text-[9px] uppercase border border-slate-200"
+                >
+                  Não
+                </button>
+              </div>
+            )}
             <button onClick={() => setError(null)} className="flex-1 md:flex-none text-rose-400 hover:text-rose-600 font-black text-xs uppercase">Fechar</button>
           </div>
         </div>
@@ -802,17 +875,21 @@ const AuditWizard: React.FC<AuditWizardProps> = ({ obras, currentUser, onAuditCo
       <footer className="flex justify-between items-center py-10">
         <div className="flex gap-6 items-center">
           <button onClick={() => currentBlockIdx === 0 ? setStep('setup') : setCurrentBlockIdx(prev => prev - 1)} className="font-black uppercase text-xs hover:text-[#F05A22] flex items-center gap-2"><ChevronLeft size={18} /> Anterior</button>
-          <button 
-            onClick={() => {
-              if (confirm('Deseja realmente apagar todo o progresso desta auditoria e recomeçar?')) {
-                clearDraft();
-                setStep('setup');
-              }
-            }}
-            className="text-rose-400 hover:text-rose-600 font-black uppercase text-[10px] tracking-widest"
-          >
-            Reiniciar
-          </button>
+          
+          {!showRestartConfirm ? (
+            <button 
+              onClick={() => setShowRestartConfirm(true)}
+              className="text-rose-400 hover:text-rose-600 font-black uppercase text-[10px] tracking-widest"
+            >
+              Reiniciar
+            </button>
+          ) : (
+            <div className="flex gap-2 items-center bg-rose-50 px-3 py-1 rounded-lg border border-rose-100">
+              <span className="text-[8px] font-black text-rose-400 uppercase">Limpar?</span>
+              <button onClick={() => { clearDraft(); setStep('setup'); setShowRestartConfirm(false); }} className="text-rose-600 font-black text-[9px] uppercase">Sim</button>
+              <button onClick={() => setShowRestartConfirm(false)} className="text-slate-400 font-black text-[9px] uppercase">Não</button>
+            </div>
+          )}
         </div>
         <button disabled={!isBlockComplete()} onClick={() => currentBlockIdx === blockKeys.length - 1 ? handleSubmit() : setCurrentBlockIdx(prev => prev + 1)} className="bg-[#F05A22] text-white px-12 py-5 rounded-2xl font-black text-sm border-4 border-slate-900 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] disabled:opacity-50 hover:bg-slate-900 transition-all active:translate-y-1 active:shadow-none">{currentBlockIdx === blockKeys.length - 1 ? 'FINALIZAR E ANALISAR' : 'PRÓXIMO BLOCO'} <ChevronRight className="inline" size={18} /></button>
       </footer>

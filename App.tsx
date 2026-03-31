@@ -32,7 +32,29 @@ const App: React.FC = () => {
         getAudits(),
         getObras()
       ]);
-      setAudits(fetchedAudits);
+      
+      // Hidratamos as auditorias com os dados salvos no JSON do relatório
+      const hydratedAudits = fetchedAudits.map(audit => {
+        if (audit.relatorio_ia) {
+          try {
+            const reportData = JSON.parse(audit.relatorio_ia);
+            return {
+              ...audit,
+              respostas: audit.respostas || reportData.respostas_raw || [],
+              entrevistas: audit.entrevistas || reportData.entrevistas_raw || [],
+              equipe_campo: audit.equipe_campo || reportData.equipe_campo_raw || 0,
+              equipe_gd4: audit.equipe_gd4 || reportData.equipe_gd4_raw || 0,
+              subcontratacao_identificada: audit.subcontratacao_identificada || reportData.subcontratacao_identificada_raw || false,
+              classificacao: audit.classificacao || reportData.classificacao_raw || reportData.classificacao || 'N/A',
+            };
+          } catch (e) {
+            return audit;
+          }
+        }
+        return audit;
+      });
+
+      setAudits(hydratedAudits);
       setObras(fetchedObras);
     } finally {
       setLoading(false);

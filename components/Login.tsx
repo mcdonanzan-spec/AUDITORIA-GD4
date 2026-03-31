@@ -16,12 +16,14 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
   const [view, setView] = React.useState<'initial' | 'request' | 'pending'>('initial');
   const [requestName, setRequestName] = React.useState('');
   const [requestProfile, setRequestProfile] = React.useState<UserRole>('obra');
+  const [error, setError] = React.useState<string | null>(null);
 
   const handleInitialSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email) return;
 
     setLoading(true);
+    setError(null);
     try {
       const normalizedEmail = email.toLowerCase().trim();
       console.log('Verificando acesso para:', normalizedEmail);
@@ -43,17 +45,18 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
       }, 500);
     } catch (err: any) {
       console.error('Erro ao conectar ao banco de dados:', err);
-      alert(`Erro ao conectar ao banco de dados: ${err.message || 'Erro desconhecido'}`);
+      setError(`Erro ao conectar ao banco de dados: ${err.message || 'Erro desconhecido'}`);
       setLoading(false);
     }
   };
 
   const handleRequestAccess = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError(null);
     
     // Check if Supabase is configured
     if (!import.meta.env.VITE_SUPABASE_URL || !import.meta.env.VITE_SUPABASE_ANON_KEY) {
-      alert('Erro de Configuração: As chaves do Supabase não foram encontradas na Vercel/Ambiente. Verifique as Environment Variables.');
+      setError('Erro de Configuração: As chaves do Supabase não foram encontradas. Verifique as Environment Variables.');
       return;
     }
 
@@ -63,7 +66,7 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
     // Safety timeout to prevent infinite loading
     const timeoutId = setTimeout(() => {
       setLoading(false);
-      alert('A conexão com o banco de dados expirou (Timeout). Isso geralmente acontece por:\n1. RLS bloqueando no Supabase\n2. Chaves incorretas na Vercel\n3. Tabela "users" não encontrada.\n\nVerifique o console (F12) para detalhes.');
+      setError('A conexão com o banco de dados expirou (Timeout). Verifique sua conexão ou se o banco está ativo.');
     }, 12000);
 
     try {
@@ -74,9 +77,8 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
       if (existingUser) {
         clearTimeout(timeoutId);
         console.warn('Usuário já existe:', normalizedEmail);
-        alert('Este e-mail já possui uma solicitação ou cadastro ativo.');
+        setError('Este e-mail já possui uma solicitação ou cadastro ativo.');
         setLoading(false);
-        setView('initial');
         return;
       }
 
@@ -101,9 +103,9 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
       const errorMsg = err.message || 'Erro desconhecido';
       
       if (errorMsg.includes('PGRST301') || errorMsg.includes('JWT')) {
-        alert('Erro de Permissão (RLS): O banco de dados recusou a gravação. Certifique-se de que o RLS está desativado ou configurado para permitir inserções públicas na tabela "users".');
+        setError('Erro de Permissão (RLS): O banco de dados recusou a gravação. Verifique as políticas de segurança.');
       } else {
-        alert(`Erro ao solicitar acesso: ${errorMsg}. Verifique o console do navegador para detalhes técnicos.`);
+        setError(`Erro ao solicitar acesso: ${errorMsg}`);
       }
       setLoading(false);
     }
@@ -140,6 +142,13 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
         {/* Form Column */}
         <div className="p-12 lg:p-16 bg-slate-50 flex flex-col justify-center min-h-[500px]">
           
+          {error && (
+            <div className="mb-6 p-4 bg-rose-50 border-2 border-rose-200 rounded-2xl animate-in slide-in-from-top-2 duration-300">
+              <p className="text-rose-600 font-black text-[10px] uppercase leading-tight">{error}</p>
+              <button onClick={() => setError(null)} className="mt-2 text-rose-400 font-black text-[9px] uppercase hover:text-rose-600">Dispensar</button>
+            </div>
+          )}
+
           {view === 'initial' && (
             <form onSubmit={handleInitialSubmit} className="space-y-8 animate-in slide-in-from-right-4">
               <div className="space-y-2">
