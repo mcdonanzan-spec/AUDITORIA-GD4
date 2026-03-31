@@ -110,13 +110,13 @@ const App: React.FC = () => {
   // LÓGICA DE FILTRAGEM DE SEGURANÇA POR ESCOPO
   const isGlobal = ['admin', 'auditor', 'diretoria'].includes(user.perfil);
   
+  // Obras: Usuários de obra só veem suas obras para INICIAR auditoria
   const filteredObras = isGlobal 
     ? obras 
     : obras.filter(o => user.obra_ids?.includes(o.id));
 
-  const filteredAudits = isGlobal
-    ? audits
-    : audits.filter(a => user.obra_ids?.includes(a.obra_id));
+  // Auditorias: Visíveis para todos para gerar competitividade, conforme solicitado
+  const filteredAudits = audits;
 
   if (configError) {
     return (
@@ -165,8 +165,10 @@ const App: React.FC = () => {
           <AuditResult 
             audit={viewingAudit.audit} 
             report={viewingAudit.report} 
-            obraName={obras.find(o => o.id === viewingAudit.audit.obra_id)?.nome || viewingAudit.audit.obra_id}
+            obra={obras.find(o => o.id === viewingAudit.audit.obra_id)}
             onClose={() => setCurrentPage('dashboard')} 
+            currentUser={user}
+            onRefresh={fetchData}
           />
         ) : <Dashboard audits={filteredAudits} obras={filteredObras} onNavigate={setCurrentPage} user={user} />;
       case 'history':

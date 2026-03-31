@@ -1,9 +1,9 @@
 
 // v1.0.1 - Ajuste no fluxo de cadastro de unidades
 import React from 'react';
-import { Obra, Audit } from '../types';
+import { Obra, Audit, User } from '../types';
 import { Building2, Plus, Search, MapPin, User as UserIcon, X, Loader2, ChevronRight, History, LayoutDashboard } from 'lucide-react';
-import { addObra } from '../services/supabase';
+import { addObra, getUsers } from '../services/supabase';
 
 interface ObrasManagementProps {
   obras: Obra[];
@@ -18,13 +18,27 @@ const ObrasManagement: React.FC<ObrasManagementProps> = ({ obras, audits, onObra
   const [loading, setLoading] = React.useState(false);
   const [searchTerm, setSearchTerm] = React.useState('');
   const [selectedObraId, setSelectedObraId] = React.useState<string | null>(null);
+  const [users, setUsers] = React.useState<User[]>([]);
 
   const [newObra, setNewObra] = React.useState({
     nome: '',
     regional: '',
     engenheiro_responsavel: '',
+    engenheiro_id: '',
     status: 'ativa' as const
   });
+
+  React.useEffect(() => {
+    const fetchUsers = async () => {
+      try {
+        const u = await getUsers();
+        setUsers(u.filter(user => user.perfil === 'obra' || user.perfil === 'admin'));
+      } catch (err) {
+        console.error(err);
+      }
+    };
+    fetchUsers();
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -33,7 +47,7 @@ const ObrasManagement: React.FC<ObrasManagementProps> = ({ obras, audits, onObra
       const savedObra = await addObra(newObra);
       onObraAdded(savedObra);
       setIsModalOpen(false);
-      setNewObra({ nome: '', regional: '', engenheiro_responsavel: '', status: 'ativa' });
+      setNewObra({ nome: '', regional: '', engenheiro_responsavel: '', engenheiro_id: '', status: 'ativa' });
     } catch (err: any) {
       console.error(err);
       alert(`Erro ao cadastrar obra: ${err.message || 'Erro desconhecido'}`);
@@ -229,14 +243,24 @@ const ObrasManagement: React.FC<ObrasManagementProps> = ({ obras, audits, onObra
               </div>
               <div className="space-y-3">
                 <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 block">Engenheiro de Campo</label>
-                <input 
+                <select 
                   required
-                  type="text" 
-                  className="w-full bg-slate-50 border-4 border-slate-100 rounded-2xl px-6 py-5 focus:border-slate-900 focus:outline-none font-black text-lg text-slate-900 transition-all"
-                  value={newObra.engenheiro_responsavel}
-                  onChange={e => setNewObra({...newObra, engenheiro_responsavel: e.target.value})}
-                  placeholder="Responsável Técnico"
-                />
+                  className="w-full bg-slate-50 border-4 border-slate-100 rounded-2xl px-6 py-5 focus:border-slate-900 focus:outline-none font-black text-lg text-slate-900 transition-all appearance-none"
+                  value={newObra.engenheiro_id}
+                  onChange={e => {
+                    const selectedUser = users.find(u => u.id === e.target.value);
+                    setNewObra({
+                      ...newObra, 
+                      engenheiro_id: e.target.value,
+                      engenheiro_responsavel: selectedUser?.nome || ''
+                    });
+                  }}
+                >
+                  <option value="">Selecione o Engenheiro</option>
+                  {users.map(u => (
+                    <option key={u.id} value={u.id}>{u.nome} ({u.email})</option>
+                  ))}
+                </select>
               </div>
               <div className="pt-8">
                 <button 

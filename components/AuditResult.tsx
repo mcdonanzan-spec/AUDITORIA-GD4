@@ -17,19 +17,25 @@ import {
 import { motion } from 'motion/react';
 // @ts-ignore
 import html2pdf from 'html2pdf.js';
-import { Audit, AIAnalysisResult } from '../types';
+import { Audit, AIAnalysisResult, User, Obra } from '../types';
 import { QUESTIONS, INTERVIEW_QUESTIONS } from '../constants';
 import { UnitaLogo } from './Layout';
+import { signAudit } from '../services/supabase';
 
 interface AuditResultProps {
   audit: Audit;
   report: AIAnalysisResult;
-  obraName: string;
+  obra?: Obra;
   onClose: () => void;
+  currentUser: User;
+  onRefresh: () => void;
 }
 
-const AuditResult: React.FC<AuditResultProps> = ({ audit, report, obraName, onClose }) => {
+const AuditResult: React.FC<AuditResultProps> = ({ audit, report, obra, onClose, currentUser, onRefresh }) => {
   const [isGenerating, setIsGenerating] = React.useState(false);
+  const [isSigning, setIsSigning] = React.useState(false);
+
+  const obraName = obra?.nome || audit.obra_id;
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
@@ -38,25 +44,68 @@ const AuditResult: React.FC<AuditResultProps> = ({ audit, report, obraName, onCl
   const handleGeneratePDF = async () => {
     if (isGenerating) return;
     setIsGenerating(true);
+    
+    // Pequeno delay para garantir que tudo esteja renderizado
+    await new Promise(resolve => setTimeout(resolve, 500));
+
     const element = document.getElementById('relatorio-unita-premium');
     if (!element) return;
 
     const opt = {
       margin: [0, 0, 0, 0] as [number, number, number, number],
-      filename: `RELATORIO_UNITA_${audit.id}.pdf`,
+      filename: `RELATORIO_UNITA_${audit.id.split('-')[1]}.pdf`,
       image: { type: 'jpeg' as const, quality: 0.98 },
-      html2canvas: { scale: 2, useCORS: true, letterRendering: true },
+      html2canvas: { 
+        scale: 2, 
+        useCORS: true, 
+        letterRendering: true,
+        logging: false,
+        windowWidth: element.scrollWidth,
+        windowHeight: element.scrollHeight
+      },
       jsPDF: { unit: 'mm' as const, format: 'a4' as const, orientation: 'portrait' as const }
     };
 
     try {
       await html2pdf().set(opt).from(element).save();
     } catch (err) {
-      console.error(err);
+      console.error('Erro ao gerar PDF:', err);
+      alert('Erro ao gerar PDF. Tente novamente.');
     } finally {
       setIsGenerating(false);
     }
   };
+
+  const handleSign = async (type: 'auditor' | 'engenheiro') => {
+    if (isSigning) return;
+    
+    const confirmMsg = type === 'auditor' 
+      ? 'Deseja assinar digitalmente este relatório como Auditor?' 
+      : 'Deseja assinar digitalmente este relatório como Engenheiro Responsável?';
+      
+    if (!window.confirm(confirmMsg)) return;
+
+    setIsSigning(true);
+    try {
+      const signature = {
+        userId: currentUser.id,
+        nome: currentUser.nome,
+        data: new Date().toISOString()
+      };
+      
+      await signAudit(audit.id, signature, type);
+      onRefresh();
+      alert('Relatório assinado com sucesso!');
+    } catch (err: any) {
+      console.error('Erro ao assinar:', err);
+      alert(`Erro ao assinar: ${err.message || 'Erro desconhecido'}`);
+    } finally {
+      setIsSigning(false);
+    }
+  };
+
+  const canSignAuditor = (currentUser.perfil === 'auditor' || currentUser.perfil === 'admin') && !audit.assinatura_auditor;
+  const canSignEngineer = (currentUser.id === obra?.engenheiro_id || currentUser.perfil === 'admin') && !audit.assinatura_engenheiro;
 
   const divergencia = Math.abs((audit.equipe_campo || 0) - (audit.equipe_gd4 || 0));
 
@@ -268,16 +317,54 @@ const AuditResult: React.FC<AuditResultProps> = ({ audit, report, obraName, onCl
            
            <div className="grid grid-cols-2 gap-20 pt-10">
               <div className="text-center space-y-2">
-                 <div className="h-px bg-slate-300 w-full mb-4"></div>
-                 <p className="text-[8px] font-black uppercase tracking-[0.3em] text-slate-400">Assinatura Digital Auditrisk</p>
-                 <p className="text-[10px] font-black uppercase">Auditor Unità S.A.</p>
-                 <p className="text-[8px] text-slate-400">Responsável pela Coleta</p>
+                  {audit.assinatura_auditor ? (
+                    <div className="font-black text-[#F05A22] text-xs uppercase italic border-b-2 border-slate-900 pb-2 mb-2">
+                      {audit.assinatura_auditor.nome}
+                      <p className="text-[8px] font-normal text-slate-500 not-italic">Assinado em {new Date(audit.assinatura_auditor.data).toLocaleString('pt-BR')}</p>
+                    </div>
+                  ) : (
+                    <div className="h-px bg-slate-300 w-full mb-4"></div>
+                  )}
+                  <p className="text-[8px] font-black uppercase tracking-[0.3em] text-slate-400">Assinatura Digital Auditrisk</p>
+                  <p className="text-[10px] font-black uppercase">Auditor Unità S.A.</p>
+                  <p className="text-[8px] text-slate-400">Responsável pela Coleta</p>
+                  
+                  {canSignAuditor && (
+                    <button 
+                      data-html2canvas-ignore
+                      disabled={isSigning}
+                      onClick={() => handleSign('auditor')}
+                      className="mt-4 bg-slate-900 text-white px-6 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-[#F05A22] transition-all shadow-[4px_4px_0px_0px_rgba(240,90,34,1)] flex items-center justify-center gap-2 mx-auto"
+                    >
+                      {isSigning ? <Loader2 className="animate-spin" size={14} /> : <UserCheck size={14} />}
+                      Assinar Relatório
+                    </button>
+                  )}
               </div>
               <div className="text-center space-y-2">
-                 <div className="h-px bg-slate-300 w-full mb-4"></div>
-                 <p className="text-[8px] font-black uppercase tracking-[0.3em] text-slate-400">Assinatura Responsável Obra</p>
-                 <p className="text-[10px] font-black uppercase">Engenheiro da Unidade</p>
-                 <p className="text-[8px] text-slate-400">Ciente do Risco de {audit.equipe_campo} P.</p>
+                  {audit.assinatura_engenheiro ? (
+                    <div className="font-black text-[#F05A22] text-xs uppercase italic border-b-2 border-slate-900 pb-2 mb-2">
+                      {audit.assinatura_engenheiro.nome}
+                      <p className="text-[8px] font-normal text-slate-500 not-italic">Assinado em {new Date(audit.assinatura_engenheiro.data).toLocaleString('pt-BR')}</p>
+                    </div>
+                  ) : (
+                    <div className="h-px bg-slate-300 w-full mb-4"></div>
+                  )}
+                  <p className="text-[8px] font-black uppercase tracking-[0.3em] text-slate-400">Assinatura Responsável Obra</p>
+                  <p className="text-[10px] font-black uppercase">Engenheiro da Unidade</p>
+                  <p className="text-[8px] text-slate-400">Ciente do Risco de {audit.equipe_campo} P.</p>
+
+                  {canSignEngineer && (
+                    <button 
+                      data-html2canvas-ignore
+                      disabled={isSigning}
+                      onClick={() => handleSign('engenheiro')}
+                      className="mt-4 bg-slate-900 text-white px-6 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-[#F05A22] transition-all shadow-[4px_4px_0px_0px_rgba(240,90,34,1)] flex items-center justify-center gap-2 mx-auto"
+                    >
+                      {isSigning ? <Loader2 className="animate-spin" size={14} /> : <UserCheck size={14} />}
+                      Assinar Relatório
+                    </button>
+                  )}
               </div>
            </div>
 

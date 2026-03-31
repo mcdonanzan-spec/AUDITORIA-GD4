@@ -93,6 +93,19 @@ export const saveAudit = async (audit: any): Promise<Audit> => {
   }
 };
 
+export const signAudit = async (auditId: string, signature: any, type: 'auditor' | 'engenheiro'): Promise<void> => {
+  const field = type === 'auditor' ? 'assinatura_auditor' : 'assinatura_engenheiro';
+  const { error } = await supabase
+    .from('audits')
+    .update({ [field]: signature })
+    .eq('id', auditId);
+  
+  if (error) {
+    console.error(`Erro ao assinar auditoria (${type}):`, error);
+    throw error;
+  }
+};
+
 export const getUsers = async (): Promise<User[]> => {
   const { data, error } = await supabase
     .from('users')

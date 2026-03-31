@@ -16,6 +16,7 @@ export interface Obra {
   nome: string;
   regional: string;
   engenheiro_responsavel: string;
+  engenheiro_id?: string;
   status: 'ativa' | 'concluida' | 'suspensa';
   created_at: string;
 }
@@ -51,6 +52,13 @@ export interface EntrevistaAmostral {
   }[];
 }
 
+export interface Signature {
+  user_id: string;
+  user_nome: string;
+  perfil: UserRole;
+  data: string;
+}
+
 export interface Audit {
   id: string;
   obra_id: string;
@@ -66,6 +74,8 @@ export interface Audit {
   subcontratacao_identificada?: boolean;
   relatorio_ia?: string;
   created_at: string;
+  assinatura_auditor?: Signature;
+  assinatura_engenheiro?: Signature;
 }
 
 export interface AIAnalysisResult {
