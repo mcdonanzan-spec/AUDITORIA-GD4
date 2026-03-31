@@ -53,9 +53,8 @@ export interface EntrevistaAmostral {
 }
 
 export interface Signature {
-  user_id: string;
-  user_nome: string;
-  perfil: UserRole;
+  userId: string;
+  nome: string;
   data: string;
 }
 

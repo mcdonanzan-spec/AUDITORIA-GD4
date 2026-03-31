@@ -56,6 +56,14 @@ const App: React.FC = () => {
 
       setAudits(hydratedAudits);
       setObras(fetchedObras);
+
+      // Atualiza o viewingAudit se estiver visualizando algo
+      setViewingAudit(prev => {
+        if (!prev) return null;
+        const updatedAudit = hydratedAudits.find(a => a.id === prev.audit.id);
+        if (!updatedAudit) return prev;
+        return { ...prev, audit: updatedAudit };
+      });
     } finally {
       setLoading(false);
     }

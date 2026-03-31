@@ -89,8 +89,9 @@ const AuditResult: React.FC<AuditResultProps> = ({ audit, report, obra, onClose,
     setIsSigning(true);
     try {
       const signature = {
-        userId: currentUser.id,
-        nome: currentUser.nome,
+        user_id: currentUser.id,
+        user_nome: currentUser.nome,
+        perfil: currentUser.perfil,
         data: new Date().toISOString()
       };
       
@@ -320,7 +321,7 @@ const AuditResult: React.FC<AuditResultProps> = ({ audit, report, obra, onClose,
               <div className="text-center space-y-2">
                   {audit.assinatura_auditor ? (
                     <div className="font-black text-[#F05A22] text-xs uppercase italic border-b-2 border-slate-900 pb-2 mb-2">
-                      {audit.assinatura_auditor.nome}
+                      {audit.assinatura_auditor.user_nome}
                       <p className="text-[8px] font-normal text-slate-500 not-italic">Assinado em {new Date(audit.assinatura_auditor.data).toLocaleString('pt-BR')}</p>
                     </div>
                   ) : (
@@ -345,7 +346,7 @@ const AuditResult: React.FC<AuditResultProps> = ({ audit, report, obra, onClose,
               <div className="text-center space-y-2">
                   {audit.assinatura_engenheiro ? (
                     <div className="font-black text-[#F05A22] text-xs uppercase italic border-b-2 border-slate-900 pb-2 mb-2">
-                      {audit.assinatura_engenheiro.nome}
+                      {audit.assinatura_engenheiro.user_nome}
                       <p className="text-[8px] font-normal text-slate-500 not-italic">Assinado em {new Date(audit.assinatura_engenheiro.data).toLocaleString('pt-BR')}</p>
                     </div>
                   ) : (
