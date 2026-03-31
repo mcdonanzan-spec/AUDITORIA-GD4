@@ -15,8 +15,8 @@ import {
   Clock
 } from 'lucide-react';
 import { motion } from 'motion/react';
-// @ts-ignore
-import html2pdf from 'html2pdf.js';
+import html2canvas from 'html2canvas';
+import { jsPDF } from 'jspdf';
 import { Audit, AIAnalysisResult, User, Obra } from '../types';
 import { QUESTIONS, INTERVIEW_QUESTIONS } from '../constants';
 import { UnitaLogo } from './Layout';
@@ -51,27 +51,57 @@ const AuditResult: React.FC<AuditResultProps> = ({ audit, report, obra, onClose,
         throw new Error("Elemento do relatório não encontrado");
       }
 
-      // Configuração de alta compatibilidade
-      const opt = {
-        margin: [10, 10, 10, 10],
-        filename: `RELATORIO_UNITA_${audit.id.substring(0, 8)}.pdf`,
-        image: { type: 'jpeg', quality: 0.98 },
-        html2canvas: { 
-          scale: 2, 
-          useCORS: true,
-          letterRendering: true,
-          scrollY: 0,
-          windowWidth: 1200 // Força uma largura estável para o print
-        },
-        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
-        pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
-      };
+      // Pequeno delay para garantir renderização final
+      await new Promise(resolve => setTimeout(resolve, 800));
 
-      // Gera o PDF
-      await html2pdf().set(opt).from(element).save();
+      const canvas = await html2canvas(element, {
+        scale: 2,
+        useCORS: true,
+        logging: false,
+        backgroundColor: '#ffffff',
+        windowWidth: 1200,
+        onclone: (clonedDoc) => {
+          // Garante que elementos com animação ou estados temporários estejam visíveis no clone
+          const clonedElement = clonedDoc.getElementById('relatorio-unita-premium');
+          if (clonedElement) {
+            clonedElement.style.transform = 'none';
+          }
+        }
+      });
+
+      const imgData = canvas.toDataURL('image/jpeg', 0.95);
+      const pdf = new jsPDF({
+        orientation: 'portrait',
+        unit: 'mm',
+        format: 'a4'
+      });
+
+      const imgProps = pdf.getImageProperties(imgData);
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
+      
+      // Se o conteúdo for maior que uma página A4, ele vai esticar ou podemos criar múltiplas páginas
+      // Para este dashboard, vamos tentar ajustar à largura e deixar a altura proporcional
+      // Se passar de uma página, adicionamos nova página
+      
+      let heightLeft = pdfHeight;
+      let position = 0;
+      const pageHeight = pdf.internal.pageSize.getHeight();
+
+      pdf.addImage(imgData, 'JPEG', 0, position, pdfWidth, pdfHeight);
+      heightLeft -= pageHeight;
+
+      while (heightLeft >= 0) {
+        position = heightLeft - pdfHeight;
+        pdf.addPage();
+        pdf.addImage(imgData, 'JPEG', 0, position, pdfWidth, pdfHeight);
+        heightLeft -= pageHeight;
+      }
+
+      pdf.save(`RELATORIO_UNITA_${audit.id.substring(0, 8)}.pdf`);
     } catch (err) {
       console.error('Erro detalhado ao gerar PDF:', err);
-      alert('Erro ao gerar o documento. Certifique-se de que o relatório carregou completamente e tente novamente.');
+      alert('Erro ao gerar o documento. Tente novamente ou use a função de imprimir do navegador (Ctrl+P).');
     } finally {
       setIsGenerating(false);
     }
@@ -147,7 +177,7 @@ const AuditResult: React.FC<AuditResultProps> = ({ audit, report, obra, onClose,
         <div className="grid grid-cols-2 gap-10 text-[10px] font-bold uppercase tracking-tight text-slate-500">
           <div className="space-y-2">
             <p>Canteiro: <span className="text-slate-900">{obraName}</span></p>
-            <p>Protocolo: <span className="text-slate-900">AR-{audit.id.split('-')[1]}</span></p>
+            <p>Protocolo: <span className="text-slate-900">AR-{audit.id.substring(0, 5).toUpperCase()}</span></p>
             <p>Data/Hora: <span className="text-slate-900">{new Date(audit.created_at).toLocaleString('pt-BR')}</span></p>
           </div>
           <div className="space-y-2 text-right">
