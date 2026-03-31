@@ -45,32 +45,33 @@ const AuditResult: React.FC<AuditResultProps> = ({ audit, report, obra, onClose,
     if (isGenerating) return;
     setIsGenerating(true);
     
-    // Pequeno delay para garantir que tudo esteja renderizado
-    await new Promise(resolve => setTimeout(resolve, 500));
-
-    const element = document.getElementById('relatorio-unita-premium');
-    if (!element) return;
-
-    const opt = {
-      margin: [0, 0, 0, 0] as [number, number, number, number],
-      filename: `RELATORIO_UNITA_${audit.id.split('-')[1]}.pdf`,
-      image: { type: 'jpeg' as const, quality: 0.98 },
-      html2canvas: { 
-        scale: 2, 
-        useCORS: true, 
-        letterRendering: true,
-        logging: false,
-        windowWidth: element.scrollWidth,
-        windowHeight: element.scrollHeight
-      },
-      jsPDF: { unit: 'mm' as const, format: 'a4' as const, orientation: 'portrait' as const }
-    };
-
     try {
+      const element = document.getElementById('relatorio-unita-premium');
+      if (!element) {
+        throw new Error("Elemento do relatório não encontrado");
+      }
+
+      // Configuração de alta compatibilidade
+      const opt = {
+        margin: [10, 10, 10, 10],
+        filename: `RELATORIO_UNITA_${audit.id.substring(0, 8)}.pdf`,
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { 
+          scale: 2, 
+          useCORS: true,
+          letterRendering: true,
+          scrollY: 0,
+          windowWidth: 1200 // Força uma largura estável para o print
+        },
+        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+        pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
+      };
+
+      // Gera o PDF
       await html2pdf().set(opt).from(element).save();
     } catch (err) {
-      console.error('Erro ao gerar PDF:', err);
-      alert('Erro ao gerar PDF. Tente novamente.');
+      console.error('Erro detalhado ao gerar PDF:', err);
+      alert('Erro ao gerar o documento. Certifique-se de que o relatório carregou completamente e tente novamente.');
     } finally {
       setIsGenerating(false);
     }
