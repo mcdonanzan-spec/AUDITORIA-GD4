@@ -301,6 +301,10 @@ const AuditWizard: React.FC<AuditWizardProps> = ({ obras, currentUser, onAuditCo
         tipo: auditType,
         indice_geral: result.indiceGeral,
         risco_juridico: result.riscoJuridico,
+        classificacao: result.classificacao,
+        equipe_campo: totalEfetivo,
+        equipe_gd4: Number(equipeGd4),
+        subcontratacao_identificada: subcontratacaoRegular === false,
         // Movemos todos os campos que não têm coluna no banco para o JSON do relatório
         relatorio_ia: JSON.stringify({
           ...result,
@@ -309,7 +313,7 @@ const AuditWizard: React.FC<AuditWizardProps> = ({ obras, currentUser, onAuditCo
           equipe_campo_raw: totalEfetivo,
           equipe_gd4_raw: Number(equipeGd4),
           subcontratacao_identificada_raw: subcontratacaoRegular === false,
-          classificacao_raw: result.classificacao // Também salvamos a classificação aqui
+          classificacao_raw: result.classificacao
         }),
         created_at: new Date().toISOString()
       };
@@ -337,6 +341,8 @@ const AuditWizard: React.FC<AuditWizardProps> = ({ obras, currentUser, onAuditCo
       
       if (err.message?.includes("Configuração da API Key") || err.message?.includes("API_KEY")) {
         errorMessage = "A chave da API do Gemini não foi configurada corretamente. Entre em contato com o administrador.";
+      } else if (err.message?.includes("503") || err.message?.includes("UNAVAILABLE") || err.message?.includes("high demand")) {
+        errorMessage = "O serviço de IA está temporariamente sobrecarregado devido à alta demanda. Por favor, aguarde alguns segundos e tente enviar novamente.";
       } else if (err.message?.includes("Timeout")) {
         errorMessage = "A análise da IA demorou muito para responder. Tente novamente com menos fotos ou observações mais curtas.";
       } else if (err.message?.includes("row size limit") || err.message?.includes("Payload Too Large") || err.status === 413) {

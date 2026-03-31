@@ -54,49 +54,63 @@ export const generateAuditReport = async (auditData: any): Promise<AIAnalysisRes
   - recomendacoes: array de strings
   - conclusaoExecutiva: string (tom executivo, curto e direto)`;
 
-  try {
-    // Timeout de 60 segundos para evitar que a UI fique travada indefinidamente, dando mais tempo para análises complexas
-    const timeoutPromise = new Promise((_, reject) => 
-      setTimeout(() => reject(new Error("Timeout na análise da IA")), 60000)
-    );
+  const executeWithRetry = async (attempt: number = 1): Promise<any> => {
+    try {
+      // Timeout de 60 segundos para evitar que a UI fique travada indefinidamente
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error("Timeout na análise da IA")), 60000)
+      );
 
-    const aiPromise = ai.models.generateContent({
-      model: 'gemini-3-flash-preview', // Flash é mais rápido e estável para esta tarefa
-      contents: prompt,
-      config: {
-        thinkingConfig: { thinkingLevel: ThinkingLevel.LOW },
-        responseMimeType: "application/json",
-        responseSchema: {
-          type: Type.OBJECT,
-          properties: {
-            indiceGeral: { type: Type.NUMBER },
-            classificacao: { type: Type.STRING },
-            riscoJuridico: { type: Type.STRING },
-            exposicaoFinanceira: { type: Type.NUMBER },
-            detalhamentoCalculo: {
-              type: Type.ARRAY,
-              items: {
-                type: Type.OBJECT,
-                properties: {
-                  item: { type: Type.STRING },
-                  valor: { type: Type.NUMBER },
-                  baseLegal: { type: Type.STRING },
-                  logica: { type: Type.STRING }
-                },
-                required: ["item", "valor", "baseLegal", "logica"]
-              }
+      const aiPromise = ai.models.generateContent({
+        model: 'gemini-3-flash-preview',
+        contents: prompt,
+        config: {
+          thinkingConfig: { thinkingLevel: ThinkingLevel.LOW },
+          responseMimeType: "application/json",
+          responseSchema: {
+            type: Type.OBJECT,
+            properties: {
+              indiceGeral: { type: Type.NUMBER },
+              classificacao: { type: Type.STRING },
+              riscoJuridico: { type: Type.STRING },
+              exposicaoFinanceira: { type: Type.NUMBER },
+              detalhamentoCalculo: {
+                type: Type.ARRAY,
+                items: {
+                  type: Type.OBJECT,
+                  properties: {
+                    item: { type: Type.STRING },
+                    valor: { type: Type.NUMBER },
+                    baseLegal: { type: Type.STRING },
+                    logica: { type: Type.STRING }
+                  },
+                  required: ["item", "valor", "baseLegal", "logica"]
+                }
+              },
+              naoConformidades: { type: Type.ARRAY, items: { type: Type.STRING } },
+              impactoJuridico: { type: Type.STRING },
+              recomendacoes: { type: Type.ARRAY, items: { type: Type.STRING } },
+              conclusaoExecutiva: { type: Type.STRING }
             },
-            naoConformidades: { type: Type.ARRAY, items: { type: Type.STRING } },
-            impactoJuridico: { type: Type.STRING },
-            recomendacoes: { type: Type.ARRAY, items: { type: Type.STRING } },
-            conclusaoExecutiva: { type: Type.STRING }
-          },
-          required: ["indiceGeral", "classificacao", "riscoJuridico", "exposicaoFinanceira", "detalhamentoCalculo", "naoConformidades", "impactoJuridico", "recomendacoes", "conclusaoExecutiva"]
+            required: ["indiceGeral", "classificacao", "riscoJuridico", "exposicaoFinanceira", "detalhamentoCalculo", "naoConformidades", "impactoJuridico", "recomendacoes", "conclusaoExecutiva"]
+          }
         }
-      }
-    });
+      });
 
-    const response = await Promise.race([aiPromise, timeoutPromise]) as any;
+      return await Promise.race([aiPromise, timeoutPromise]);
+    } catch (error: any) {
+      // Se for erro 503 (UNAVAILABLE) e tivermos tentativas, esperamos um pouco e tentamos de novo
+      if (attempt < 3 && (error.status === 'UNAVAILABLE' || error.message?.includes('503') || error.message?.includes('high demand'))) {
+        console.warn(`IA sobrecarregada (503). Tentativa ${attempt} de 3. Aguardando...`);
+        await new Promise(resolve => setTimeout(resolve, 2000 * attempt)); // Exponential backoff
+        return executeWithRetry(attempt + 1);
+      }
+      throw error;
+    }
+  };
+
+  try {
+    const response = await executeWithRetry();
     
     console.log("Resposta bruta da IA:", response);
 
