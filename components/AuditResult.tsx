@@ -43,6 +43,13 @@ const AuditResult: React.FC<AuditResultProps> = ({ audit, report, obra, onClose,
 
   const handleGeneratePDF = async () => {
     if (isGenerating) return;
+
+    // Validação de Assinaturas Obrigatórias
+    if (!audit.assinatura_auditor || !audit.assinatura_engenheiro) {
+      alert('⚠️ BLOQUEIO DE SEGURANÇA: O relatório só pode ser exportado após as duas assinaturas digitais (Auditor e Engenheiro).');
+      return;
+    }
+
     setIsGenerating(true);
     
     try {
@@ -52,19 +59,20 @@ const AuditResult: React.FC<AuditResultProps> = ({ audit, report, obra, onClose,
       }
 
       // Pequeno delay para garantir renderização final
-      await new Promise(resolve => setTimeout(resolve, 800));
+      await new Promise(resolve => setTimeout(resolve, 1000));
 
       const canvas = await html2canvas(element, {
-        scale: 2,
+        scale: 1.5, // Reduzido ligeiramente para evitar estouro de memória em navegadores mobile/iframes
         useCORS: true,
         logging: false,
         backgroundColor: '#ffffff',
         windowWidth: 1200,
         onclone: (clonedDoc) => {
-          // Garante que elementos com animação ou estados temporários estejam visíveis no clone
           const clonedElement = clonedDoc.getElementById('relatorio-unita-premium');
           if (clonedElement) {
             clonedElement.style.transform = 'none';
+            // Garante que tudo esteja visível
+            clonedElement.style.display = 'block';
           }
         }
       });
@@ -151,14 +159,22 @@ const AuditResult: React.FC<AuditResultProps> = ({ audit, report, obra, onClose,
         <button onClick={onClose} className="flex items-center gap-2 font-black text-[10px] text-slate-500 uppercase tracking-widest hover:text-[#F05A22]">
           <ArrowLeft size={14} /> Voltar ao Painel
         </button>
-        <button 
-          onClick={handleGeneratePDF}
-          disabled={isGenerating}
-          className="bg-[#F05A22] text-white px-8 py-4 rounded-2xl font-black text-xs uppercase border-4 border-slate-900 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] flex items-center gap-3 transition-all active:translate-y-1 active:shadow-none"
-        >
-          {isGenerating ? <Loader2 className="animate-spin" /> : <Download size={18} />}
-          Exportar Relatório PDF
-        </button>
+        <div className="flex items-center gap-4">
+          {(!audit.assinatura_auditor || !audit.assinatura_engenheiro) && (
+            <div className="bg-amber-50 border-2 border-amber-200 px-4 py-2 rounded-xl flex items-center gap-2 text-amber-700 animate-pulse">
+              <AlertTriangle size={16} />
+              <span className="text-[10px] font-black uppercase tracking-tighter">Assinaturas Pendentes para Exportação</span>
+            </div>
+          )}
+          <button 
+            onClick={handleGeneratePDF}
+            disabled={isGenerating}
+            className={`${(!audit.assinatura_auditor || !audit.assinatura_engenheiro) ? 'bg-slate-300 cursor-not-allowed' : 'bg-[#F05A22]'} text-white px-8 py-4 rounded-2xl font-black text-xs uppercase border-4 border-slate-900 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] flex items-center gap-3 transition-all active:translate-y-1 active:shadow-none`}
+          >
+            {isGenerating ? <Loader2 className="animate-spin" /> : <Download size={18} />}
+            Exportar Relatório PDF
+          </button>
+        </div>
       </header>
 
       {/* DOCUMENTO PDF START */}
@@ -188,7 +204,7 @@ const AuditResult: React.FC<AuditResultProps> = ({ audit, report, obra, onClose,
         </div>
 
         {/* BLOCOS DE STATUS SUPERIOR */}
-        <div className="grid grid-cols-4 gap-4">
+        <div className="grid grid-cols-4 gap-4 break-inside-avoid">
           <div className="bg-slate-50 border-2 border-slate-100 p-6 rounded-[2rem] text-center space-y-1">
             <Users className="mx-auto text-slate-300" size={24} />
             <p className="text-[8px] font-black text-slate-400 uppercase">Efetivo Total</p>
@@ -210,7 +226,7 @@ const AuditResult: React.FC<AuditResultProps> = ({ audit, report, obra, onClose,
         </div>
 
         {/* ANÁLISE DE EFETIVO */}
-        <div className="grid grid-cols-3 gap-6">
+        <div className="grid grid-cols-3 gap-6 break-inside-avoid">
           <div className="col-span-2 border-4 border-slate-900 p-8 rounded-[2.5rem] space-y-6">
             <h3 className="text-xs font-black uppercase flex items-center gap-2 border-b-2 border-slate-100 pb-4"><Users size={16} className="text-[#F05A22]" /> Análise de Efetivo e Quarteirização</h3>
             <div className="space-y-4">
@@ -238,7 +254,7 @@ const AuditResult: React.FC<AuditResultProps> = ({ audit, report, obra, onClose,
         </div>
 
         {/* EXPOSIÇÃO FINANCEIRA POTENCIAL */}
-        <div className="bg-slate-900 rounded-[3rem] p-10 text-white space-y-8">
+        <div className="bg-slate-900 rounded-[3rem] p-10 text-white space-y-8 break-inside-avoid">
           <div className="flex justify-between items-center border-b border-slate-700 pb-6">
             <div className="flex items-center gap-4">
               <div className="p-3 bg-[#F05A22] rounded-2xl border border-slate-700"><Scale size={24} /></div>
@@ -282,7 +298,7 @@ const AuditResult: React.FC<AuditResultProps> = ({ audit, report, obra, onClose,
         </div>
 
         {/* EVIDÊNCIAS DO CHECKLIST */}
-        <div className="space-y-6">
+        <div className="space-y-6 break-inside-avoid">
           <h3 className="text-xl font-black uppercase border-l-8 border-[#F05A22] pl-4 tracking-tighter">Evidências do Checklist (Campo)</h3>
           <div className="space-y-3">
             {audit.respostas.map((r, i) => {
@@ -340,7 +356,7 @@ const AuditResult: React.FC<AuditResultProps> = ({ audit, report, obra, onClose,
         </div>
 
         {/* CONCLUSÃO EXECUTIVA */}
-        <div className="border-[6px] border-slate-900 rounded-[3rem] p-10 space-y-10 mt-12 bg-white relative">
+        <div className="border-[6px] border-slate-900 rounded-[3rem] p-10 space-y-10 mt-12 bg-white relative break-inside-avoid">
            <div className="flex items-center gap-4 border-b-2 border-slate-100 pb-6">
               <FileText className="text-[#F05A22]" size={32} />
               <h3 className="text-2xl font-black uppercase tracking-tighter">Conclusão Executiva</h3>
