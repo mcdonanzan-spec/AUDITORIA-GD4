@@ -299,11 +299,15 @@ const AuditWizard: React.FC<AuditWizardProps> = ({ obras, currentUser, onAuditCo
         classificacao: result.classificacao,
         risco_juridico: result.riscoJuridico,
         respostas,
-        entrevistas,
+        // Removendo 'entrevistas' pois a coluna não existe no banco de dados
+        // entrevistas, 
         equipe_campo: totalEfetivo,
         equipe_gd4: Number(equipeGd4),
         subcontratacao_identificada: subcontratacaoRegular === false,
-        relatorio_ia: JSON.stringify(result),
+        relatorio_ia: JSON.stringify({
+          ...result,
+          entrevistas_raw: entrevistas // Salvamos as entrevistas dentro do campo JSON do relatório
+        }),
         created_at: new Date().toISOString()
       };
 
@@ -425,6 +429,7 @@ const AuditWizard: React.FC<AuditWizardProps> = ({ obras, currentUser, onAuditCo
                 });
                 clearDraft();
                 alert('Todos os rascunhos foram removidos.');
+                window.location.reload(); // Recarrega para limpar qualquer estado residual
               }
             }}
             className="w-full text-slate-400 font-black text-[10px] uppercase tracking-widest hover:text-slate-600"
@@ -503,6 +508,7 @@ const AuditWizard: React.FC<AuditWizardProps> = ({ obras, currentUser, onAuditCo
                 if (confirm('Deseja realmente limpar os dados e reiniciar esta auditoria?')) {
                   clearDraft();
                   setError(null);
+                  setStep('setup'); // Volta para o início
                 }
               }} 
               className="flex-1 md:flex-none bg-rose-600 text-white px-4 py-2 rounded-xl font-black text-[10px] uppercase border-2 border-slate-900"
