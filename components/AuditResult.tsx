@@ -15,8 +15,6 @@ import {
   Clock
 } from 'lucide-react';
 import { motion } from 'motion/react';
-import html2canvas from 'html2canvas';
-import { jsPDF } from 'jspdf';
 import { Audit, AIAnalysisResult, User, Obra } from '../types';
 import { QUESTIONS, INTERVIEW_QUESTIONS } from '../constants';
 import { UnitaLogo } from './Layout';
@@ -32,7 +30,6 @@ interface AuditResultProps {
 }
 
 const AuditResult: React.FC<AuditResultProps> = ({ audit, report, obra, onClose, currentUser, onRefresh }) => {
-  const [isGenerating, setIsGenerating] = React.useState(false);
   const [isSigning, setIsSigning] = React.useState(false);
 
   const obraName = obra?.nome || audit.obra_id;
@@ -41,78 +38,16 @@ const AuditResult: React.FC<AuditResultProps> = ({ audit, report, obra, onClose,
     return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
   };
 
-  const handleGeneratePDF = async () => {
-    if (isGenerating) return;
-
+  const handleGeneratePDF = () => {
     // Validação de Assinaturas Obrigatórias
     if (!audit.assinatura_auditor || !audit.assinatura_engenheiro) {
       alert('⚠️ BLOQUEIO DE SEGURANÇA: O relatório só pode ser exportado após as duas assinaturas digitais (Auditor e Engenheiro).');
       return;
     }
 
-    setIsGenerating(true);
-    
-    try {
-      const element = document.getElementById('relatorio-unita-premium');
-      if (!element) {
-        throw new Error("Elemento do relatório não encontrado");
-      }
-
-      // Pequeno delay para garantir renderização final
-      await new Promise(resolve => setTimeout(resolve, 1000));
-
-      const canvas = await html2canvas(element, {
-        scale: 1.5, // Reduzido ligeiramente para evitar estouro de memória em navegadores mobile/iframes
-        useCORS: true,
-        logging: false,
-        backgroundColor: '#ffffff',
-        windowWidth: 1200,
-        onclone: (clonedDoc) => {
-          const clonedElement = clonedDoc.getElementById('relatorio-unita-premium');
-          if (clonedElement) {
-            clonedElement.style.transform = 'none';
-            // Garante que tudo esteja visível
-            clonedElement.style.display = 'block';
-          }
-        }
-      });
-
-      const imgData = canvas.toDataURL('image/jpeg', 0.95);
-      const pdf = new jsPDF({
-        orientation: 'portrait',
-        unit: 'mm',
-        format: 'a4'
-      });
-
-      const imgProps = pdf.getImageProperties(imgData);
-      const pdfWidth = pdf.internal.pageSize.getWidth();
-      const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
-      
-      // Se o conteúdo for maior que uma página A4, ele vai esticar ou podemos criar múltiplas páginas
-      // Para este dashboard, vamos tentar ajustar à largura e deixar a altura proporcional
-      // Se passar de uma página, adicionamos nova página
-      
-      let heightLeft = pdfHeight;
-      let position = 0;
-      const pageHeight = pdf.internal.pageSize.getHeight();
-
-      pdf.addImage(imgData, 'JPEG', 0, position, pdfWidth, pdfHeight);
-      heightLeft -= pageHeight;
-
-      while (heightLeft >= 0) {
-        position = heightLeft - pdfHeight;
-        pdf.addPage();
-        pdf.addImage(imgData, 'JPEG', 0, position, pdfWidth, pdfHeight);
-        heightLeft -= pageHeight;
-      }
-
-      pdf.save(`RELATORIO_UNITA_${audit.id.substring(0, 8)}.pdf`);
-    } catch (err) {
-      console.error('Erro detalhado ao gerar PDF:', err);
-      alert('Erro ao gerar o documento. Tente novamente ou use a função de imprimir do navegador (Ctrl+P).');
-    } finally {
-      setIsGenerating(false);
-    }
+    // O usuário relatou que o Ctrl+P gera o melhor resultado.
+    // Disparar a impressão nativa que é a forma mais fiel de gerar o PDF no navegador.
+    window.print();
   };
 
   const handleSign = async (type: 'auditor' | 'engenheiro') => {
@@ -168,11 +103,10 @@ const AuditResult: React.FC<AuditResultProps> = ({ audit, report, obra, onClose,
           )}
           <button 
             onClick={handleGeneratePDF}
-            disabled={isGenerating}
             className={`${(!audit.assinatura_auditor || !audit.assinatura_engenheiro) ? 'bg-slate-300 cursor-not-allowed' : 'bg-[#F05A22]'} text-white px-8 py-4 rounded-2xl font-black text-xs uppercase border-4 border-slate-900 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] flex items-center gap-3 transition-all active:translate-y-1 active:shadow-none`}
           >
-            {isGenerating ? <Loader2 className="animate-spin" /> : <Download size={18} />}
-            Exportar Relatório PDF
+            <Download size={18} />
+            Gerar Relatório (PDF)
           </button>
         </div>
       </header>
@@ -329,7 +263,7 @@ const AuditResult: React.FC<AuditResultProps> = ({ audit, report, obra, onClose,
            <h3 className="text-xl font-black uppercase border-l-8 border-[#F05A22] pl-4 tracking-tighter">Detalhamento da Amostragem ({audit.entrevistas?.length} Colaboradores)</h3>
            <div className="grid grid-cols-1 gap-4">
              {audit.entrevistas?.map((ent, idx) => (
-               <div key={idx} className="bg-slate-50 rounded-[2.5rem] p-6 border border-slate-200">
+               <div key={idx} className="bg-slate-50 rounded-[2.5rem] p-6 border border-slate-200 break-inside-avoid">
                   <div className="flex justify-between items-center mb-6">
                     <div className="flex items-center gap-4">
                       <div className="w-10 h-10 bg-slate-900 text-white rounded-full flex items-center justify-center font-black">{idx + 1}</div>
@@ -382,7 +316,7 @@ const AuditResult: React.FC<AuditResultProps> = ({ audit, report, obra, onClose,
                       data-html2canvas-ignore
                       disabled={isSigning}
                       onClick={() => handleSign('auditor')}
-                      className="mt-4 bg-slate-900 text-white px-6 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-[#F05A22] transition-all shadow-[4px_4px_0px_0px_rgba(240,90,34,1)] flex items-center justify-center gap-2 mx-auto"
+                      className="print:hidden mt-4 bg-slate-900 text-white px-6 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-[#F05A22] transition-all shadow-[4px_4px_0px_0px_rgba(240,90,34,1)] flex items-center justify-center gap-2 mx-auto"
                     >
                       {isSigning ? <Loader2 className="animate-spin" size={14} /> : <UserCheck size={14} />}
                       Assinar Relatório
@@ -407,7 +341,7 @@ const AuditResult: React.FC<AuditResultProps> = ({ audit, report, obra, onClose,
                       data-html2canvas-ignore
                       disabled={isSigning}
                       onClick={() => handleSign('engenheiro')}
-                      className="mt-4 bg-slate-900 text-white px-6 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-[#F05A22] transition-all shadow-[4px_4px_0px_0px_rgba(240,90,34,1)] flex items-center justify-center gap-2 mx-auto"
+                      className="print:hidden mt-4 bg-slate-900 text-white px-6 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-[#F05A22] transition-all shadow-[4px_4px_0px_0px_rgba(240,90,34,1)] flex items-center justify-center gap-2 mx-auto"
                     >
                       {isSigning ? <Loader2 className="animate-spin" size={14} /> : <UserCheck size={14} />}
                       Assinar Relatório
