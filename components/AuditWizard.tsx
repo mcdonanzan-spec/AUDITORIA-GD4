@@ -225,8 +225,8 @@ const AuditWizard: React.FC<AuditWizardProps> = ({ obras, currentUser, onAuditCo
       const questionsFilled = currentBlockQuestions.every(q => {
         const r = respostas.find(resp => resp.pergunta_id === q.id);
         if (!r) return false;
-        const needsObs = r.resposta !== 'sim' && r.resposta !== 'n_a';
-        if (needsObs && (!r.observacao || r.observacao.trim().length < 5)) return false;
+        const isNonCompliant = q.inverted ? r.resposta === 'sim' : (r.resposta !== 'sim' && r.resposta !== 'n_a');
+        if (isNonCompliant && (!r.observacao || r.observacao.trim().length < 5)) return false;
         return true;
       });
       return basicFields && questionsFilled;
@@ -252,8 +252,8 @@ const AuditWizard: React.FC<AuditWizardProps> = ({ obras, currentUser, onAuditCo
     return currentBlockQuestions.every(q => {
       const r = respostas.find(resp => resp.pergunta_id === q.id);
       if (!r) return false;
-      const needsObs = r.resposta !== 'sim' && r.resposta !== 'n_a';
-      if (needsObs && (!r.observacao || r.observacao.trim().length < 5)) return false;
+      const isNonCompliant = q.inverted ? r.resposta === 'sim' : (r.resposta !== 'sim' && r.resposta !== 'n_a');
+      if (isNonCompliant && (!r.observacao || r.observacao.trim().length < 5)) return false;
       if (q.requiresPhotos) {
         const minReq = q.minPhotos || 3;
         if ((r.fotos?.length || 0) < minReq) return false;
@@ -357,9 +357,17 @@ const AuditWizard: React.FC<AuditWizardProps> = ({ obras, currentUser, onAuditCo
     }
   };
 
-  const getButtonStyles = (val: ResponseValue, active: boolean) => {
+  const getButtonStyles = (val: ResponseValue, active: boolean, inverted?: boolean) => {
     if (!active) return 'bg-white text-slate-400 border-slate-200';
-    switch (val) {
+    
+    // Se a pergunta for invertida, trocamos as cores de SIM e NAO
+    let effectiveVal = val;
+    if (inverted) {
+      if (val === 'sim') effectiveVal = 'nao';
+      else if (val === 'nao') effectiveVal = 'sim';
+    }
+
+    switch (effectiveVal) {
       case 'sim': return 'bg-emerald-500 text-white border-slate-900 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]';
       case 'parcial': return 'bg-amber-500 text-white border-slate-900 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]';
       case 'nao': return 'bg-rose-500 text-white border-slate-900 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]';
@@ -644,14 +652,16 @@ const AuditWizard: React.FC<AuditWizardProps> = ({ obras, currentUser, onAuditCo
                          <button 
                            key={val} 
                            onClick={() => handleResponseChange(q.id, val)} 
-                           className={`py-5 rounded-2xl font-black text-[11px] border-4 transition-all uppercase tracking-widest ${getButtonStyles(val, resp?.resposta === val)}`}
+                           className={`py-5 rounded-2xl font-black text-[11px] border-4 transition-all uppercase tracking-widest ${getButtonStyles(val, resp?.resposta === val, q.inverted)}`}
                          >
                            {val === 'n_a' ? 'N A' : val.toUpperCase()}
                          </button>
                        ))}
                      </div>
 
-                     {resp && resp.resposta !== 'sim' && resp.resposta !== 'n_a' && (
+                     {resp && (
+                        (q.inverted ? resp.resposta === 'sim' : (resp.resposta !== 'sim' && resp.resposta !== 'n_a'))
+                      ) && (
                         <textarea 
                           className="w-full border-4 border-slate-900 rounded-2xl p-5 font-black text-slate-900 bg-rose-50 placeholder-rose-300 focus:outline-none" 
                           placeholder="JUSTIFIQUE O DESVIO IDENTIFICADO (OBRIGATÓRIO)..." 
@@ -777,7 +787,7 @@ const AuditWizard: React.FC<AuditWizardProps> = ({ obras, currentUser, onAuditCo
                             <button 
                               key={val} 
                               onClick={() => handleResponseChange(q.id, val)} 
-                              className={`py-6 rounded-2xl font-black text-xs border-4 transition-all tracking-widest ${getButtonStyles(val, resp?.resposta === val)}`}
+                              className={`py-6 rounded-2xl font-black text-xs border-4 transition-all tracking-widest ${getButtonStyles(val, resp?.resposta === val, q.inverted)}`}
                             >
                               {val === 'n_a' ? 'N A' : val.toUpperCase()}
                             </button>

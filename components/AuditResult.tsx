@@ -240,7 +240,7 @@ const AuditResult: React.FC<AuditResultProps> = ({ audit, report, obra, onClose,
               if (!q) return null;
               return (
                 <div key={i} className="flex items-center gap-4 bg-slate-50 p-4 rounded-3xl border border-slate-100">
-                   <div className={`w-14 h-14 rounded-2xl flex flex-col items-center justify-center font-black text-[10px] border-2 shadow-sm ${r.resposta === 'sim' ? 'bg-emerald-500 text-white border-slate-900' : 'bg-amber-500 text-white border-slate-900'}`}>
+                   <div className={`w-14 h-14 rounded-2xl flex flex-col items-center justify-center font-black text-[10px] border-2 shadow-sm ${(q.inverted ? r.resposta === 'nao' : r.resposta === 'sim') ? 'bg-emerald-500 text-white border-slate-900' : 'bg-amber-500 text-white border-slate-900'}`}>
                      <span>{r.resposta.toUpperCase()}</span>
                    </div>
                    <div className="flex-1 space-y-1">

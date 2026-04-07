@@ -30,6 +30,7 @@ export interface Question {
   peso: number;
   requiresPhotos?: boolean;
   minPhotos?: number;
+  inverted?: boolean;
 }
 
 export type ResponseValue = 'sim' | 'parcial' | 'nao' | 'n_a';
