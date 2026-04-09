@@ -118,13 +118,16 @@ const App: React.FC = () => {
   // LÓGICA DE FILTRAGEM DE SEGURANÇA POR ESCOPO
   const isGlobal = ['admin', 'auditor', 'diretoria'].includes(user.perfil);
   
-  // Obras: Usuários de obra só veem suas obras para INICIAR auditoria
-  const filteredObras = isGlobal 
-    ? obras 
-    : obras.filter(o => user.obra_ids?.includes(o.id));
-
   // Auditorias: Visíveis para todos para gerar competitividade, conforme solicitado
   const filteredAudits = audits;
+
+  // Obras para visualização (Dashboard/Histórico): Visíveis para todos
+  const allObras = obras;
+
+  // Obras para AÇÃO (Iniciar Auditoria): Usuários de obra só veem suas obras
+  const actionObras = isGlobal 
+    ? obras 
+    : obras.filter(o => user.obra_ids?.includes(o.id) || o.engenheiro_id === user.id);
 
   if (configError) {
     return (
@@ -163,11 +166,11 @@ const App: React.FC = () => {
   const renderContent = () => {
     switch (currentPage) {
       case 'dashboard':
-        return <Dashboard audits={filteredAudits} obras={filteredObras} onNavigate={setCurrentPage} user={user} />;
+        return <Dashboard audits={filteredAudits} obras={allObras} onNavigate={setCurrentPage} user={user} />;
       case 'new-audit':
-        return <AuditWizard obras={filteredObras} currentUser={user} onAuditComplete={handleAuditComplete} onNavigate={setCurrentPage} />;
+        return <AuditWizard obras={actionObras} currentUser={user} onAuditComplete={handleAuditComplete} onNavigate={setCurrentPage} />;
       case 'obras':
-        return <ObrasManagement obras={filteredObras} audits={filteredAudits} onObraAdded={handleObraAdded} onSelectAudit={handleViewAudit} onNavigate={setCurrentPage} />;
+        return <ObrasManagement obras={allObras} audits={filteredAudits} onObraAdded={handleObraAdded} onSelectAudit={handleViewAudit} onNavigate={setCurrentPage} />;
       case 'result':
         return viewingAudit ? (
           <AuditResult 
@@ -178,15 +181,15 @@ const App: React.FC = () => {
             currentUser={user}
             onRefresh={fetchData}
           />
-        ) : <Dashboard audits={filteredAudits} obras={filteredObras} onNavigate={setCurrentPage} user={user} />;
+        ) : <Dashboard audits={filteredAudits} obras={allObras} onNavigate={setCurrentPage} user={user} />;
       case 'history':
-        return <AuditHistory audits={filteredAudits} obras={filteredObras} onSelectAudit={handleViewAudit} onNavigate={setCurrentPage} />;
+        return <AuditHistory audits={filteredAudits} obras={allObras} onSelectAudit={handleViewAudit} onNavigate={setCurrentPage} />;
       case 'access':
         return <UserManagement obras={obras} onNavigate={setCurrentPage} />;
       case 'guide':
         return <UserGuide onNavigate={setCurrentPage} />;
       default:
-        return <Dashboard audits={filteredAudits} obras={filteredObras} onNavigate={setCurrentPage} user={user} />;
+        return <Dashboard audits={filteredAudits} obras={allObras} onNavigate={setCurrentPage} user={user} />;
     }
   };
 

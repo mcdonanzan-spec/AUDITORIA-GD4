@@ -49,6 +49,21 @@ export const addObra = async (obra: Partial<Obra>): Promise<Obra> => {
   return data;
 };
 
+export const updateObra = async (obra: Obra): Promise<Obra> => {
+  const { data, error } = await supabase
+    .from('obras')
+    .update(obra)
+    .eq('id', obra.id)
+    .select()
+    .single();
+  
+  if (error) {
+    console.error('Erro no Supabase (updateObra):', error);
+    throw error;
+  }
+  return data;
+};
+
 export const getAudits = async (): Promise<Audit[]> => {
   try {
     const { data, error } = await supabase

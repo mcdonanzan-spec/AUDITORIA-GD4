@@ -333,10 +333,10 @@ const AuditResult: React.FC<AuditResultProps> = ({ audit, report, obra, onClose,
                     <div className="h-px bg-slate-300 w-full mb-4"></div>
                   )}
                   <p className="text-[8px] font-black uppercase tracking-[0.3em] text-slate-400">Assinatura Responsável Obra</p>
-                  <p className="text-[10px] font-black uppercase">Engenheiro da Unidade</p>
-                  <p className="text-[8px] text-slate-400">Ciente do Risco de {audit.equipe_campo} P.</p>
+                  <p className="text-[10px] font-black uppercase">{obra?.engenheiro_responsavel || 'Engenheiro da Unidade'}</p>
+                  <p className="text-[8px] text-slate-400">Responsável Técnico</p>
 
-                  {canSignEngineer && (
+                  {canSignEngineer ? (
                     <button 
                       data-html2canvas-ignore
                       disabled={isSigning}
@@ -346,6 +346,10 @@ const AuditResult: React.FC<AuditResultProps> = ({ audit, report, obra, onClose,
                       {isSigning ? <Loader2 className="animate-spin" size={14} /> : <UserCheck size={14} />}
                       Assinar Relatório
                     </button>
+                  ) : !audit.assinatura_engenheiro && (
+                    <div className="print:hidden mt-4 p-3 bg-slate-50 border-2 border-dashed border-slate-200 rounded-xl text-[8px] font-black uppercase text-slate-400 tracking-widest">
+                      Aguardando assinatura do responsável
+                    </div>
                   )}
               </div>
            </div>

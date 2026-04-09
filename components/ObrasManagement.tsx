@@ -2,8 +2,8 @@
 // v1.0.1 - Ajuste no fluxo de cadastro de unidades
 import React from 'react';
 import { Obra, Audit, User } from '../types';
-import { Building2, Plus, Search, MapPin, User as UserIcon, X, Loader2, ChevronRight, History, LayoutDashboard } from 'lucide-react';
-import { addObra, getUsers } from '../services/supabase';
+import { Building2, Plus, Search, MapPin, User as UserIcon, X, Loader2, ChevronRight, History, LayoutDashboard, Edit2 } from 'lucide-react';
+import { addObra, updateObra, getUsers } from '../services/supabase';
 
 interface ObrasManagementProps {
   obras: Obra[];
@@ -15,6 +15,7 @@ interface ObrasManagementProps {
 
 const ObrasManagement: React.FC<ObrasManagementProps> = ({ obras, audits, onObraAdded, onSelectAudit, onNavigate }) => {
   const [isModalOpen, setIsModalOpen] = React.useState(false);
+  const [editingObra, setEditingObra] = React.useState<Obra | null>(null);
   const [loading, setLoading] = React.useState(false);
   const [searchTerm, setSearchTerm] = React.useState('');
   const [selectedObraId, setSelectedObraId] = React.useState<string | null>(null);
@@ -44,8 +45,17 @@ const ObrasManagement: React.FC<ObrasManagementProps> = ({ obras, audits, onObra
     e.preventDefault();
     setLoading(true);
     try {
-      const savedObra = await addObra(newObra);
-      onObraAdded(savedObra);
+      if (editingObra) {
+        const updated = await updateObra({
+          ...editingObra,
+          ...newObra
+        } as Obra);
+        onObraAdded(updated); // This will trigger a refresh in App.tsx
+        setEditingObra(null);
+      } else {
+        const savedObra = await addObra(newObra);
+        onObraAdded(savedObra);
+      }
       setIsModalOpen(false);
       setNewObra({ nome: '', regional: '', engenheiro_responsavel: '', engenheiro_id: '', status: 'ativa' });
     } catch (err: any) {
@@ -102,9 +112,27 @@ const ObrasManagement: React.FC<ObrasManagementProps> = ({ obras, audits, onObra
               <div className="w-16 h-16 bg-slate-50 rounded-2xl flex items-center justify-center text-slate-300 group-hover:bg-[#F05A22] group-hover:text-white transition-all shadow-inner border-4 border-slate-100 group-hover:border-slate-900">
                 <Building2 size={32} />
               </div>
-              <span className={`px-4 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest border-2 ${obra.status === 'ativa' ? 'bg-emerald-50 text-emerald-700 border-emerald-600' : 'bg-slate-50 text-slate-500 border-slate-400'}`}>
-                {obra.status}
-              </span>
+              <div className="flex flex-col items-end gap-2">
+                <span className={`px-4 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest border-2 ${obra.status === 'ativa' ? 'bg-emerald-50 text-emerald-700 border-emerald-600' : 'bg-slate-50 text-slate-500 border-slate-400'}`}>
+                  {obra.status}
+                </span>
+                <button 
+                  onClick={() => {
+                    setEditingObra(obra);
+                    setNewObra({
+                      nome: obra.nome,
+                      regional: obra.regional,
+                      engenheiro_responsavel: obra.engenheiro_responsavel,
+                      engenheiro_id: obra.engenheiro_id || '',
+                      status: obra.status
+                    });
+                    setIsModalOpen(true);
+                  }}
+                  className="p-2 bg-slate-100 text-slate-400 rounded-lg hover:bg-slate-900 hover:text-white transition-all"
+                >
+                  <Edit2 size={14} />
+                </button>
+              </div>
             </div>
             
             <h3 className="font-black text-2xl text-slate-900 mb-8 uppercase tracking-tight leading-tight">{obra.nome}</h3>
@@ -194,13 +222,22 @@ const ObrasManagement: React.FC<ObrasManagementProps> = ({ obras, audits, onObra
         </div>
       )}
 
-      {/* Modal de Cadastro */}
+      {/* Modal de Cadastro/Edição */}
       {isModalOpen && (
         <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-slate-900/70 backdrop-blur-md animate-in fade-in duration-300">
           <div className="bg-white w-full max-w-lg rounded-[3rem] shadow-2xl overflow-hidden border-4 border-slate-900 animate-in zoom-in-95 duration-300">
             <div className="p-10 border-b-4 border-slate-50 flex justify-between items-center bg-slate-50">
-              <h3 className="text-3xl font-black text-slate-900 uppercase tracking-tighter">Novo Ativo Unità</h3>
-              <button onClick={() => setIsModalOpen(false)} className="text-slate-400 hover:text-rose-600 transition-colors p-2">
+              <h3 className="text-3xl font-black text-slate-900 uppercase tracking-tighter">
+                {editingObra ? 'Editar Ativo' : 'Novo Ativo Unità'}
+              </h3>
+              <button 
+                onClick={() => {
+                  setIsModalOpen(false);
+                  setEditingObra(null);
+                  setNewObra({ nome: '', regional: '', engenheiro_responsavel: '', engenheiro_id: '', status: 'ativa' });
+                }} 
+                className="text-slate-400 hover:text-rose-600 transition-colors p-2"
+              >
                 <X size={32} />
               </button>
             </div>
@@ -267,7 +304,7 @@ const ObrasManagement: React.FC<ObrasManagementProps> = ({ obras, audits, onObra
                   disabled={loading}
                   className="w-full bg-[#F05A22] text-white py-6 rounded-2xl font-black uppercase text-sm tracking-widest hover:bg-slate-900 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] transition-all flex justify-center items-center gap-3 border-4 border-slate-900 active:translate-y-1 active:shadow-none"
                 >
-                  {loading ? <Loader2 className="animate-spin" size={28} /> : 'Concluir Cadastro de Unidade'}
+                  {loading ? <Loader2 className="animate-spin" size={28} /> : (editingObra ? 'Salvar Alterações' : 'Concluir Cadastro de Unidade')}
                 </button>
               </div>
             </form>
