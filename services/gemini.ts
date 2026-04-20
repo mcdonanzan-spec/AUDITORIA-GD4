@@ -58,41 +58,63 @@ export const generateAuditReport = async (auditData: any): Promise<AIAnalysisRes
     "conclusaoExecutiva": string
   }`;
 
-  // Estratégia de Fetch Direto (Sem SDK para evitar 404s fantasmas)
-  const models = ["gemini-1.5-flash", "gemini-1.5-pro"];
+  // Estratégia de Auto-Descoberta de Modelos (Expert Discovery)
+  let models: string[] = ["gemini-1.5-flash", "gemini-1.5-pro", "gemini-2.0-flash"];
+  
+  try {
+    console.log("DEBUG: Consultando modelos disponíveis para esta chave...");
+    const listResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`);
+    if (listResponse.ok) {
+      const listData = await listResponse.json();
+      const availableModels = listData.models
+        ?.filter((m: any) => m.supportedGenerationMethods.includes("generateContent"))
+        ?.map((m: any) => m.name.split('/').pop()) || [];
+      
+      if (availableModels.length > 0) {
+        console.log("DEBUG: Modelos encontrados no seu projeto:", availableModels);
+        // Colocamos os modelos encontrados no topo da lista de prioridade
+        models = [...new Set([...availableModels, ...models])];
+      }
+    }
+  } catch (e) {
+    console.warn("DEBUG: Falha ao listar modelos, usando lista padrão.");
+  }
+
   let lastError = "";
 
   for (const model of models) {
     try {
       console.log(`Tentando conexão direta com modelo: ${model}`);
       
-      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          contents: [{ parts: [{ text: prompt }] }],
-          generationConfig: {
-            temperature: 0.1,
-            topK: 1,
-            topP: 1,
-            maxOutputTokens: 2048,
-          }
-        })
-      });
+      // Tentamos v1 e v1beta para máxima compatibilidade
+      for (const apiVer of ['v1beta', 'v1']) {
+        const response = await fetch(`https://generativelanguage.googleapis.com/${apiVer}/models/${model}:generateContent?key=${apiKey}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            contents: [{ parts: [{ text: prompt }] }],
+            generationConfig: {
+              temperature: 0.1,
+              topK: 1,
+              topP: 1,
+              maxOutputTokens: 2048,
+            }
+          })
+        });
 
-      const data = await response.json();
+        const data = await response.json();
 
-      if (!response.ok) {
-        lastError = data.error?.message || response.statusText;
-        console.warn(`Erro no modelo ${model}: ${lastError}`);
-        continue;
+        if (!response.ok) {
+          lastError = data.error?.message || response.statusText;
+          continue;
+        }
+
+        const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
+        if (!text) continue;
+
+        const parsed = robustJsonParse(text);
+        return parsed as AIAnalysisResult;
       }
-
-      const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
-      if (!text) continue;
-
-      const parsed = robustJsonParse(text);
-      return parsed as AIAnalysisResult;
 
     } catch (err: any) {
       lastError = err.message;
