@@ -1,0 +1,42 @@
+@import "tailwindcss";
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
+}
+
+body {
+  font-family: var(--font-sans);
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Custom styles for PDF generation */
+.pdf-fix {
+  background-color: white !important;
+  color: black !important;
+}
+
+@media print {
+  .print-hidden { display: none !important; }
+  
+  body {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    background: white !important;
+  }
+
+  /* Ensure page breaks are clean */
+  .break-inside-avoid {
+    break-inside: avoid !important;
+    page-break-inside: avoid !important;
+  }
+
+  /* Remove shadows and borders that might look bad in print */
+  #relatorio-unita-premium {
+    box-shadow: none !important;
+    border-top: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+}

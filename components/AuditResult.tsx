@@ -1,0 +1,374 @@
+
+import React from 'react';
+import { 
+  ArrowLeft,
+  Download,
+  ShieldCheck,
+  Users,
+  Loader2,
+  Scale,
+  AlertTriangle,
+  CheckCircle2,
+  FileText,
+  UserCheck,
+  Building2,
+  Clock
+} from 'lucide-react';
+import { motion } from 'motion/react';
+import { Audit, AIAnalysisResult, User, Obra } from '../types';
+import { QUESTIONS, INTERVIEW_QUESTIONS } from '../constants';
+import { UnitaLogo } from './Layout';
+import { signAudit } from '../services/supabase';
+
+interface AuditResultProps {
+  audit: Audit;
+  report: AIAnalysisResult;
+  obra?: Obra;
+  onClose: () => void;
+  currentUser: User;
+  onRefresh: () => void;
+}
+
+const AuditResult: React.FC<AuditResultProps> = ({ audit, report, obra, onClose, currentUser, onRefresh }) => {
+  const [isSigning, setIsSigning] = React.useState(false);
+
+  const obraName = obra?.nome || audit.obra_id;
+
+  const formatCurrency = (value: number) => {
+    return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
+  };
+
+  const handleGeneratePDF = () => {
+    // Validação de Assinaturas Obrigatórias
+    if (!audit.assinatura_auditor || !audit.assinatura_engenheiro) {
+      alert('⚠️ BLOQUEIO DE SEGURANÇA: O relatório só pode ser exportado após as duas assinaturas digitais (Auditor e Engenheiro).');
+      return;
+    }
+
+    // O usuário relatou que o Ctrl+P gera o melhor resultado.
+    // Disparar a impressão nativa que é a forma mais fiel de gerar o PDF no navegador.
+    window.print();
+  };
+
+  const handleSign = async (type: 'auditor' | 'engenheiro') => {
+    if (isSigning) return;
+    
+    const confirmMsg = type === 'auditor' 
+      ? 'Deseja assinar digitalmente este relatório como Auditor?' 
+      : 'Deseja assinar digitalmente este relatório como Engenheiro Responsável?';
+      
+    if (!window.confirm(confirmMsg)) return;
+
+    setIsSigning(true);
+    try {
+      const signature = {
+        user_id: currentUser.id,
+        user_nome: currentUser.nome,
+        perfil: currentUser.perfil,
+        data: new Date().toISOString()
+      };
+      
+      await signAudit(audit.id, signature, type);
+      onRefresh();
+      alert('Relatório assinado com sucesso!');
+    } catch (err: any) {
+      console.error('Erro ao assinar:', err);
+      alert(`Erro ao assinar: ${err.message || 'Erro desconhecido'}`);
+    } finally {
+      setIsSigning(false);
+    }
+  };
+
+  const canSignAuditor = (currentUser.perfil === 'auditor' || currentUser.perfil === 'admin') && !audit.assinatura_auditor;
+  const canSignEngineer = (currentUser.id === obra?.engenheiro_id || currentUser.perfil === 'admin') && !audit.assinatura_engenheiro;
+
+  const divergencia = Math.abs((audit.equipe_campo || 0) - (audit.equipe_gd4 || 0));
+
+  return (
+    <motion.div 
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="max-w-5xl mx-auto space-y-6 pb-20"
+    >
+      <header className="flex justify-between items-center print:hidden">
+        <button onClick={onClose} className="flex items-center gap-2 font-black text-[10px] text-slate-500 uppercase tracking-widest hover:text-[#F05A22]">
+          <ArrowLeft size={14} /> Voltar ao Painel
+        </button>
+        <div className="flex items-center gap-4">
+          {(!audit.assinatura_auditor || !audit.assinatura_engenheiro) && (
+            <div className="bg-amber-50 border-2 border-amber-200 px-4 py-2 rounded-xl flex items-center gap-2 text-amber-700 animate-pulse">
+              <AlertTriangle size={16} />
+              <span className="text-[10px] font-black uppercase tracking-tighter">Assinaturas Pendentes para Exportação</span>
+            </div>
+          )}
+          <button 
+            onClick={handleGeneratePDF}
+            className={`${(!audit.assinatura_auditor || !audit.assinatura_engenheiro) ? 'bg-slate-300 cursor-not-allowed' : 'bg-[#F05A22]'} text-white px-8 py-4 rounded-2xl font-black text-xs uppercase border-4 border-slate-900 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] flex items-center gap-3 transition-all active:translate-y-1 active:shadow-none`}
+          >
+            <Download size={18} />
+            Gerar Relatório (PDF)
+          </button>
+        </div>
+      </header>
+
+      {/* DOCUMENTO PDF START */}
+      <div id="relatorio-unita-premium" className="bg-white min-h-[297mm] text-slate-900 font-sans p-10 space-y-8 shadow-2xl border-t-[12px] border-slate-900">
+        
+        {/* HEADER PADRÃO PREMIUM */}
+        <div className="flex justify-between items-start border-b-4 border-slate-100 pb-8">
+          <UnitaLogo className="scale-125 origin-left" />
+          <div className="text-right space-y-1">
+            <h1 className="text-2xl font-black text-slate-900 uppercase tracking-tighter">Relatório de Conformidade</h1>
+            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Governança Digital de Terceiros e Riscos</p>
+          </div>
+        </div>
+
+        {/* METADADOS DA AUDITORIA */}
+        <div className="grid grid-cols-2 gap-10 text-[10px] font-bold uppercase tracking-tight text-slate-500">
+          <div className="space-y-2">
+            <p>Canteiro: <span className="text-slate-900">{obraName}</span></p>
+            <p>Protocolo: <span className="text-slate-900">AR-{audit.id.substring(0, 5).toUpperCase()}</span></p>
+            <p>Data/Hora: <span className="text-slate-900">{new Date(audit.created_at).toLocaleString('pt-BR')}</span></p>
+          </div>
+          <div className="space-y-2 text-right">
+            <p>Efetivo em Campo: <span className="text-slate-900">{audit.equipe_campo} Pessoas</span></p>
+            <p>Amostragem Real: <span className="text-[#F05A22]">{audit.entrevistas?.length || 0} ({Math.round(((audit.entrevistas?.length || 0)/(audit.equipe_campo || 1))*100)}% do Efetivo)</span></p>
+            <p>Metodologia: <span className="text-emerald-600">VALIDADA</span></p>
+          </div>
+        </div>
+
+        {/* BLOCOS DE STATUS SUPERIOR */}
+        <div className="grid grid-cols-4 gap-4 break-inside-avoid">
+          <div className="bg-slate-50 border-2 border-slate-100 p-6 rounded-[2rem] text-center space-y-1">
+            <Users className="mx-auto text-slate-300" size={24} />
+            <p className="text-[8px] font-black text-slate-400 uppercase">Efetivo Total</p>
+            <p className="text-2xl font-black">{audit.equipe_campo}</p>
+          </div>
+          <div className="bg-slate-50 border-2 border-slate-100 p-6 rounded-[2rem] text-center space-y-1">
+            <UserCheck className="mx-auto text-slate-300" size={24} />
+            <p className="text-[8px] font-black text-slate-400 uppercase">Auditados in Loco</p>
+            <p className="text-2xl font-black">{audit.entrevistas?.length}</p>
+          </div>
+          <div className="bg-amber-500 text-white p-6 rounded-[2rem] text-center space-y-1 shadow-lg shadow-amber-200">
+            <p className="text-[8px] font-black opacity-80 uppercase">Score Conformidade</p>
+            <p className="text-3xl font-black">{report.indiceGeral}%</p>
+          </div>
+          <div className="bg-[#F05A22] text-white p-6 rounded-[2rem] text-center space-y-1 shadow-lg shadow-orange-200">
+            <p className="text-[8px] font-black opacity-80 uppercase">Status Final</p>
+            <p className="text-xl font-black uppercase tracking-tighter">{report.classificacao}</p>
+          </div>
+        </div>
+
+        {/* ANÁLISE DE EFETIVO */}
+        <div className="grid grid-cols-3 gap-6 break-inside-avoid">
+          <div className="col-span-2 border-4 border-slate-900 p-8 rounded-[2.5rem] space-y-6">
+            <h3 className="text-xs font-black uppercase flex items-center gap-2 border-b-2 border-slate-100 pb-4"><Users size={16} className="text-[#F05A22]" /> Análise de Efetivo e Quarteirização</h3>
+            <div className="space-y-4">
+              <div className="flex justify-between items-center">
+                <span className="text-[10px] font-black text-slate-400 uppercase">Efetivo Real (Campo)</span>
+                <span className="text-lg font-black">{audit.equipe_campo}</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-[10px] font-black text-slate-400 uppercase">Efetivo no GD4 (Sistêmico)</span>
+                <span className="text-lg font-black">{audit.equipe_gd4}</span>
+              </div>
+              <div className="flex justify-between items-center pt-4 border-t-2 border-dashed border-slate-200">
+                <span className="text-[10px] font-black text-rose-600 uppercase">Divergência Detectada</span>
+                <span className="text-lg font-black text-rose-600">{divergencia} Pessoas</span>
+              </div>
+            </div>
+          </div>
+          <div className="border-4 border-emerald-500 bg-emerald-50 p-8 rounded-[2.5rem] flex flex-col items-center justify-center text-center space-y-4">
+            <Scale size={48} className="text-emerald-500" />
+            <div>
+              <p className="text-[8px] font-black text-emerald-800 uppercase tracking-widest">Quarteirização</p>
+              <p className="text-xs font-black text-emerald-900 uppercase">Totalmente Regularizada</p>
+            </div>
+          </div>
+        </div>
+
+        {/* EXPOSIÇÃO FINANCEIRA POTENCIAL */}
+        <div className="bg-slate-900 rounded-[3rem] p-10 text-white space-y-8 break-inside-avoid">
+          <div className="flex justify-between items-center border-b border-slate-700 pb-6">
+            <div className="flex items-center gap-4">
+              <div className="p-3 bg-[#F05A22] rounded-2xl border border-slate-700"><Scale size={24} /></div>
+              <div>
+                <p className="text-[10px] font-black uppercase tracking-widest text-[#F05A22]">Exposição Financeira Potencial</p>
+                <p className="text-[8px] opacity-50 uppercase">Cálculo de risco projetado sobre efetivo total</p>
+              </div>
+            </div>
+            <div className="bg-white text-slate-900 px-6 py-3 rounded-2xl flex items-center gap-3 border-2 border-slate-900 shadow-sm">
+              <AlertTriangle size={20} className="text-amber-500" />
+              <div className="text-right">
+                <p className="text-[8px] font-black uppercase opacity-50 leading-none">Matriz de Risco</p>
+                <p className="text-sm font-black uppercase leading-none">{report.riscoJuridico}</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="flex items-baseline gap-4">
+            <h2 className="text-6xl font-black tracking-tighter">{formatCurrency(report.exposicaoFinanceira)}</h2>
+            <p className="text-[10px] font-bold text-slate-500 uppercase">Passivo Trabalhista e Previdenciário Estimado</p>
+          </div>
+
+          {/* MEMÓRIA DE CÁLCULO REFINADA */}
+          <div className="space-y-4 bg-slate-800/40 p-8 rounded-[2.5rem] border border-slate-700/50">
+             <p className="text-[10px] font-black uppercase tracking-[0.2em] flex items-center gap-2 mb-4 text-slate-400"><FileText size={14} className="text-[#F05A22]" /> Memória de Cálculo e Base Legal</p>
+             <div className="grid grid-cols-1 gap-4">
+               {report.detalhamentoCalculo.map((item, idx) => (
+                 <div key={idx} className="flex justify-between items-start text-xs border-b border-slate-700/50 pb-4 last:border-0 last:pb-0">
+                    <div className="space-y-1.5 flex-1 pr-10">
+                      <p className="font-black uppercase text-slate-100 tracking-tight leading-snug">{item.item}</p>
+                      <div className="flex items-center gap-2 opacity-60">
+                         <Scale size={10} className="text-[#F05A22]" />
+                         <p className="text-[9px] font-bold uppercase tracking-widest">{item.baseLegal} {item.logica ? `| ${item.logica}` : ''}</p>
+                      </div>
+                    </div>
+                    <p className="font-black text-[#F05A22] text-sm shrink-0">{formatCurrency(item.valor)}</p>
+                 </div>
+               ))}
+             </div>
+          </div>
+        </div>
+
+        {/* EVIDÊNCIAS DO CHECKLIST */}
+        <div className="space-y-6 break-inside-avoid">
+          <h3 className="text-xl font-black uppercase border-l-8 border-[#F05A22] pl-4 tracking-tighter">Evidências do Checklist (Campo)</h3>
+          <div className="space-y-3">
+            {audit.respostas.map((r, i) => {
+              const q = QUESTIONS.find(qi => qi.id === r.pergunta_id);
+              if (!q) return null;
+              return (
+                <div key={i} className="flex items-center gap-4 bg-slate-50 p-4 rounded-3xl border border-slate-100">
+                   <div className={`w-14 h-14 rounded-2xl flex flex-col items-center justify-center font-black text-[10px] border-2 shadow-sm ${(q.inverted ? r.resposta === 'nao' : r.resposta === 'sim') ? 'bg-emerald-500 text-white border-slate-900' : 'bg-amber-500 text-white border-slate-900'}`}>
+                     <span>{r.resposta.toUpperCase()}</span>
+                   </div>
+                   <div className="flex-1 space-y-1">
+                     <p className="text-[10px] font-black uppercase leading-tight">{q.texto}</p>
+                     {r.observacao && <p className="text-[9px] font-bold text-rose-600 uppercase italic leading-none">⚠️ OBS: {r.observacao}</p>}
+                   </div>
+                   {r.fotos && r.fotos.length > 0 && (
+                     <div className="flex gap-1">
+                       {r.fotos.slice(0, 3).map((f, fi) => <img key={fi} src={f} className="w-12 h-12 rounded-lg border-2 border-white shadow-sm object-cover" />)}
+                     </div>
+                   )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* DETALHAMENTO AMOSTRAGEM */}
+        <div className="space-y-6 break-before-page pt-10">
+           <h3 className="text-xl font-black uppercase border-l-8 border-[#F05A22] pl-4 tracking-tighter">Detalhamento da Amostragem ({audit.entrevistas?.length} Colaboradores)</h3>
+           <div className="grid grid-cols-1 gap-4">
+             {audit.entrevistas?.map((ent, idx) => (
+               <div key={idx} className="bg-slate-50 rounded-[2.5rem] p-6 border border-slate-200 break-inside-avoid">
+                  <div className="flex justify-between items-center mb-6">
+                    <div className="flex items-center gap-4">
+                      <div className="w-10 h-10 bg-slate-900 text-white rounded-full flex items-center justify-center font-black">{idx + 1}</div>
+                      <div>
+                        <p className="text-[8px] font-black text-slate-400 uppercase leading-none">Função Auditada</p>
+                        <p className="text-sm font-black uppercase">{ent.funcao}</p>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                       <p className="text-[10px] font-black uppercase text-[#F05A22]"><Building2 className="inline mr-1" size={14} /> {ent.empresa}</p>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                     {ent.respostas.map((er, ei) => (
+                       <div key={ei} className="bg-white p-3 rounded-2xl flex justify-between items-center border border-slate-100 shadow-sm">
+                          <span className="text-[8px] font-black text-slate-500 uppercase leading-tight">{INTERVIEW_QUESTIONS.find(iq => iq.id === er.pergunta_id)?.texto}</span>
+                          <span className={`text-[10px] font-black uppercase px-2 py-1 rounded-lg ${er.resposta === 'sim' ? 'text-emerald-600' : 'text-rose-600 bg-rose-50'}`}>{er.resposta}</span>
+                       </div>
+                     ))}
+                  </div>
+               </div>
+             ))}
+           </div>
+        </div>
+
+        {/* CONCLUSÃO EXECUTIVA */}
+        <div className="border-[6px] border-slate-900 rounded-[3rem] p-10 space-y-10 mt-12 bg-white relative break-inside-avoid">
+           <div className="flex items-center gap-4 border-b-2 border-slate-100 pb-6">
+              <FileText className="text-[#F05A22]" size={32} />
+              <h3 className="text-2xl font-black uppercase tracking-tighter">Conclusão Executiva</h3>
+           </div>
+           <p className="text-lg font-bold italic text-slate-800 leading-relaxed text-center px-10">"{report.conclusaoExecutiva}"</p>
+           
+           <div className="grid grid-cols-2 gap-20 pt-10">
+              <div className="text-center space-y-2">
+                  {audit.assinatura_auditor ? (
+                    <div className="font-black text-[#F05A22] text-xs uppercase italic border-b-2 border-slate-900 pb-2 mb-2">
+                      {audit.assinatura_auditor.user_nome}
+                      <p className="text-[8px] font-normal text-slate-500 not-italic">Assinado em {new Date(audit.assinatura_auditor.data).toLocaleString('pt-BR')}</p>
+                    </div>
+                  ) : (
+                    <div className="h-px bg-slate-300 w-full mb-4"></div>
+                  )}
+                  <p className="text-[8px] font-black uppercase tracking-[0.3em] text-slate-400">Assinatura Digital Auditrisk</p>
+                  <p className="text-[10px] font-black uppercase">Auditor Unità S.A.</p>
+                  <p className="text-[8px] text-slate-400">Responsável pela Coleta</p>
+                  
+                  {canSignAuditor && (
+                    <button 
+                      data-html2canvas-ignore
+                      disabled={isSigning}
+                      onClick={() => handleSign('auditor')}
+                      className="print:hidden mt-4 bg-slate-900 text-white px-6 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-[#F05A22] transition-all shadow-[4px_4px_0px_0px_rgba(240,90,34,1)] flex items-center justify-center gap-2 mx-auto"
+                    >
+                      {isSigning ? <Loader2 className="animate-spin" size={14} /> : <UserCheck size={14} />}
+                      Assinar Relatório
+                    </button>
+                  )}
+              </div>
+              <div className="text-center space-y-2">
+                  {audit.assinatura_engenheiro ? (
+                    <div className="font-black text-[#F05A22] text-xs uppercase italic border-b-2 border-slate-900 pb-2 mb-2">
+                      {audit.assinatura_engenheiro.user_nome}
+                      <p className="text-[8px] font-normal text-slate-500 not-italic">Assinado em {new Date(audit.assinatura_engenheiro.data).toLocaleString('pt-BR')}</p>
+                    </div>
+                  ) : (
+                    <div className="h-px bg-slate-300 w-full mb-4"></div>
+                  )}
+                  <p className="text-[8px] font-black uppercase tracking-[0.3em] text-slate-400">Assinatura Responsável Obra</p>
+                  <p className="text-[10px] font-black uppercase">{obra?.engenheiro_responsavel || 'Engenheiro da Unidade'}</p>
+                  <p className="text-[8px] text-slate-400">Responsável Técnico</p>
+
+                  {canSignEngineer ? (
+                    <button 
+                      data-html2canvas-ignore
+                      disabled={isSigning}
+                      onClick={() => handleSign('engenheiro')}
+                      className="print:hidden mt-4 bg-slate-900 text-white px-6 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-[#F05A22] transition-all shadow-[4px_4px_0px_0px_rgba(240,90,34,1)] flex items-center justify-center gap-2 mx-auto"
+                    >
+                      {isSigning ? <Loader2 className="animate-spin" size={14} /> : <UserCheck size={14} />}
+                      Assinar Relatório
+                    </button>
+                  ) : !audit.assinatura_engenheiro && (
+                    <div className="print:hidden mt-4 p-3 bg-slate-50 border-2 border-dashed border-slate-200 rounded-xl text-[8px] font-black uppercase text-slate-400 tracking-widest">
+                      Aguardando assinatura do responsável
+                    </div>
+                  )}
+              </div>
+           </div>
+
+           <div className="flex justify-between items-center text-[8px] font-black text-slate-300 uppercase tracking-widest pt-8">
+              <span>ID Relatório: {audit.id}</span>
+              <div className="text-right">
+                <p>Tecnologia Auditrisk v2.5</p>
+                <p className="text-[#F05A22]">Unità Engenharia S.A.</p>
+              </div>
+           </div>
+        </div>
+
+        <div className="text-center text-[9px] font-black text-slate-200 uppercase tracking-[0.6em] pt-10">
+           Documento Confidencial - Uso Interno
+        </div>
+      </div>
+    </motion.div>
+  );
+};
+
+export default AuditResult;
