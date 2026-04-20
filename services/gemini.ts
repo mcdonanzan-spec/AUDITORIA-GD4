@@ -62,7 +62,7 @@ export const generateAuditReport = async (auditData: any): Promise<AIAnalysisRes
       );
 
       const aiPromise = ai.models.generateContent({
-        model: 'gemini-2.0-flash',
+        model: 'gemini-1.5-flash-8b',
         contents: prompt,
         config: {
           responseMimeType: "application/json",
