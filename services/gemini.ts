@@ -1,18 +1,6 @@
 
 import { AIAnalysisResult } from "../types";
 
-const sanitizeDataForAI = (data: any) => {
-  return {
-    obra: data.obra_nome,
-    tipo: data.tipo_servico,
-    resumo_check: data.respostas_check?.map((r: any) => ({
-      item: r.item_nome,
-      status: r.conforme ? 'CONFORME' : 'NÃO CONFORME',
-      obs: r.observacao
-    })) || []
-  };
-};
-
 const robustJsonParse = (text: string): any => {
   try {
     const start = text.indexOf('{');
@@ -33,92 +21,88 @@ export const generateAuditReport = async (auditData: any): Promise<AIAnalysisRes
                  (window as any).process?.env?.GEMINI_API_KEY;
   
   if (!apiKey || apiKey === 'undefined') {
-    console.error("ERRO: Nenhuma chave de API detectada pelo sistema.");
-    throw new Error("A chave da API do Gemini não foi encontrada. Certifique-se de que a variável de ambiente VITE_GEMINI_API_KEY está configurada na Vercel e que você fez um novo deploy.");
+    throw new Error("A chave da API do Gemini não foi encontrada. Certifique-se de que a variável de ambiente VITE_GEMINI_API_KEY está configurada na Vercel.");
   }
 
-  console.log(`DEBUG: Chave detectada (Inicia com: ${apiKey.substring(0, 4)}... Tamanho: ${apiKey.length})`);
+  // PREPARAÇÃO DE DADOS RICOS (Foco em Não Conformidades)
+  const itensComFalha = auditData.respostas_check
+    ?.filter((r: any) => r.resposta === 'nao' || r.resposta === 'parcial')
+    ?.map((r: any) => `- ITEM: ${r.pergunta}\n  STATUS: ${r.resposta.toUpperCase()}\n  OBSERVAÇÃO: ${r.obs}`)
+    .join('\n') || "Nenhum desvio crítico identificado.";
 
-  const cleanPayload = sanitizeDataForAI(auditData);
+  const resumoEntrevistas = auditData.entrevistas
+    ?.map((e: any) => `- ${e.funcao} (${e.empresa}): ${e.respostas.filter((r: any) => r.resposta === 'nao').length} divergências`)
+    .join('\n') || "Nenhuma divergência nas entrevistas.";
 
-  const prompt = `ATUE COMO UM AUDITOR FISAL DO TRABALHO E ESPECIALISTA EM DIREITO DO TRABALHO (TRTs/TST).
+  const prompt = `ATUE COMO UM AUDITOR TÉCNICO E JURÍDICO DA UNITA ENGENHARIA.
   
-  CONTEXTO: Auditoria de quarteirização em canteiro de obras da Unità Engenharia.
-  DADOS COLETADOS EM CAMPO: ${JSON.stringify(cleanPayload)}
+  DADOS REAIS DA AUDITORIA HOJE:
+  OBRA: ${auditData.obra}
+  EFETIVO TOTAL: ${auditData.amostragem?.total_efetivo}
+  QUARTEIRIZAÇÃO IRREGULAR IDENTIFICADA? ${auditData.amostragem?.quarteirizacao_irregular ? 'SIM' : 'NÃO'}
   
-  MISSÃO: Gerar um relatório técnico de exposição financeira baseado exclusivamente na legislação trabalhista brasileira.
+  DESVIOS ENCONTRADOS (ITENS NÃO CONFORMES):
+  ${itensComFalha}
   
-  DIRETRIZES DE ANÁLISE:
-  1. BASE LEGAL: Foque em CLT, Normas Regulamentadoras (NR-18, NR-35, NR-06 etc.), Súmula 331 do TST e jurisprudência consolidada dos TRTs.
-  2. FOCO NO RISCO: Vínculo empregatício irregular, falta de EPIs, ausência de treinamentos obrigatórios, subcontratação ilícita (quarteirização) e verbas não pagas (FGTS, DSR, Horas Extras, Adicionais).
-  3. PROIBIDO: Não mencione LGPD, Propriedade Intelectual ou crimes cibernéticos. O foco é 100% OPERACIONAL E TRABALHISTA.
+  RESUMO DAS ENTREVISTAS:
+  ${resumoEntrevistas}
   
-  RETORNE APENAS UM JSON COM ESTA ESTRUTURA:
+  MISSÃO: Interprete os DESVIOS acima e gere uma MEMÓRIA DE CÁLCULO DE RISCO FINANCEIRO.
+  
+  REGRAS DE OURO:
+  1. Para cada DESVIO encontrado, procure a multa correspondente na CLT ou nas NRs (ex: NR-18, NR-35).
+  2. Calcule o valor da multa considerando o número de funcionários expostos e a gravidade (Súmula 331 TST / Normas do MTE).
+  3. Seja específico: cite o Artigo, a NR e a Jurisprudência do TRT que fundamenta o risco.
+  4. NÃO gere textos genéricos. Se o usuário marcou "Não Conforme" em um item de EPI, fale especificamente de NR-06.
+  
+  FORMATO JSON OBRIGATÓRIO:
   {
     "indiceGeral": number (0-100),
     "classificacao": "REGULAR" | "ATENÇÃO" | "CRÍTICA",
     "riscoJuridico": "BAIXO" | "MÉDIO" | "ALTO" | "CRÍTICO",
-    "exposicaoFinanceira": number (Soma total do passivo estimado),
+    "exposicaoFinanceira": number,
     "detalhamentoCalculo": [
       {
-        "item": "Ex: Vínculo Empregatício Irregular ou NR-18 (EPIs)", 
-        "valor": number, 
-        "baseLegal": "Citar Artigo da CLT, NR ou Súmula do TST", 
-        "logica": "Explicação técnica fundamentada na jurisprudência dos TRTs"
+        "item": "Título do Risco",
+        "valor": number,
+        "baseLegal": "Artigo/NR/Súmula específica",
+        "logica": "Por que este valor? (ex: Multa de R$ X por funcionário conforme NR-Y)"
       }
     ],
     "naoConformidades": [string],
-    "impactoJuridico": "Análise sobre responsabilidade subsidiária/solidária",
-    "recomendacoes": ["Ações imediatas para mitigação de risco"],
-    "conclusaoExecutiva": "Resumo estratégico para a diretoria"
+    "impactoJuridico": "Análise técnica fundamentada",
+    "recomendacoes": [string],
+    "conclusaoExecutiva": "Resumo estratégico"
   }`;
 
-  // Estratégia de Auto-Descoberta de Modelos (Expert Discovery)
-  let models: string[] = ["gemini-1.5-flash", "gemini-1.5-pro", "gemini-2.0-flash"];
+  // Estratégia de Auto-Descoberta de Modelos
+  let models: string[] = ["gemini-1.5-flash", "gemini-1.5-pro"];
   
   try {
-    console.log("DEBUG: Consultando modelos disponíveis para esta chave...");
     const listResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`);
     if (listResponse.ok) {
       const listData = await listResponse.json();
       const availableModels = listData.models
         ?.filter((m: any) => m.supportedGenerationMethods.includes("generateContent"))
         ?.map((m: any) => m.name.split('/').pop()) || [];
-      
-      if (availableModels.length > 0) {
-        console.log("DEBUG: Modelos encontrados no seu projeto:", availableModels);
-        // Colocamos os modelos encontrados no topo da lista de prioridade
-        models = [...new Set([...availableModels, ...models])];
-      }
+      if (availableModels.length > 0) models = [...new Set([...availableModels, ...models])];
     }
-  } catch (e) {
-    console.warn("DEBUG: Falha ao listar modelos, usando lista padrão.");
-  }
+  } catch (e) {}
 
   let lastError = "";
-
   for (const model of models) {
     try {
-      console.log(`Tentando conexão direta com modelo: ${model}`);
-      
-      // Tentamos v1 e v1beta para máxima compatibilidade
       for (const apiVer of ['v1beta', 'v1']) {
         const response = await fetch(`https://generativelanguage.googleapis.com/${apiVer}/models/${model}:generateContent?key=${apiKey}`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             contents: [{ parts: [{ text: prompt }] }],
-            generationConfig: {
-              temperature: 0.1,
-              topK: 1,
-              topP: 1,
-              maxOutputTokens: 2048,
-            }
+            generationConfig: { temperature: 0.1, maxOutputTokens: 2048 }
           })
         });
 
         const data = await response.json();
-
         if (!response.ok) {
           lastError = data.error?.message || response.statusText;
           continue;
@@ -127,15 +111,13 @@ export const generateAuditReport = async (auditData: any): Promise<AIAnalysisRes
         const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
         if (!text) continue;
 
-        const parsed = robustJsonParse(text);
-        return parsed as AIAnalysisResult;
+        return robustJsonParse(text);
       }
-
     } catch (err: any) {
       lastError = err.message;
       continue;
     }
   }
 
-  throw new Error(`Conexão com IA falhou. Último erro: ${lastError}. DICA: Verifique se sua chave de API está ativa no Google AI Studio.`);
+  throw new Error(`Falha na IA: ${lastError}`);
 };
