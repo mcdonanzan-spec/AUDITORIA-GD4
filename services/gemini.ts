@@ -26,39 +26,42 @@ export const generateAuditReport = async (auditData: any): Promise<AIAnalysisRes
   const genAI = new GoogleGenerativeAI(apiKey);
   
   // Usamos o modelo mais estável e rápido disponível na v1
-  const model = genAI.getGenerativeModel({
-    model: "gemini-1.5-flash",
-    generationConfig: {
-      responseMimeType: "application/json",
-      responseSchema: {
-        type: SchemaType.OBJECT,
-        properties: {
-          indiceGeral: { type: SchemaType.NUMBER },
-          classificacao: { type: SchemaType.STRING },
-          riscoJuridico: { type: SchemaType.STRING },
-          exposicaoFinanceira: { type: SchemaType.NUMBER },
-          detalhamentoCalculo: {
-            type: SchemaType.ARRAY,
-            items: {
-              type: SchemaType.OBJECT,
-              properties: {
-                item: { type: SchemaType.STRING },
-                valor: { type: SchemaType.NUMBER },
-                baseLegal: { type: SchemaType.STRING },
-                logica: { type: SchemaType.STRING }
-              },
-              required: ["item", "valor", "baseLegal", "logica"]
-            }
-          },
-          naoConformidades: { type: SchemaType.ARRAY, items: { type: SchemaType.STRING } },
-          impactoJuridico: { type: SchemaType.STRING },
-          recomendacoes: { type: SchemaType.ARRAY, items: { type: SchemaType.STRING } },
-          conclusaoExecutiva: { type: SchemaType.STRING }
+  const model = genAI.getGenerativeModel(
+    { model: "gemini-1.5-flash" },
+    { apiVersion: "v1" }
+  );
+
+  // Configuramos as opções de geração separadamente para maior clareza
+  const generationConfig = {
+    responseMimeType: "application/json",
+    responseSchema: {
+      type: SchemaType.OBJECT,
+      properties: {
+        indiceGeral: { type: SchemaType.NUMBER },
+        classificacao: { type: SchemaType.STRING },
+        riscoJuridico: { type: SchemaType.STRING },
+        exposicaoFinanceira: { type: SchemaType.NUMBER },
+        detalhamentoCalculo: {
+          type: SchemaType.ARRAY,
+          items: {
+            type: SchemaType.OBJECT,
+            properties: {
+              item: { type: SchemaType.STRING },
+              valor: { type: SchemaType.NUMBER },
+              baseLegal: { type: SchemaType.STRING },
+              logica: { type: SchemaType.STRING }
+            },
+            required: ["item", "valor", "baseLegal", "logica"]
+          }
         },
-        required: ["indiceGeral", "classificacao", "riscoJuridico", "exposicaoFinanceira", "detalhamentoCalculo", "naoConformidades", "impactoJuridico", "recomendacoes", "conclusaoExecutiva"]
-      }
+        naoConformidades: { type: SchemaType.ARRAY, items: { type: SchemaType.STRING } },
+        impactoJuridico: { type: SchemaType.STRING },
+        recomendacoes: { type: SchemaType.ARRAY, items: { type: SchemaType.STRING } },
+        conclusaoExecutiva: { type: SchemaType.STRING }
+      },
+      required: ["indiceGeral", "classificacao", "riscoJuridico", "exposicaoFinanceira", "detalhamentoCalculo", "naoConformidades", "impactoJuridico", "recomendacoes", "conclusaoExecutiva"]
     }
-  });
+  };
 
   const cleanPayload = sanitizeDataForAI(auditData);
 
@@ -81,7 +84,10 @@ export const generateAuditReport = async (auditData: any): Promise<AIAnalysisRes
 
   const executeWithRetry = async (attempt: number = 1): Promise<any> => {
     try {
-      const result = await model.generateContent(prompt);
+      const result = await model.generateContent({
+        contents: [{ role: 'user', parts: [{ text: prompt }] }],
+        generationConfig
+      });
       const response = await result.response;
       return response.text();
     } catch (error: any) {
