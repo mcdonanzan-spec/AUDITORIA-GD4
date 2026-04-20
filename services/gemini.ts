@@ -1,5 +1,4 @@
 
-import { GoogleGenerativeAI, HarmCategory, HarmBlockThreshold } from "@google/generative-ai";
 import { AIAnalysisResult } from "../types";
 
 const sanitizeDataForAI = (data: any) => {
@@ -16,42 +15,37 @@ const sanitizeDataForAI = (data: any) => {
 
 const robustJsonParse = (text: string): any => {
   try {
-    // Remove qualquer texto antes do primeiro '{' e depois do último '}'
     const start = text.indexOf('{');
     const end = text.lastIndexOf('}');
-    
-    if (start === -1 || end === -1) {
-      throw new Error("JSON não encontrado na resposta");
-    }
-
-    const jsonStr = text.substring(start, end + 1);
-    return JSON.parse(jsonStr);
+    if (start === -1 || end === -1) throw new Error("JSON não encontrado");
+    return JSON.parse(text.substring(start, end + 1));
   } catch (e) {
     console.error("Erro no parser:", e, "Texto:", text);
-    throw new Error("A IA não retornou um formato de relatório válido.");
+    throw new Error("IA não retornou dados válidos.");
   }
 };
 
 export const generateAuditReport = async (auditData: any): Promise<AIAnalysisResult> => {
-  const apiKey = process.env.GEMINI_API_KEY || process.env.API_KEY || import.meta.env.VITE_GEMINI_API_KEY;
+  // Diagnóstico de Chave de API
+  const apiKey = (import.meta.env.VITE_GEMINI_API_KEY || 
+                  (window as any).process?.env?.GEMINI_API_KEY || 
+                  (window as any).process?.env?.VITE_GEMINI_API_KEY ||
+                  import.meta.env.GEMINI_API_KEY);
   
   if (!apiKey) {
-    throw new Error("Configuração: Chave GEMINI_API_KEY não encontrada.");
+    console.error("DEBUG: Nenhuma chave de API encontrada nos envs.");
+    throw new Error("ERRO DE CONFIGURAÇÃO: A chave GEMINI_API_KEY não foi encontrada. Verifique se ela foi adicionada nas configurações da Vercel com o prefixo VITE_GEMINI_API_KEY.");
   }
 
-  const genAI = new GoogleGenerativeAI(apiKey);
+  console.log(`DEBUG: Chave detectada (Inicia com: ${apiKey.substring(0, 4)}... Tamanho: ${apiKey.length})`);
+
   const cleanPayload = sanitizeDataForAI(auditData);
 
   const prompt = `ATUE COMO CONSULTOR SÊNIOR DE RISCO JURÍDICO. 
   DADOS: ${JSON.stringify(cleanPayload)}
+  MISSÃO: Gerar relatório técnico de governança em JSON.
   
-  MISSÃO: Gerar relatório técnico de governança.
-  
-  REGRAS FINANCEIRAS:
-  - Exposição Financeira total = soma do detalhamento.
-  - Detalhe 4 itens (CLT, NRs, Multas, Benefícios).
-  
-  RETORNE APENAS UM OBJETO JSON NO FORMATO ABAIXO (MUITO IMPORTANTE):
+  FORMATO JSON OBRIGATÓRIO:
   {
     "indiceGeral": number,
     "classificacao": "REGULAR" | "ATENÇÃO" | "CRÍTICA",
@@ -64,52 +58,47 @@ export const generateAuditReport = async (auditData: any): Promise<AIAnalysisRes
     "conclusaoExecutiva": string
   }`;
 
-  // Lista de modelos para tentar em ordem de prioridade
-  const modelNames = ["gemini-1.5-flash", "gemini-2.0-flash", "gemini-1.5-pro"];
+  // Estratégia de Fetch Direto (Sem SDK para evitar 404s fantasmas)
+  const models = ["gemini-1.5-flash", "gemini-1.5-pro"];
   let lastError = "";
 
-  for (const modelName of modelNames) {
+  for (const model of models) {
     try {
-      // Tentamos primeiro na v1beta (mais moderna) e depois na v1 (estável)
-      for (const apiVer of ['v1beta', 'v1']) {
-        try {
-          const model = genAI.getGenerativeModel({ 
-            model: modelName,
-            safetySettings: [
-              { category: HarmCategory.HARM_CATEGORY_HARASSMENT, threshold: HarmBlockThreshold.BLOCK_NONE },
-              { category: HarmCategory.HARM_CATEGORY_HATE_SPEECH, threshold: HarmBlockThreshold.BLOCK_NONE },
-              { category: HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT, threshold: HarmBlockThreshold.BLOCK_NONE },
-              { category: HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT, threshold: HarmBlockThreshold.BLOCK_NONE },
-            ]
-          }, { apiVersion: apiVer as any });
-
-          const result = await model.generateContent(prompt);
-          const text = result.response.text();
-          
-          if (!text) continue;
-
-          const parsed = robustJsonParse(text);
-
-          // Validação aritmética
-          const soma = parsed.detalhamentoCalculo?.reduce((acc: number, curr: any) => acc + (curr.valor || 0), 0) || 0;
-          if (soma !== parsed.exposicaoFinanceira && soma > 0) {
-            parsed.exposicaoFinanceira = soma;
+      console.log(`Tentando conexão direta com modelo: ${model}`);
+      
+      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: prompt }] }],
+          generationConfig: {
+            temperature: 0.1,
+            topK: 1,
+            topP: 1,
+            maxOutputTokens: 2048,
           }
+        })
+      });
 
-          return parsed as AIAnalysisResult;
+      const data = await response.json();
 
-        } catch (innerErr: any) {
-          lastError = innerErr.message || "Erro de conexão";
-          if (lastError.includes("429")) {
-             await new Promise(r => setTimeout(r, 2000));
-          }
-          continue;
-        }
+      if (!response.ok) {
+        lastError = data.error?.message || response.statusText;
+        console.warn(`Erro no modelo ${model}: ${lastError}`);
+        continue;
       }
-    } catch (outerErr) {
+
+      const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
+      if (!text) continue;
+
+      const parsed = robustJsonParse(text);
+      return parsed as AIAnalysisResult;
+
+    } catch (err: any) {
+      lastError = err.message;
       continue;
     }
   }
 
-  throw new Error(`Falha crítica na IA: ${lastError}. Tente novamente.`);
+  throw new Error(`Conexão com IA falhou. Último erro: ${lastError}. DICA: Verifique se sua chave de API está ativa no Google AI Studio.`);
 };
