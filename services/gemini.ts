@@ -41,21 +41,36 @@ export const generateAuditReport = async (auditData: any): Promise<AIAnalysisRes
 
   const cleanPayload = sanitizeDataForAI(auditData);
 
-  const prompt = `ATUE COMO CONSULTOR SÊNIOR DE RISCO JURÍDICO. 
-  DADOS: ${JSON.stringify(cleanPayload)}
-  MISSÃO: Gerar relatório técnico de governança em JSON.
+  const prompt = `ATUE COMO UM AUDITOR FISAL DO TRABALHO E ESPECIALISTA EM DIREITO DO TRABALHO (TRTs/TST).
   
-  FORMATO JSON OBRIGATÓRIO:
+  CONTEXTO: Auditoria de quarteirização em canteiro de obras da Unità Engenharia.
+  DADOS COLETADOS EM CAMPO: ${JSON.stringify(cleanPayload)}
+  
+  MISSÃO: Gerar um relatório técnico de exposição financeira baseado exclusivamente na legislação trabalhista brasileira.
+  
+  DIRETRIZES DE ANÁLISE:
+  1. BASE LEGAL: Foque em CLT, Normas Regulamentadoras (NR-18, NR-35, NR-06 etc.), Súmula 331 do TST e jurisprudência consolidada dos TRTs.
+  2. FOCO NO RISCO: Vínculo empregatício irregular, falta de EPIs, ausência de treinamentos obrigatórios, subcontratação ilícita (quarteirização) e verbas não pagas (FGTS, DSR, Horas Extras, Adicionais).
+  3. PROIBIDO: Não mencione LGPD, Propriedade Intelectual ou crimes cibernéticos. O foco é 100% OPERACIONAL E TRABALHISTA.
+  
+  RETORNE APENAS UM JSON COM ESTA ESTRUTURA:
   {
-    "indiceGeral": number,
+    "indiceGeral": number (0-100),
     "classificacao": "REGULAR" | "ATENÇÃO" | "CRÍTICA",
     "riscoJuridico": "BAIXO" | "MÉDIO" | "ALTO" | "CRÍTICO",
-    "exposicaoFinanceira": number,
-    "detalhamentoCalculo": [{"item": string, "valor": number, "baseLegal": string, "logica": string}],
+    "exposicaoFinanceira": number (Soma total do passivo estimado),
+    "detalhamentoCalculo": [
+      {
+        "item": "Ex: Vínculo Empregatício Irregular ou NR-18 (EPIs)", 
+        "valor": number, 
+        "baseLegal": "Citar Artigo da CLT, NR ou Súmula do TST", 
+        "logica": "Explicação técnica fundamentada na jurisprudência dos TRTs"
+      }
+    ],
     "naoConformidades": [string],
-    "impactoJuridico": string,
-    "recomendacoes": [string],
-    "conclusaoExecutiva": string
+    "impactoJuridico": "Análise sobre responsabilidade subsidiária/solidária",
+    "recomendacoes": ["Ações imediatas para mitigação de risco"],
+    "conclusaoExecutiva": "Resumo estratégico para a diretoria"
   }`;
 
   // Estratégia de Auto-Descoberta de Modelos (Expert Discovery)
