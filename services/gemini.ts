@@ -26,15 +26,15 @@ const robustJsonParse = (text: string): any => {
 };
 
 export const generateAuditReport = async (auditData: any): Promise<AIAnalysisResult> => {
-  // Diagnóstico de Chave de API
-  const apiKey = (import.meta.env.VITE_GEMINI_API_KEY || 
-                  (window as any).process?.env?.GEMINI_API_KEY || 
-                  (window as any).process?.env?.VITE_GEMINI_API_KEY ||
-                  import.meta.env.GEMINI_API_KEY);
+  // Diagnóstico e Captura de Chave de API (Tolerância Máxima)
+  const apiKey = import.meta.env.VITE_GEMINI_API_KEY || 
+                 import.meta.env.GEMINI_API_KEY ||
+                 (window as any).process?.env?.VITE_GEMINI_API_KEY || 
+                 (window as any).process?.env?.GEMINI_API_KEY;
   
-  if (!apiKey) {
-    console.error("DEBUG: Nenhuma chave de API encontrada nos envs.");
-    throw new Error("ERRO DE CONFIGURAÇÃO: A chave GEMINI_API_KEY não foi encontrada. Verifique se ela foi adicionada nas configurações da Vercel com o prefixo VITE_GEMINI_API_KEY.");
+  if (!apiKey || apiKey === 'undefined') {
+    console.error("ERRO: Nenhuma chave de API detectada pelo sistema.");
+    throw new Error("A chave da API do Gemini não foi encontrada. Certifique-se de que a variável de ambiente VITE_GEMINI_API_KEY está configurada na Vercel e que você fez um novo deploy.");
   }
 
   console.log(`DEBUG: Chave detectada (Inicia com: ${apiKey.substring(0, 4)}... Tamanho: ${apiKey.length})`);
