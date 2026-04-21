@@ -602,36 +602,37 @@ const AuditWizard: React.FC<AuditWizardProps> = ({ obras, currentUser, onAuditCo
               <p className="text-rose-700 text-xs font-bold">{error}</p>
             </div>
           </div>
-          <div className="flex gap-3 w-full md:w-auto">
-            {!showRestartConfirm ? (
-              <button 
-                onClick={() => setShowRestartConfirm(true)} 
-                className="flex-1 md:flex-none bg-rose-600 text-white px-4 py-2 rounded-xl font-black text-[10px] uppercase border-2 border-slate-900"
+          <div className="flex flex-col md:flex-row gap-3 w-full md:w-auto">
+            {error === "O motor de análise atingiu o limite de requisições do plano gratuito. Por favor, aguarde cerca de 30 a 60 segundos e tente enviar novamente." && (
+               <button 
+                onClick={() => handleSubmit()} 
+                className="flex-1 md:flex-none bg-[#F05A22] text-white px-6 py-2 rounded-xl font-black text-[10px] uppercase border-2 border-slate-900 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:bg-slate-900 transition-all"
               >
-                Reiniciar
+                Tentar Novamente Agora
               </button>
-            ) : (
-              <div className="flex gap-2">
-                <button 
-                  onClick={() => {
-                    clearDraft();
-                    setError(null);
-                    setShowRestartConfirm(false);
-                    setStep('setup');
-                  }}
-                  className="bg-rose-700 text-white px-3 py-2 rounded-lg font-black text-[9px] uppercase border border-slate-900"
-                >
-                  Confirmar
-                </button>
-                <button 
-                  onClick={() => setShowRestartConfirm(false)}
-                  className="bg-white text-slate-600 px-3 py-2 rounded-lg font-black text-[9px] uppercase border border-slate-200"
-                >
-                  Não
-                </button>
-              </div>
             )}
-            <button onClick={() => setError(null)} className="flex-1 md:flex-none text-rose-400 hover:text-rose-600 font-black text-xs uppercase">Fechar</button>
+            <button 
+              onClick={() => {
+                setError(null);
+                setStep('questions');
+              }} 
+              className="flex-1 md:flex-none bg-slate-100 text-slate-700 px-6 py-2 rounded-xl font-black text-[10px] uppercase border-2 border-slate-200 hover:border-slate-900 transition-all"
+            >
+              Voltar e Revisar Dados
+            </button>
+            <button 
+              onClick={() => {
+                const confirmClear = window.confirm("Isso apagará o progresso atual. Tem certeza?");
+                if (confirmClear) {
+                  clearDraft();
+                  setError(null);
+                  setStep('setup');
+                }
+              }} 
+              className="flex-1 md:flex-none text-rose-400 hover:text-rose-600 font-black text-[10px] uppercase"
+            >
+              Reiniciar Tudo
+            </button>
           </div>
         </div>
       )}

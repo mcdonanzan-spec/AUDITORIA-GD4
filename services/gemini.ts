@@ -111,5 +111,5 @@ export const generateAuditReport = async (auditData: any): Promise<AIAnalysisRes
       continue;
     }
   }
-  throw new Error(`Falha na IA: ${lastError}`);
+  throw new Error(lastError);
 };
