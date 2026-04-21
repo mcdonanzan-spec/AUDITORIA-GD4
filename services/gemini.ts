@@ -23,73 +23,60 @@ export const generateAuditReport = async (auditData: any): Promise<AIAnalysisRes
     throw new Error("A chave da API do Gemini não foi encontrada.");
   }
 
-  const itensComFalha = auditData.respostas_check
+  // Captura detalhada de falhas para a IA
+  const falhasCriticas = auditData.respostas_check
     ?.filter((r: any) => r.resposta === 'nao' || r.resposta === 'parcial')
-    ?.map((r: any) => `- ITEM: ${r.pergunta}\n  STATUS: ${r.resposta.toUpperCase()}\n  OBSERVAÇÃO: ${r.obs}`)
-    .join('\n') || "Nenhum desvio crítico encontrado nos itens de checklist.";
+    ?.map((r: any) => `QUESTÃO: ${r.pergunta}\nRESPOSTA: ${r.resposta.toUpperCase()}\nOBSERVAÇÃO DO AUDITOR: ${r.obs}`)
+    .join('\n\n') || "Nenhum desvio crítico encontrado.";
 
-  const resumoEntrevistas = auditData.entrevistas
-    ?.map((e: any) => `- ${e.funcao} (${e.empresa}): ${e.respostas.filter((r: any) => r.resposta === 'nao').length} divergências encontradas entre depoimento e documentação.`)
-    .join('\n') || "Sem divergências críticas nas entrevistas amostrais.";
+  const divergenciasEntrevistas = auditData.entrevistas
+    ?.map((e: any) => {
+      const erros = e.respostas.filter((r: any) => r.resposta === 'nao');
+      if (erros.length === 0) return null;
+      return `COLABORADOR (${e.funcao} - ${e.empresa}): Afirmou NÃO receber ou NÃO ter ${erros.map((er: any) => er.pergunta).join(', ')}`;
+    })
+    .filter(Boolean)
+    .join('\n') || "Nenhuma divergência grave nas entrevistas.";
 
-  const prompt = `ATUE COMO UM CONSULTOR JURÍDICO TRABALHISTA SÊNIOR E AUDITOR FORENSE.
+  const prompt = `VOCÊ É UM AUDITOR FORENSE ESPECIALISTA EM DIREITO DO TRABALHO NA CONSTRUÇÃO CIVIL.
   
-  DADOS DO CANTEIRO:
-  OBRA: ${auditData.obra}
-  EFETIVO TOTAL EM CAMPO: ${auditData.amostragem?.total_efetivo}
-  QUARTEIRIZAÇÃO IRREGULAR (SUB-SUBCONTRATAÇÃO): ${auditData.amostragem?.quarteirizacao_irregular ? 'IDENTIFICADA (ALTÍSSIMO RISCO)' : 'NÃO DETECTADA'}
+  DADOS REAIS DA OBRA ${auditData.obra}:
+  - EFETIVO TOTAL: ${auditData.amostragem?.total_efetivo} pessoas.
+  - FALHAS DETECTADAS NO CHECKLIST:
+  ${falhasCriticas}
   
-  EVIDÊNCIAS DE CAMPO:
-  ${itensComFalha}
+  - DIVERGÊNCIAS NAS ENTREVISTAS:
+  ${divergenciasEntrevistas}
   
-  CONFLITOS EM ENTREVISTAS:
-  ${resumoEntrevistas}
+  SUA MISSÃO: Realizar uma análise técnica individualizada de cada falha acima. NÃO USE TEXTOS GENÉRICOS OU EXEMPLOS.
   
-  MISSÃO: Realizar análise de RISCO JURÍDICO TRABALHISTA e PROJETAR PASSIVO FINANCEIRO OCULTO.
+  REGRAS DE OURO:
+  1. MEMÓRIA DE CÁLCULO: Para cada desvio, calcule o risco real. Ex: Falta de registro de ponto para 100 pessoas não custa R$ 50,00. Custa milhares (R$ 50.000+). Use valores de mercado (settlements).
+  2. BASE LEGAL: Cite CLT, Artigos (9, 2, 3, 74, 467, 477), Súmulas do TST (331) e Jurisprudência dos TRTs.
+  3. SENSIBILIDADE DO SCORE: Se houver "Quarteirização Irregular" ou "Falta de registro de ponto", o indiceGeral NÃO pode ser acima de 50%.
+  4. INTERPRETAÇÃO: Se o auditor disse "porteiro libera com a facial", interprete como falha de controle de jornada e segurança orgânica, aumentando o risco de vínculo.
   
-  DIRETRIZES JURÍDICAS OBRIGATÓRIAS:
-  1. CLT E FRAUDE: Interprete falhas de controle (catracas, registros) como indícios de fraude à legislação tributária e trabalhista (Art. 9º da CLT).
-  2. VÍNCULO E SUBORDINAÇÃO: Avalie o risco de reconhecimento de vínculo direto com a Unità (Art. 2º e 3º da CLT).
-  3. RESPONSABILIDADE: Fundamente o risco na Súmula 331 do TST. Fale sobre Responsabilidade Subsidiária e Solidária.
-  4. JURISPRUDÊNCIA: Cite acórdãos dos TRTs e decisões do TST sobre quarteirização ilícita e precarização do trabalho.
-  5. CÁLCULO DE PASSIVO: Não calcule apenas MULTAS. Calcule o PASSIVO PROJETADO (FGTS, Multa 40%, 13º, Férias + 1/3, Reflexos em DSR e possíveis Indenizações por Danos Morais Coletivos).
-  6. BASE LEGAL: Use CLT (Arts 9, 74, 467, 477, 818), Súmulas do TST e Normas Regulamentadoras apenas como suporte operacional.
-  
-  REGRAS DE CÁLCULO:
-  - Considere o Efetivo Total (${auditData.amostragem?.total_efetivo}) na projeção do risco, pois uma falha sistêmica afeta a todos.
-  
-  FORMATO JSON OBRIGATÓRIO:
+  ESTRUTURA DO JSON (OBRIGATÓRIO):
   {
-    "indiceGeral": number (0-100),
+    "indiceGeral": number (deve refletir a realidade dos erros),
     "classificacao": "REGULAR" | "ATENÇÃO" | "CRÍTICA",
     "riscoJuridico": "BAIXO" | "MÉDIO" | "ALTO" | "CRÍTICO",
-    "exposicaoFinanceira": number,
+    "exposicaoFinanceira": number (TOTAL DO RISTO PROJETADO),
     "detalhamentoCalculo": [
       {
-        "item": "Ex: Risco de Vínculo Empregatício ou Fraude na Terceirização",
-        "valor": number,
-        "baseLegal": "Citar Artigo da CLT, Súmula do TST e Jurisprudência dos TRTs",
-        "logica": "Explicação jurídica técnica (ex: Incidência da Súmula 331 TST combinada com Art. 9 CLT)"
+        "item": "NOME DO RISCO ESPECÍFICO (Baseado na falha real)",
+        "valor": number (VALOR REAL EM REAIS),
+        "baseLegal": "ARTIGO / LEI / SÚMULA / ACÓRDÃO",
+        "logica": "POR QUE este valor? Explique a conta jurídica (ex: reflexos de horas extras sobre o efetivo total)"
       }
     ],
     "naoConformidades": [string],
-    "impactoJuridico": "Análise profunda sobre o passivo judicial projetado na Justiça do Trabalho",
-    "recomendacoes": ["Medidas preventivas urgentes"],
-    "conclusaoExecutiva": "Resumo executivo de alto nível sobre a saúde jurídica da obra"
+    "impactoJuridico": "Análise técnica fundamentada nos fatos encontrados de falha na portaria e entrevistas",
+    "recomendacoes": [string],
+    "conclusaoExecutiva": "Análise estratégica para a diretoria sobre a segurança jurídica da unidade"
   }`;
 
   let models: string[] = ["gemini-1.5-pro", "gemini-1.5-flash", "gemini-2.0-flash"];
-  
-  try {
-    const listResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`);
-    if (listResponse.ok) {
-      const listData = await listResponse.json();
-      const availableModels = listData.models
-        ?.filter((m: any) => m.supportedGenerationMethods.includes("generateContent"))
-        ?.map((m: any) => m.name.split('/').pop()) || [];
-      if (availableModels.length > 0) models = [...new Set([...availableModels, ...models])];
-    }
-  } catch (e) {}
 
   let lastError = "";
   for (const model of models) {
@@ -100,7 +87,7 @@ export const generateAuditReport = async (auditData: any): Promise<AIAnalysisRes
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             contents: [{ parts: [{ text: prompt }] }],
-            generationConfig: { temperature: 0.1, maxOutputTokens: 3072 }
+            generationConfig: { temperature: 0.1, maxOutputTokens: 3000 }
           })
         });
 
@@ -119,5 +106,5 @@ export const generateAuditReport = async (auditData: any): Promise<AIAnalysisRes
       continue;
     }
   }
-  throw new Error(`Erro na IA: ${lastError}`);
+  throw new Error(`Falha na IA: ${lastError}`);
 };
