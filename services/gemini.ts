@@ -14,46 +14,49 @@ const robustJsonParse = (text: string): any => {
 };
 
 export const generateAuditReport = async (auditData: any): Promise<AIAnalysisResult> => {
-  // Diagnóstico e Captura de Chave de API (Tolerância Máxima)
   const apiKey = import.meta.env.VITE_GEMINI_API_KEY || 
                  import.meta.env.GEMINI_API_KEY ||
                  (window as any).process?.env?.VITE_GEMINI_API_KEY || 
                  (window as any).process?.env?.GEMINI_API_KEY;
   
   if (!apiKey || apiKey === 'undefined') {
-    throw new Error("A chave da API do Gemini não foi encontrada. Certifique-se de que a variável de ambiente VITE_GEMINI_API_KEY está configurada na Vercel.");
+    throw new Error("A chave da API do Gemini não foi encontrada.");
   }
 
-  // PREPARAÇÃO DE DADOS RICOS (Foco em Não Conformidades)
   const itensComFalha = auditData.respostas_check
     ?.filter((r: any) => r.resposta === 'nao' || r.resposta === 'parcial')
     ?.map((r: any) => `- ITEM: ${r.pergunta}\n  STATUS: ${r.resposta.toUpperCase()}\n  OBSERVAÇÃO: ${r.obs}`)
-    .join('\n') || "Nenhum desvio crítico identificado.";
+    .join('\n') || "Nenhum desvio crítico encontrado nos itens de checklist.";
 
   const resumoEntrevistas = auditData.entrevistas
-    ?.map((e: any) => `- ${e.funcao} (${e.empresa}): ${e.respostas.filter((r: any) => r.resposta === 'nao').length} divergências`)
-    .join('\n') || "Nenhuma divergência nas entrevistas.";
+    ?.map((e: any) => `- ${e.funcao} (${e.empresa}): ${e.respostas.filter((r: any) => r.resposta === 'nao').length} divergências encontradas entre depoimento e documentação.`)
+    .join('\n') || "Sem divergências críticas nas entrevistas amostrais.";
 
-  const prompt = `ATUE COMO UM AUDITOR TÉCNICO E JURÍDICO DA UNITA ENGENHARIA.
+  const prompt = `ATUE COMO UM CONSULTOR JURÍDICO TRABALHISTA SÊNIOR E AUDITOR FORENSE.
   
-  DADOS REAIS DA AUDITORIA HOJE:
+  DADOS DO CANTEIRO:
   OBRA: ${auditData.obra}
-  EFETIVO TOTAL: ${auditData.amostragem?.total_efetivo}
-  QUARTEIRIZAÇÃO IRREGULAR IDENTIFICADA? ${auditData.amostragem?.quarteirizacao_irregular ? 'SIM' : 'NÃO'}
+  EFETIVO TOTAL EM CAMPO: ${auditData.amostragem?.total_efetivo}
+  QUARTEIRIZAÇÃO IRREGULAR (SUB-SUBCONTRATAÇÃO): ${auditData.amostragem?.quarteirizacao_irregular ? 'IDENTIFICADA (ALTÍSSIMO RISCO)' : 'NÃO DETECTADA'}
   
-  DESVIOS ENCONTRADOS (ITENS NÃO CONFORMES):
+  EVIDÊNCIAS DE CAMPO:
   ${itensComFalha}
   
-  RESUMO DAS ENTREVISTAS:
+  CONFLITOS EM ENTREVISTAS:
   ${resumoEntrevistas}
   
-  MISSÃO: Interprete os DESVIOS acima e gere uma MEMÓRIA DE CÁLCULO DE RISCO FINANCEIRO.
+  MISSÃO: Realizar análise de RISCO JURÍDICO TRABALHISTA e PROJETAR PASSIVO FINANCEIRO OCULTO.
   
-  REGRAS DE OURO:
-  1. Para cada DESVIO encontrado, procure a multa correspondente na CLT ou nas NRs (ex: NR-18, NR-35).
-  2. Calcule o valor da multa considerando o número de funcionários expostos e a gravidade (Súmula 331 TST / Normas do MTE).
-  3. Seja específico: cite o Artigo, a NR e a Jurisprudência do TRT que fundamenta o risco.
-  4. NÃO gere textos genéricos. Se o usuário marcou "Não Conforme" em um item de EPI, fale especificamente de NR-06.
+  DIRETRIZES JURÍDICAS OBRIGATÓRIAS:
+  1. CLT E FRAUDE: Interprete falhas de controle (catracas, registros) como indícios de fraude à legislação tributária e trabalhista (Art. 9º da CLT).
+  2. VÍNCULO E SUBORDINAÇÃO: Avalie o risco de reconhecimento de vínculo direto com a Unità (Art. 2º e 3º da CLT).
+  3. RESPONSABILIDADE: Fundamente o risco na Súmula 331 do TST. Fale sobre Responsabilidade Subsidiária e Solidária.
+  4. JURISPRUDÊNCIA: Cite acórdãos dos TRTs e decisões do TST sobre quarteirização ilícita e precarização do trabalho.
+  5. CÁLCULO DE PASSIVO: Não calcule apenas MULTAS. Calcule o PASSIVO PROJETADO (FGTS, Multa 40%, 13º, Férias + 1/3, Reflexos em DSR e possíveis Indenizações por Danos Morais Coletivos).
+  6. BASE LEGAL: Use CLT (Arts 9, 74, 467, 477, 818), Súmulas do TST e Normas Regulamentadoras apenas como suporte operacional.
+  
+  REGRAS DE CÁLCULO:
+  - Considere o Efetivo Total (${auditData.amostragem?.total_efetivo}) na projeção do risco, pois uma falha sistêmica afeta a todos.
   
   FORMATO JSON OBRIGATÓRIO:
   {
@@ -63,20 +66,19 @@ export const generateAuditReport = async (auditData: any): Promise<AIAnalysisRes
     "exposicaoFinanceira": number,
     "detalhamentoCalculo": [
       {
-        "item": "Título do Risco",
+        "item": "Ex: Risco de Vínculo Empregatício ou Fraude na Terceirização",
         "valor": number,
-        "baseLegal": "Artigo/NR/Súmula específica",
-        "logica": "Por que este valor? (ex: Multa de R$ X por funcionário conforme NR-Y)"
+        "baseLegal": "Citar Artigo da CLT, Súmula do TST e Jurisprudência dos TRTs",
+        "logica": "Explicação jurídica técnica (ex: Incidência da Súmula 331 TST combinada com Art. 9 CLT)"
       }
     ],
     "naoConformidades": [string],
-    "impactoJuridico": "Análise técnica fundamentada",
-    "recomendacoes": [string],
-    "conclusaoExecutiva": "Resumo estratégico"
+    "impactoJuridico": "Análise profunda sobre o passivo judicial projetado na Justiça do Trabalho",
+    "recomendacoes": ["Medidas preventivas urgentes"],
+    "conclusaoExecutiva": "Resumo executivo de alto nível sobre a saúde jurídica da obra"
   }`;
 
-  // Estratégia de Auto-Descoberta de Modelos
-  let models: string[] = ["gemini-1.5-flash", "gemini-1.5-pro"];
+  let models: string[] = ["gemini-1.5-pro", "gemini-1.5-flash", "gemini-2.0-flash"];
   
   try {
     const listResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`);
@@ -98,7 +100,7 @@ export const generateAuditReport = async (auditData: any): Promise<AIAnalysisRes
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             contents: [{ parts: [{ text: prompt }] }],
-            generationConfig: { temperature: 0.1, maxOutputTokens: 2048 }
+            generationConfig: { temperature: 0.1, maxOutputTokens: 3072 }
           })
         });
 
@@ -110,7 +112,6 @@ export const generateAuditReport = async (auditData: any): Promise<AIAnalysisRes
 
         const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
         if (!text) continue;
-
         return robustJsonParse(text);
       }
     } catch (err: any) {
@@ -118,6 +119,5 @@ export const generateAuditReport = async (auditData: any): Promise<AIAnalysisRes
       continue;
     }
   }
-
-  throw new Error(`Falha na IA: ${lastError}`);
+  throw new Error(`Erro na IA: ${lastError}`);
 };
