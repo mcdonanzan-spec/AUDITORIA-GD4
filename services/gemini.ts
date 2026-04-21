@@ -93,7 +93,12 @@ export const generateAuditReport = async (auditData: any): Promise<AIAnalysisRes
 
         const data = await response.json();
         if (!response.ok) {
-          lastError = data.error?.message || response.statusText;
+          const errorMsg = data.error?.message || "";
+          if (errorMsg.toLowerCase().includes("quota") || response.status === 429) {
+            lastError = "LIMITE_ATINGIDO"; // Flag para o frontend
+            continue;
+          }
+          lastError = errorMsg || response.statusText;
           continue;
         }
 

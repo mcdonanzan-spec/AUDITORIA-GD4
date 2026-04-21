@@ -366,7 +366,9 @@ const AuditWizard: React.FC<AuditWizardProps> = ({ obras, currentUser, onAuditCo
       
       let errorMessage = "Falha no processamento. Tente novamente.";
       
-      if (err.message?.includes("Configuração da API Key") || err.message?.includes("API_KEY")) {
+      if (err.message === "LIMITE_ATINGIDO") {
+        errorMessage = "O motor de análise atingiu o limite de requisições do plano gratuito. Por favor, aguarde cerca de 30 a 60 segundos e tente enviar novamente.";
+      } else if (err.message?.includes("Configuração da API Key") || err.message?.includes("API_KEY")) {
         errorMessage = "A chave da API do Gemini não foi configurada corretamente. Entre em contato com o administrador.";
       } else if (err.message?.includes("503") || err.message?.includes("UNAVAILABLE") || err.message?.includes("high demand")) {
         errorMessage = "O serviço de IA está temporariamente sobrecarregado devido à alta demanda. Por favor, aguarde alguns segundos e tente enviar novamente.";
