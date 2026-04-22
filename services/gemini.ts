@@ -89,42 +89,54 @@ export const generateAuditReport = async (auditData: any): Promise<AIAnalysisRes
     
     // Tenta cada modelo com a chave atual
     for (const model of models) {
-      try {
-        console.log(`Tentando IA: Modelo ${model} com Chave Index ${currentKeyIndex % apiKeys.length}`);
-        
-        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            contents: [{ parts: [{ text: prompt }] }],
-            generationConfig: { temperature: 0.1, maxOutputTokens: 2000 }
-          })
-        });
-
-        const data = await response.json();
-        
-        if (!response.ok) {
-          const errorMsg = data.error?.message || "";
+      for (const apiVer of ['v1', 'v1beta']) {
+        try {
+          console.log(`Tentando IA: Modelo ${model} (${apiVer}) com Chave Index ${currentKeyIndex % apiKeys.length}`);
           
-          // Se for erro de cota (429), pula para a PRÓXIMA CHAVE e interrompe os modelos para esta chave
-          if (response.status === 429 || errorMsg.toLowerCase().includes("quota")) {
-            console.warn(`Chave ${currentKeyIndex % apiKeys.length} atingiu o limite. Rotacionando...`);
-            currentKeyIndex++; // Rotaciona globalmente
-            break; // Sai do loop de modelos desta chave e tenta a próxima chave
+          const response = await fetch(`https://generativelanguage.googleapis.com/${apiVer}/models/${model}:generateContent?key=${apiKey}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              contents: [{ parts: [{ text: prompt }] }],
+              generationConfig: { temperature: 0.1, maxOutputTokens: 2000 }
+            })
+          });
+
+          const data = await response.json();
+          
+          if (!response.ok) {
+            const errorMsg = data.error?.message || "";
+            
+            // Se for erro de NotFound (404), pula e tenta próxima versão da API (v1beta/v1)
+            if (response.status === 404) {
+              lastError = errorMsg || "Modelo não encontrado (404)";
+              continue;
+            }
+
+            // Se for erro de cota (429), pula para a PRÓXIMA CHAVE e interrompe os modelos para esta chave
+            if (response.status === 429 || errorMsg.toLowerCase().includes("quota")) {
+              console.warn(`Chave ${currentKeyIndex % apiKeys.length} atingiu o limite. Rotacionando...`);
+              currentKeyIndex++; // Rotaciona globalmente
+              break; // Sai do loop apiVer
+            }
+            
+            lastError = errorMsg || response.statusText;
+            continue; // Tenta outro modelo com a mesma chave (ex: erro 500)
           }
+
+          const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
+          if (!text) continue;
           
-          lastError = errorMsg || response.statusText;
-          continue; // Tenta outro modelo com a mesma chave (ex: erro 500)
+          return robustJsonParse(text);
+
+        } catch (err: any) {
+          lastError = err.message;
+          continue;
         }
-
-        const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
-        if (!text) continue;
-        
-        return robustJsonParse(text);
-
-      } catch (err: any) {
-        lastError = err.message;
-        continue;
+      }
+      // Se tiver rotacionado de chave no bloco acima por Cota (Break), precisamos quebrar esse loop de modelo também
+      if (lastError === "LIMITE_ATINGIDO" || lastError.toLowerCase().includes("quota")) {
+         break;
       }
     }
   }
