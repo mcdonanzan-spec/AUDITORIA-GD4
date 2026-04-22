@@ -55,8 +55,11 @@ const AuditWizard: React.FC<AuditWizardProps> = ({ obras, currentUser, onAuditCo
   const [entrevistas, setEntrevistas] = React.useState<EntrevistaAmostral[]>([]);
 
   // PERSISTÊNCIA DE RASCUNHO
+  const isLoaded = React.useRef(false);
+
   React.useEffect(() => {
     // Reset state when obra changes to avoid cross-contamination
+    isLoaded.current = false;
     setRespostas([]);
     setEntrevistas([]);
     setEquipeCampo('');
@@ -76,27 +79,38 @@ const AuditWizard: React.FC<AuditWizardProps> = ({ obras, currentUser, onAuditCo
           if (parsed.equipeGd4) setEquipeGd4(parsed.equipeGd4);
           if (parsed.subcontratacaoRegular !== undefined) setSubcontratacaoRegular(parsed.subcontratacaoRegular);
           if (parsed.currentBlockIdx !== undefined) setCurrentBlockIdx(parsed.currentBlockIdx);
+          console.log(`Rascunho carregado para a obra: ${selectedObra}`);
         } catch (err) {
           console.error("Erro ao carregar rascunho:", err);
         }
       }
+      
+      // Permitir salvamento após um pequeno delay para garantir que o estado foi atualizado
+      setTimeout(() => {
+        isLoaded.current = true;
+      }, 150);
     }
   }, [selectedObra]);
 
   React.useEffect(() => {
-    if (selectedObra && (respostas.length > 0 || entrevistas.length > 0 || equipeCampo || equipeGd4)) {
-      try {
-        localStorage.setItem(`audit_draft_${selectedObra}`, JSON.stringify({
-          respostas,
-          entrevistas,
-          equipeCampo,
-          equipeGd4,
-          subcontratacaoRegular,
-          currentBlockIdx,
-          timestamp: Date.now()
-        }));
-      } catch (err) {
-        console.warn("Falha ao salvar rascunho (provavelmente limite de armazenamento):", err);
+    // Só salva se o carregamento inicial terminou e temos uma obra selecionada
+    if (isLoaded.current && selectedObra) {
+      const hasData = respostas.length > 0 || entrevistas.length > 0 || equipeCampo || equipeGd4 || currentBlockIdx > 0;
+      
+      if (hasData) {
+        try {
+          localStorage.setItem(`audit_draft_${selectedObra}`, JSON.stringify({
+            respostas,
+            entrevistas,
+            equipeCampo,
+            equipeGd4,
+            subcontratacaoRegular,
+            currentBlockIdx,
+            timestamp: Date.now()
+          }));
+        } catch (err) {
+          console.warn("Falha ao salvar rascunho (provavelmente limite de armazenamento):", err);
+        }
       }
     }
   }, [respostas, entrevistas, selectedObra, equipeCampo, equipeGd4, subcontratacaoRegular, currentBlockIdx]);
@@ -367,7 +381,7 @@ const AuditWizard: React.FC<AuditWizardProps> = ({ obras, currentUser, onAuditCo
       let errorMessage = "Falha no processamento. Tente novamente.";
       
       if (err.message === "LIMITE_ATINGIDO") {
-        errorMessage = "O motor de análise atingiu o limite de requisições do plano gratuito. Por favor, aguarde cerca de 30 a 60 segundos e tente enviar novamente.";
+        errorMessage = "O motor de análise atingiu o limite temporário de processamento. Por favor, aguarde cerca de 30 a 60 segundos e tente enviar novamente.";
       } else if (err.message?.includes("Configuração da API Key") || err.message?.includes("API_KEY")) {
         errorMessage = "A chave da API do Gemini não foi configurada corretamente. Entre em contato com o administrador.";
       } else if (err.message?.includes("503") || err.message?.includes("UNAVAILABLE") || err.message?.includes("high demand")) {
@@ -603,7 +617,7 @@ const AuditWizard: React.FC<AuditWizardProps> = ({ obras, currentUser, onAuditCo
             </div>
           </div>
           <div className="flex flex-col md:flex-row gap-3 w-full md:w-auto">
-            {error === "O motor de análise atingiu o limite de requisições do plano gratuito. Por favor, aguarde cerca de 30 a 60 segundos e tente enviar novamente." && (
+            {error === "O motor de análise atingiu o limite temporário de processamento. Por favor, aguarde cerca de 30 a 60 segundos e tente enviar novamente." && (
                <button 
                 onClick={() => handleSubmit()} 
                 className="flex-1 md:flex-none bg-[#F05A22] text-white px-6 py-2 rounded-xl font-black text-[10px] uppercase border-2 border-slate-900 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:bg-slate-900 transition-all"

@@ -1,6 +1,7 @@
 
 import { AIAnalysisResult } from "../types";
 
+// v1.0.3 - Implementação de Pool de Chaves e Otimização de Performance
 const robustJsonParse = (text: string): any => {
   try {
     const start = text.indexOf('{');
@@ -13,14 +14,22 @@ const robustJsonParse = (text: string): any => {
   }
 };
 
+// Indexador global para persistir entre chamadas na mesma sessão
+let currentKeyIndex = 0;
+
 export const generateAuditReport = async (auditData: any): Promise<AIAnalysisResult> => {
-  const apiKey = import.meta.env.VITE_GEMINI_API_KEY || 
-                 import.meta.env.GEMINI_API_KEY ||
-                 (window as any).process?.env?.VITE_GEMINI_API_KEY || 
-                 (window as any).process?.env?.GEMINI_API_KEY;
+  const rawKeys = import.meta.env.VITE_GEMINI_API_KEY || 
+                  import.meta.env.GEMINI_API_KEY || "";
   
-  if (!apiKey || apiKey === 'undefined') {
-    throw new Error("A chave da API do Gemini não foi encontrada.");
+  // Limpa e separa as chaves por vírgula ou espaço, removendo aspas residuais
+  const apiKeys = rawKeys
+    .replace(/["']/g, "")
+    .split(/[, ]+/)
+    .map((k: string) => k.trim())
+    .filter((k: string) => k.length > 10);
+  
+  if (apiKeys.length === 0) {
+    throw new Error("A chave da API do Gemini não foi encontrada no ambiente.");
   }
 
   // Captura detalhada de falhas para a IA
@@ -51,65 +60,74 @@ export const generateAuditReport = async (auditData: any): Promise<AIAnalysisRes
   SUA MISSÃO: Realizar uma análise técnica individualizada de cada falha acima. NÃO USE TEXTOS GENÉRICOS OU EXEMPLOS.
   
   REGRAS DE OURO:
-  1. MEMÓRIA DE CÁLCULO: Para cada desvio, calcule o risco real. Ex: Falta de registro de ponto para 100 pessoas não custa R$ 50,00. Custa milhares (R$ 50.000+). Use valores de mercado (settlements).
+  1. MEMÓRIA DE CÁLCULO: Para cada desvio, calcule o risco real. Use valores de mercado (settlements).
   2. BASE LEGAL: Cite CLT, Artigos (9, 2, 3, 74, 467, 477), Súmulas do TST (331) e Jurisprudência dos TRTs.
   3. SENSIBILIDADE DO SCORE: Se houver "Quarteirização Irregular" ou "Falta de registro de ponto", o indiceGeral NÃO pode ser acima de 50%.
-  4. INTERPRETAÇÃO: Se o auditor disse "porteiro libera com a facial", interprete como falha de controle de jornada e segurança orgânica, aumentando o risco de vínculo.
   
   ESTRUTURA DO JSON (OBRIGATÓRIO):
   {
-    "indiceGeral": number (deve refletir a realidade dos erros),
+    "indiceGeral": number,
     "classificacao": "REGULAR" | "ATENÇÃO" | "CRÍTICA",
     "riscoJuridico": "BAIXO" | "MÉDIO" | "ALTO" | "CRÍTICO",
-    "exposicaoFinanceira": number (TOTAL DO RISTO PROJETADO),
-    "detalhamentoCalculo": [
-      {
-        "item": "NOME DO RISCO ESPECÍFICO (Baseado na falha real)",
-        "valor": number (VALOR REAL EM REAIS),
-        "baseLegal": "ARTIGO / LEI / SÚMULA / ACÓRDÃO",
-        "logica": "POR QUE este valor? Explique a conta jurídica (ex: reflexos de horas extras sobre o efetivo total)"
-      }
-    ],
+    "exposicaoFinanceira": number,
+    "detalhamentoCalculo": [{ "item": string, "valor": number, "baseLegal": string, "logica": string }],
     "naoConformidades": [string],
-    "impactoJuridico": "Análise técnica fundamentada nos fatos encontrados de falha na portaria e entrevistas",
+    "impactoJuridico": string,
     "recomendacoes": [string],
-    "conclusaoExecutiva": "Análise estratégica para a diretoria sobre a segurança jurídica da unidade"
+    "conclusaoExecutiva": string
   }`;
 
-  let models: string[] = ["gemini-1.5-pro", "gemini-1.5-flash", "gemini-2.0-flash"];
-
+  // Lista otimizada de modelos (Flash é mais resiliente à cota)
+  const models = ["gemini-1.5-flash", "gemini-2.0-flash", "gemini-1.5-pro"];
+  const maxKeyAttempts = apiKeys.length;
+  
   let lastError = "";
-  for (const model of models) {
-    try {
-      for (const apiVer of ['v1beta', 'v1']) {
-        const response = await fetch(`https://generativelanguage.googleapis.com/${apiVer}/models/${model}:generateContent?key=${apiKey}`, {
+
+  // Loop de tentativa por chave
+  for (let keyAttempt = 0; keyAttempt < maxKeyAttempts; keyAttempt++) {
+    const apiKey = apiKeys[currentKeyIndex % apiKeys.length];
+    
+    // Tenta cada modelo com a chave atual
+    for (const model of models) {
+      try {
+        console.log(`Tentando IA: Modelo ${model} com Chave Index ${currentKeyIndex % apiKeys.length}`);
+        
+        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             contents: [{ parts: [{ text: prompt }] }],
-            generationConfig: { temperature: 0.1, maxOutputTokens: 3000 }
+            generationConfig: { temperature: 0.1, maxOutputTokens: 2000 }
           })
         });
 
         const data = await response.json();
+        
         if (!response.ok) {
           const errorMsg = data.error?.message || "";
-          if (errorMsg.toLowerCase().includes("quota") || response.status === 429) {
-            lastError = "LIMITE_ATINGIDO"; // Flag para o frontend
-            continue;
+          
+          // Se for erro de cota (429), pula para a PRÓXIMA CHAVE e interrompe os modelos para esta chave
+          if (response.status === 429 || errorMsg.toLowerCase().includes("quota")) {
+            console.warn(`Chave ${currentKeyIndex % apiKeys.length} atingiu o limite. Rotacionando...`);
+            currentKeyIndex++; // Rotaciona globalmente
+            break; // Sai do loop de modelos desta chave e tenta a próxima chave
           }
+          
           lastError = errorMsg || response.statusText;
-          continue;
+          continue; // Tenta outro modelo com a mesma chave (ex: erro 500)
         }
 
         const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
         if (!text) continue;
+        
         return robustJsonParse(text);
+
+      } catch (err: any) {
+        lastError = err.message;
+        continue;
       }
-    } catch (err: any) {
-      lastError = err.message;
-      continue;
     }
   }
-  throw new Error(lastError);
+
+  throw new Error(lastError === "LIMITE_ATINGIDO" || lastError.includes("quota") ? "LIMITE_ATINGIDO" : lastError);
 };
