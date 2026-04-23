@@ -391,7 +391,7 @@ const AuditWizard: React.FC<AuditWizardProps> = ({ obras, currentUser, onAuditCo
       } else if (err.message?.includes("row size limit") || err.message?.includes("Payload Too Large") || err.status === 413) {
         errorMessage = "O relatório é muito grande para ser salvo. Tente reduzir o número de fotos ou o tamanho das observações.";
       } else if (err.message) {
-        errorMessage = `Erro: ${err.message}`;
+        errorMessage = err.message.substring(0, 300);
       }
       
       setError(errorMessage);
