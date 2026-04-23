@@ -1,12 +1,10 @@
 
 import { AIAnalysisResult } from "../types";
 
-// ============================================================
-// v3.0.0 - Implementação estável com fallback total
-// ============================================================
+// v3.1.0 - Pool de Chaves com Backoff Inteligente
+// Suporta N chaves via VITE_GEMINI_API_KEY separadas por vírgula
 
 const robustJsonParse = (text: string): any => {
-  // Tenta extrair JSON mesmo que haja texto ao redor (markdown code fences, etc.)
   const cleaned = text.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
   try {
     const start = cleaned.indexOf('{');
@@ -19,47 +17,51 @@ const robustJsonParse = (text: string): any => {
   }
 };
 
-export const generateAuditReport = async (auditData: any): Promise<AIAnalysisResult> => {
-  
-  // ---- LEITURA DA CHAVE DE API ----
-  // Estratégia multi-fonte para funcionar em qualquer ambiente
-  // (Vite dev, Vercel preview, Vercel production)
-  let rawKey = "";
-  
-  try {
-    // import.meta.env é a fonte primária para variáveis VITE_ no Vite
-    rawKey = import.meta.env.VITE_GEMINI_API_KEY || "";
-  } catch(_) { /* não disponível */ }
-  
-  if (!rawKey) {
+const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
+// Lê as chaves da variável de ambiente, suportando múltiplas separadas por vírgula
+const getApiKeys = (): string[] => {
+  let raw = "";
+  try { raw = import.meta.env.VITE_GEMINI_API_KEY || ""; } catch (_) {}
+  if (!raw) {
     try {
-      // process.env é injetado pelo bloco define do vite.config.ts
-      rawKey = (process as any).env?.VITE_GEMINI_API_KEY || 
-               (process as any).env?.GEMINI_API_KEY || 
-               (process as any).env?.API_KEY || "";
-    } catch(_) { /* não disponível */ }
+      raw = (process as any).env?.VITE_GEMINI_API_KEY ||
+            (process as any).env?.GEMINI_API_KEY ||
+            (process as any).env?.API_KEY || "";
+    } catch (_) {}
   }
-  
-  const apiKeys = rawKey
+  const keys = String(raw)
     .replace(/["'`]/g, "")
     .split(/[,\s]+/)
     .map((k: string) => k.trim())
     .filter((k: string) => k.length > 10);
+  console.log(`[Gemini] ${keys.length} chave(s) carregada(s).`);
+  return keys;
+};
 
-  console.log(`[Gemini] Chaves encontradas: ${apiKeys.length}`);
-  
+// Endpoints em ordem de prioridade (modelos gratuitos e estáveis em 2025)
+const ENDPOINTS = [
+  "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent",
+  "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent",
+  "https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent",
+  "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-lite:generateContent",
+];
+
+export const generateAuditReport = async (auditData: any): Promise<AIAnalysisResult> => {
+  const apiKeys = getApiKeys();
+
   if (apiKeys.length === 0) {
     throw new Error(
-      "CHAVE_AUSENTE: A variável VITE_GEMINI_API_KEY não foi encontrada. " +
-      "Acesse Vercel > Settings > Environment Variables e configure a chave."
+      "Chave da API não configurada. Acesse Vercel > Settings > Environment Variables " +
+      "e configure VITE_GEMINI_API_KEY com suas chaves separadas por vírgula."
     );
   }
 
-  // ---- CONSTRUÇÃO DO PROMPT ----
+  // ----- MONTAGEM DO PROMPT -----
   const falhasCriticas = auditData.respostas_check
     ?.filter((r: any) => r.resposta === 'nao' || r.resposta === 'parcial')
-    ?.map((r: any) => `• ${r.pergunta}: ${r.resposta.toUpperCase()} (Obs: ${r.obs || 'nenhuma'})`)
-    .join('\n') || "Nenhuma falha crítica registrada.";
+    ?.map((r: any) => `• ${r.pergunta}: ${r.resposta.toUpperCase()} - Obs: ${r.obs || 'nenhuma'}`)
+    .join('\n') || "Nenhuma falha crítica.";
 
   const divergencias = auditData.entrevistas
     ?.map((e: any) => {
@@ -68,12 +70,12 @@ export const generateAuditReport = async (auditData: any): Promise<AIAnalysisRes
       return `• ${e.funcao} (${e.empresa}): NÃO tem → ${falhas.map((f: any) => f.pergunta).join(', ')}`;
     })
     .filter(Boolean)
-    .join('\n') || "Sem divergências nas entrevistas.";
+    .join('\n') || "Sem divergências.";
 
   const prompt = `Você é um auditor forense sênior especializado em Direito do Trabalho na construção civil brasileira.
 
-OBRA AUDITADA: ${auditData.obra}
-EFETIVO: ${auditData.amostragem?.total_efetivo || 'não informado'} trabalhadores
+OBRA: ${auditData.obra}
+EFETIVO: ${auditData.amostragem?.total_efetivo || '?'} trabalhadores
 
 FALHAS NO CHECKLIST:
 ${falhasCriticas}
@@ -81,37 +83,29 @@ ${falhasCriticas}
 DIVERGÊNCIAS NAS ENTREVISTAS:
 ${divergencias}
 
-INSTRUÇÕES:
-- Calcule riscos financeiros reais baseados no efetivo e nas falhas específicas
+REGRAS:
+- Calcule riscos financeiros reais baseados no efetivo e nas falhas específicas encontradas
 - Cite CLT (arts. 9, 74, 467, 477), Súmulas TST 331, NR-18 quando aplicável
-- Se houver quarteirização irregular ou ausência de registro de ponto: indiceGeral <= 50
-- Seja específico e forense, não use textos genéricos
+- Quarteirização irregular ou ausência de registro de ponto: indiceGeral OBRIGATORIAMENTE <= 50
+- Seja forense e específico — use os dados reais da obra, não texto genérico
 
-RETORNE APENAS O JSON (sem markdown, sem texto antes ou depois):
-{"indiceGeral":number,"classificacao":"REGULAR"|"ATENÇÃO"|"CRÍTICA","riscoJuridico":"BAIXO"|"MÉDIO"|"ALTO"|"CRÍTICO","exposicaoFinanceira":number,"detalhamentoCalculo":[{"item":string,"valor":number,"baseLegal":string,"logica":string}],"naoConformidades":[string],"impactoJuridico":string,"recomendacoes":[string],"conclusaoExecutiva":string}`;
+RETORNE SOMENTE O JSON (sem markdown, sem texto extra):
+{"indiceGeral":85,"classificacao":"REGULAR","riscoJuridico":"MÉDIO","exposicaoFinanceira":150000,"detalhamentoCalculo":[{"item":"Exemplo","valor":50000,"baseLegal":"CLT Art. 74","logica":"Explicação"}],"naoConformidades":["item1"],"impactoJuridico":"análise","recomendacoes":["ação1"],"conclusaoExecutiva":"resumo"}`;
 
-  // ---- LISTA DE ENDPOINTS (modelos gratuitos disponíveis em 2025) ----
-  const endpoints = [
-    "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent",
-    "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent",
-    "https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent",
-    "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-lite:generateContent",
-  ];
-
+  // ----- LOOP PRINCIPAL: tenta cada chave × cada endpoint -----
   const errors: string[] = [];
 
-  // ---- LOOP PRINCIPAL: tenta cada chave × cada endpoint ----
   for (let ki = 0; ki < apiKeys.length; ki++) {
     const key = apiKeys[ki];
-    
-    for (const endpoint of endpoints) {
-      const modelName = endpoint.split('/models/')[1]?.split(':')[0] ?? endpoint;
-      
+    let quotaHit = false;
+
+    for (const endpoint of ENDPOINTS) {
+      const modelName = endpoint.split('/models/')[1]?.split(':')[0] ?? "unknown";
+
       try {
-        const url = `${endpoint}?key=${key}`;
-        console.log(`[Gemini] Tentando: ${modelName} | Chave ${ki + 1}/${apiKeys.length}`);
-        
-        const res = await fetch(url, {
+        console.log(`[Gemini] ${modelName} | Chave ${ki + 1}/${apiKeys.length}`);
+
+        const res = await fetch(`${endpoint}?key=${key}`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -127,24 +121,24 @@ RETORNE APENAS O JSON (sem markdown, sem texto antes ou depois):
         const json = await res.json();
 
         if (!res.ok) {
-          const msg = json?.error?.message || res.statusText;
-          const lowerMsg = msg.toLowerCase();
-          
-          // Erros de cota → tenta próxima chave, não próximo modelo
-          if (res.status === 429 || lowerMsg.includes("quota") || lowerMsg.includes("rate limit")) {
-            errors.push(`Chave ${ki+1} - Cota esgotada`);
-            break; // Sai do loop de endpoints e tenta próxima chave
+          const msg = json?.error?.message || res.statusText || `HTTP ${res.status}`;
+          const lower = msg.toLowerCase();
+
+          if (res.status === 429 || lower.includes("quota") || lower.includes("rate limit")) {
+            errors.push(`Chave ${ki + 1}: cota esgotada`);
+            quotaHit = true;
+            // Aguarda 2s antes de tentar próxima chave
+            await sleep(2000);
+            break;
           }
-          
-          // Modelo não existe → tenta próximo endpoint
-          if (res.status === 404 || lowerMsg.includes("not found") || lowerMsg.includes("not supported")) {
-            errors.push(`${modelName}: não disponível`);
+
+          if (res.status === 404 || lower.includes("not found") || lower.includes("not supported")) {
+            // Modelo não disponível neste endpoint — tenta o próximo silenciosamente
             continue;
           }
 
-          // Chave inválida → tenta próxima chave
-          if (res.status === 400 || res.status === 401 || res.status === 403 || lowerMsg.includes("api key")) {
-            errors.push(`Chave ${ki+1}: inválida (${res.status})`);
+          if (res.status === 400 || res.status === 401 || res.status === 403 || lower.includes("api key") || lower.includes("invalid")) {
+            errors.push(`Chave ${ki + 1}: inválida (HTTP ${res.status})`);
             break;
           }
 
@@ -152,30 +146,38 @@ RETORNE APENAS O JSON (sem markdown, sem texto antes ou depois):
           continue;
         }
 
-        // Sucesso!
         const text = json.candidates?.[0]?.content?.parts?.[0]?.text;
         if (!text) {
           errors.push(`${modelName}: resposta vazia`);
           continue;
         }
 
-        console.log(`[Gemini] ✅ Sucesso: ${modelName} com chave ${ki + 1}`);
+        console.log(`[Gemini] ✅ Sucesso: ${modelName} | Chave ${ki + 1}`);
         return robustJsonParse(text);
 
-      } catch (networkErr: any) {
-        errors.push(`${modelName}: erro de rede - ${networkErr.message}`);
+      } catch (netErr: any) {
+        errors.push(`${modelName}: ${netErr.message}`);
         continue;
       }
     }
+
+    if (!quotaHit) {
+      // Se não estourou cota, significa que a chave é inválida ou todos os modelos falharam
+      // Não tenta as próximas chaves com o mesmo erro
+      break;
+    }
   }
 
-  // ---- Montagem do erro final para diagnóstico ----
-  const isQuotaError = errors.some(e => e.includes("Cota") || e.includes("quota"));
-  const isKeyError = errors.some(e => e.includes("inválida"));
-  
-  console.error("[Gemini] Todos endpoints falharam:", errors);
-  
-  if (isQuotaError) throw new Error("LIMITE_ATINGIDO");
-  if (isKeyError) throw new Error(`Chave de API inválida. Verifique a variável VITE_GEMINI_API_KEY na Vercel. Erros: ${errors.join(' | ')}`);
-  throw new Error(`Falha ao conectar com a IA. Erros: ${errors.join(' | ')}`);
+  // ----- Diagnóstico do erro final -----
+  console.error("[Gemini] Falhou em todos os endpoints:", errors);
+
+  const hasQuota = errors.some(e => e.includes("cota"));
+  const hasInvalid = errors.some(e => e.includes("inválida"));
+
+  if (hasQuota) throw new Error("LIMITE_ATINGIDO");
+  if (hasInvalid) throw new Error(
+    `Chave de API inválida. Gere novas chaves em aistudio.google.com e atualize a variável VITE_GEMINI_API_KEY na Vercel. [${errors.join(' | ')}]`
+  );
+
+  throw new Error(`Falha na conexão com a IA: ${errors.join(' | ')}`);
 };
