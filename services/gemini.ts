@@ -166,28 +166,33 @@ export const generateAuditReport = async (auditData: any): Promise<AIAnalysisRes
     })
     .filter(Boolean).join('\n') || "Sem divergências.";
 
-  const prompt = `Você atua estritamente como um Auditor Titular do Ministério do Trabalho e Emprego (MTE) e Perito Forense em Direito do Trabalho em obras da Construção Civil Brasileira.
-Sua tarefa é gerar um laudo de autuação e contingenciamento de passivo trabalhista extremamente minucioso e rigoroso.
+  const prompt = `Você atua estritamente como um Auditor Fiscal do Ministério do Trabalho e Emprego (MTE) / Perito Forense em Direito do Trabalho em obras da Construção Civil.
+Sua tarefa é gerar um laudo rigoroso, baseado ESTRITAMENTE na legislação brasileira VIGENTE (atualizações NR-18, Nova CLT, Portarias MTE atuais). É TERMINANTEMENTE PROIBIDO inventar ou alucinar bases legais, incisos ou itens de normas que não existem.
 
 OBRA AUDITADA: ${auditData.obra}
 TOTAL DE TRABALHADORES (EFETIVO): ${auditData.amostragem?.total_efetivo || 'desconhecido'}
 
 ======= INFRAÇÕES E VESTÍGIOS ENCONTRADOS EM CAMPO =======
-O fiscal de campo inspecionou as seguintes falhas (NÃO CONFORMIDADES):
 ${falhas}
 
-======= DEPOIMENTOS E ENTREVISTAS (PROVA TESTEMUNHAL) =======
+======= DEPOIMENTOS E ENTREVISTAS =======
 ${divergencias}
 
-======= DIRETRIZES DA PERÍCIA (OBRIGATÓRIO) =======
-1. ANÁLISE EXAUSTIVA: Você DEVE citar, analisar e penalizar TODAS as infrações relatadas acima, UMA A UMA, sem agrupar de forma genérica. Se alojamento, EPI, registro, quarteirização foram citados, todos devem ter seu risco calculado.
-2. CÁLCULO DE MULTAS E PASSIVO: No array 'detalhamentoCalculo', adicione um objeto para CADA infração. Calcule realisticamente o passivo (multas administrativas do MTE + projeção de reclamatórias trabalhistas multiplicadas pelo número de trabalhadores). Use valores de mercado.
-3. FUNDAMENTAÇÃO LEGAL: Para cada falha, seja taxativo. Cite NR-18 (Segurança na Indústria da Construção), NR-24 (Condições Sanitárias e de Conforto Trabalhistas - Alojamentos/Refeitórios), NR-06 (EPI), Artigos CLT aplicáveis (74, 467, 477, etc.), Súmula 331 do TST.
-4. ÍNDICE GERAL DE CONFORMIDADE: Nota de 0 a 100. Havendo Falha no Registro de Ponto, Fraude no Vínculo ou Quarteirização Irregular, a nota máxima possível cai drasticamente para <= 50.
-5. VÉXAME PROFISSIONAL: Baseie o linguajar no padrão de auditores de Big 4 ou Peritos da Justiça do Trabalho. ZERO TEXTO GENÉRICO, foque nas falhas pontuadas.
+======= DIRETRIZES DA PERÍCIA (OBRIGATÓRIO E CRÍTICO) =======
+1. ANÁLISE RIGOROSA E INDIVIDUAL: Analise CADA UMA das infrações passadas acima individualmente. Não pule nenhuma.
+2. ZERO ALUCINAÇÃO LEGAL (MUITO IMPORTANTE):
+   - NÃO cite itens fictícios da NR-18 (ex: 18.2.2, 18.4.1 não existem na norma atual). Use a NR-18 genérica ou NR-01 (PGR) para gestão.
+   - Súmula 331 do TST serve ÚNICA E EXCLUSIVAMENTE para Quarteirização, Terceirização e Responsabilidade Subsidiária/Solidária. Não use para "divergência de efetivo".
+   - CLT Art. 74 aplica-se APENAS ao registro de ponto de EMPREGADOS (empresas com >20 funcionários). Não se aplica a controle de acesso físico (catraca) nem a "empreiteiros/PJ". 
+   - Falta de documentação de SST remete à NR-01 (PGR, PCMSO) e e-Social.
+3. CÁLCULO DE PASSIVO REALISTA:
+   - Multas administrativas devem ser calculadas com base na Portaria MTE vigente (Valores típicos: de R$ 400 a R$ 6.000 por infração, variando por efetivo e gravidade).
+   - Passivo trabalhista (Reclamatórias) deve considerar o Risco de Vínculo Empregatício ou Danos Morais sobre o efetivo da contratada respectiva.
+   - Não chute valores de "R$ 40.000,00" por falhas simples de controle. Seja proporcional e realista.
+4. PARÂMETRO DO ÍNDICE: Nota de 0 a 100. Havendo Falha grave de Controle/Ponto, Quarteirização Irregular ou Risco de Vínculo Empregatício, a nota deve ser penalizada severamente (<= 50).
 
-RETORNE APENAS O JSON (SEM markdown, comentários, explicações ou texto extra fora das chaves) respeitando estritamente a tipagem abaixo:
-{"indiceGeral": <nota 0 a 100>,"classificacao":"REGULAR"|"ATENÇÃO"|"CRÍTICA","riscoJuridico":"BAIXO"|"MÉDIO"|"ALTO"|"CRÍTICO","exposicaoFinanceira": <soma de todos os riscos em número real>,"detalhamentoCalculo":[{"item":"<Nome específico da infração - ex: Ausência de Rouparia/Alojamento Inadequado>","valor": <numero financeiro do passivo da infração>,"baseLegal":"<NR-XX Item X / CLT Art. X>","logica":"<explicação técnica da conta considerando o efetivo da obra>"}],"naoConformidades":["<Listar todas as encontradas uma a uma>"],"impactoJuridico":"<análise técnica>","recomendacoes":["<ações de correção imediatas e mandatórias>"],"conclusaoExecutiva":"<parecer final do MTE>"}
+RETORNE APENAS O JSON (SEM markdown, comentários ou texto extra) respeitando estritamente:
+{"indiceGeral": <nota 0 a 100>,"classificacao":"REGULAR"|"ATENÇÃO"|"CRÍTICA","riscoJuridico":"BAIXO"|"MÉDIO"|"ALTO"|"CRÍTICO","exposicaoFinanceira": <soma realista>,"detalhamentoCalculo":[{"item":"<Nome da infração real encontrada>","valor": <passivo>,"baseLegal":"<Base real. Se não existir específica, cite NR-01 Gerenciamento de Riscos>","logica":"<explicação técnica da conta considerando as Portarias MTE ou TST>"}],"naoConformidades":["<Listar todas>"],"impactoJuridico":"<análise técnica>","recomendacoes":["<ações de correção>"],"conclusaoExecutiva":"<parecer final>"}
 `;
 
   // ── Construção do pool de providers ──
