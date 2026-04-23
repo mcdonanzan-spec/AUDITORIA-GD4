@@ -166,23 +166,29 @@ export const generateAuditReport = async (auditData: any): Promise<AIAnalysisRes
     })
     .filter(Boolean).join('\n') || "Sem divergências.";
 
-  const prompt = `OBRA: ${auditData.obra}
-EFETIVO: ${auditData.amostragem?.total_efetivo || '?'} trabalhadores
+  const prompt = `Você atua estritamente como um Auditor Titular do Ministério do Trabalho e Emprego (MTE) e Perito Forense em Direito do Trabalho em obras da Construção Civil Brasileira.
+Sua tarefa é gerar um laudo de autuação e contingenciamento de passivo trabalhista extremamente minucioso e rigoroso.
 
-FALHAS NO CHECKLIST:
+OBRA AUDITADA: ${auditData.obra}
+TOTAL DE TRABALHADORES (EFETIVO): ${auditData.amostragem?.total_efetivo || 'desconhecido'}
+
+======= INFRAÇÕES E VESTÍGIOS ENCONTRADOS EM CAMPO =======
+O fiscal de campo inspecionou as seguintes falhas (NÃO CONFORMIDADES):
 ${falhas}
 
-DIVERGÊNCIAS NAS ENTREVISTAS:
+======= DEPOIMENTOS E ENTREVISTAS (PROVA TESTEMUNHAL) =======
 ${divergencias}
 
-REGRAS OBRIGATÓRIAS:
-- Calcule riscos financeiros reais baseados no efetivo DESTA obra e nas falhas específicas encontradas
-- Cite CLT (arts. 9, 74, 467, 477), Súmulas TST 331, NR-18 quando aplicável
-- Quarteirização irregular ou ausência registro de ponto: indiceGeral DEVE SER <= 50
-- Use dados reais da obra — PROIBIDO texto genérico
+======= DIRETRIZES DA PERÍCIA (OBRIGATÓRIO) =======
+1. ANÁLISE EXAUSTIVA: Você DEVE citar, analisar e penalizar TODAS as infrações relatadas acima, UMA A UMA, sem agrupar de forma genérica. Se alojamento, EPI, registro, quarteirização foram citados, todos devem ter seu risco calculado.
+2. CÁLCULO DE MULTAS E PASSIVO: No array 'detalhamentoCalculo', adicione um objeto para CADA infração. Calcule realisticamente o passivo (multas administrativas do MTE + projeção de reclamatórias trabalhistas multiplicadas pelo número de trabalhadores). Use valores de mercado.
+3. FUNDAMENTAÇÃO LEGAL: Para cada falha, seja taxativo. Cite NR-18 (Segurança na Indústria da Construção), NR-24 (Condições Sanitárias e de Conforto Trabalhistas - Alojamentos/Refeitórios), NR-06 (EPI), Artigos CLT aplicáveis (74, 467, 477, etc.), Súmula 331 do TST.
+4. ÍNDICE GERAL DE CONFORMIDADE: Nota de 0 a 100. Havendo Falha no Registro de Ponto, Fraude no Vínculo ou Quarteirização Irregular, a nota máxima possível cai drasticamente para <= 50.
+5. VÉXAME PROFISSIONAL: Baseie o linguajar no padrão de auditores de Big 4 ou Peritos da Justiça do Trabalho. ZERO TEXTO GENÉRICO, foque nas falhas pontuadas.
 
-RETORNE APENAS O JSON:
-{"indiceGeral":0,"classificacao":"REGULAR","riscoJuridico":"BAIXO","exposicaoFinanceira":0,"detalhamentoCalculo":[{"item":"","valor":0,"baseLegal":"","logica":""}],"naoConformidades":[""],"impactoJuridico":"","recomendacoes":[""],"conclusaoExecutiva":""}`;
+RETORNE APENAS O JSON (SEM markdown, comentários, explicações ou texto extra fora das chaves) respeitando estritamente a tipagem abaixo:
+{"indiceGeral": <nota 0 a 100>,"classificacao":"REGULAR"|"ATENÇÃO"|"CRÍTICA","riscoJuridico":"BAIXO"|"MÉDIO"|"ALTO"|"CRÍTICO","exposicaoFinanceira": <soma de todos os riscos em número real>,"detalhamentoCalculo":[{"item":"<Nome específico da infração - ex: Ausência de Rouparia/Alojamento Inadequado>","valor": <numero financeiro do passivo da infração>,"baseLegal":"<NR-XX Item X / CLT Art. X>","logica":"<explicação técnica da conta considerando o efetivo da obra>"}],"naoConformidades":["<Listar todas as encontradas uma a uma>"],"impactoJuridico":"<análise técnica>","recomendacoes":["<ações de correção imediatas e mandatórias>"],"conclusaoExecutiva":"<parecer final do MTE>"}
+`;
 
   // ── Construção do pool de providers ──
   const geminiKeys = getGeminiKeys();
