@@ -83,38 +83,68 @@ const buildGeminiProvider = (apiKey: string, keyIdx: number, total: number): Pro
 const buildGroqProvider = (apiKey: string, keyIdx: number, total: number): Provider => ({
   name: `Groq/Llama [chave ${keyIdx + 1}/${total}]`,
   call: async (prompt: string) => {
-    const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${apiKey}`
-      },
-      body: JSON.stringify({
-        model: "llama-3.1-70b-versatile",
-        messages: [
-          {
-            role: "system",
-            content: "Você é um auditor forense especialista em Direito do Trabalho na construção civil brasileira. Responda APENAS com JSON válido, sem markdown, sem texto antes ou depois."
+    // Modelos disponíveis no Groq (2025) - em ordem de qualidade/disponibilidade
+    const groqModels = [
+      "llama-3.3-70b-versatile",
+      "llama-3.1-70b-versatile",
+      "llama3-70b-8192",
+      "mixtral-8x7b-32768",
+      "llama-3.1-8b-instant",
+    ];
+
+    let lastError = "";
+    for (const model of groqModels) {
+      try {
+        const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${apiKey}`
           },
-          { role: "user", content: prompt }
-        ],
-        temperature: 0.2,
-        max_tokens: 2048,
-        response_format: { type: "json_object" }
-      })
-    });
-    const json = await res.json();
-    if (!res.ok) {
-      const msg = json?.error?.message || `HTTP ${res.status}`;
-      const lower = msg.toLowerCase();
-      if (res.status === 429 || lower.includes("quota") || lower.includes("rate limit") || lower.includes("rate_limit")) {
-        throw new Error("QUOTA");
+          body: JSON.stringify({
+            model,
+            messages: [
+              {
+                role: "system",
+                content: "Você é um auditor forense especialista em Direito do Trabalho na construção civil brasileira. Responda APENAS com JSON válido, sem markdown, sem texto antes ou depois."
+              },
+              { role: "user", content: prompt }
+            ],
+            temperature: 0.2,
+            max_tokens: 2048,
+            response_format: { type: "json_object" }
+          })
+        });
+
+        const json = await res.json();
+        if (!res.ok) {
+          const msg = json?.error?.message || `HTTP ${res.status}`;
+          const lower = msg.toLowerCase();
+          if (res.status === 429 || lower.includes("quota") || lower.includes("rate_limit") || lower.includes("rate limit")) {
+            throw new Error("QUOTA");
+          }
+          // Modelo não encontrado → tenta próximo
+          if (res.status === 404 || lower.includes("does not exist") || lower.includes("decommissioned")) {
+            console.warn(`[Groq] Modelo ${model} indisponível, tentando próximo...`);
+            lastError = `${model}: indisponível`;
+            continue;
+          }
+          throw new Error(msg);
+        }
+
+        const text = json.choices?.[0]?.message?.content;
+        if (!text) { lastError = `${model}: resposta vazia`; continue; }
+
+        console.log(`[Groq] ✅ Sucesso com modelo: ${model}`);
+        return text;
+
+      } catch (err: any) {
+        if (err.message === "QUOTA") throw err; // propaga para o pool externo
+        lastError = err.message;
+        continue;
       }
-      throw new Error(msg);
     }
-    const text = json.choices?.[0]?.message?.content;
-    if (!text) throw new Error("Groq: resposta vazia");
-    return text;
+    throw new Error(lastError || "Todos os modelos Groq falharam");
   }
 });
 
