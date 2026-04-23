@@ -1,7 +1,7 @@
 
 import { AIAnalysisResult } from "../types";
 
-// v2.0.0 - Pool de Chaves + Modelos Atuais (Gemini 2.0)
+// v2.1.0 - Leitura de chaves à prova de falhas (process.env + import.meta.env)
 const robustJsonParse = (text: string): any => {
   try {
     const start = text.indexOf('{');
@@ -17,19 +17,39 @@ const robustJsonParse = (text: string): any => {
 // Indexador global para rodízio de chaves entre chamadas na mesma sessão
 let currentKeyIndex = 0;
 
-export const generateAuditReport = async (auditData: any): Promise<AIAnalysisResult> => {
-  const rawKeys = import.meta.env.VITE_GEMINI_API_KEY || 
-                  import.meta.env.GEMINI_API_KEY || "";
-  
+/**
+ * Lê as chaves de API do ambiente, suportando múltiplos caminhos de leitura.
+ * Compatível com Vite local (import.meta.env) e Vercel produção (process.env via define).
+ */
+const getApiKeys = (): string[] => {
+  // Tenta todos os caminhos possíveis de onde a chave pode estar
+  const rawKeys =
+    (typeof process !== 'undefined' && process.env?.VITE_GEMINI_API_KEY) ||
+    (typeof process !== 'undefined' && process.env?.GEMINI_API_KEY) ||
+    (typeof process !== 'undefined' && process.env?.API_KEY) ||
+    import.meta.env?.VITE_GEMINI_API_KEY ||
+    import.meta.env?.GEMINI_API_KEY ||
+    "";
+
   // Sanitiza e separa as chaves (suporta vírgula ou espaço como separador)
-  const apiKeys: string[] = rawKeys
-    .replace(/["']/g, "")
+  const keys = String(rawKeys)
+    .replace(/["'`]/g, "")
     .split(/[,\s]+/)
-    .map((k: string) => k.trim())
-    .filter((k: string) => k.length > 20);
-  
+    .map((k) => k.trim())
+    .filter((k) => k.length > 20);
+
+  console.log(`[Gemini] ${keys.length} chave(s) de API encontrada(s).`);
+  return keys;
+};
+
+export const generateAuditReport = async (auditData: any): Promise<AIAnalysisResult> => {
+  const apiKeys = getApiKeys();
+
   if (apiKeys.length === 0) {
-    throw new Error("A chave da API do Gemini não foi configurada no ambiente.");
+    throw new Error(
+      "A chave da API do Gemini não foi encontrada. " +
+      "Configure a variável VITE_GEMINI_API_KEY nas Configurações da Vercel."
+    );
   }
 
   // Captura detalhada de falhas para a IA
@@ -65,7 +85,7 @@ export const generateAuditReport = async (auditData: any): Promise<AIAnalysisRes
   3. SENSIBILIDADE DO SCORE: Se houver "Quarteirização Irregular" ou "Falta de registro de ponto", o indiceGeral NÃO pode ser acima de 50%.
   4. INTERPRETAÇÃO: Analise o contexto das observações e extraia riscos jurídicos implícitos.
   
-  ESTRUTURA DO JSON (OBRIGATÓRIO, sem texto extra, apenas JSON):
+  ESTRUTURA DO JSON (OBRIGATÓRIO, responda APENAS com o JSON, sem texto antes ou depois):
   {
     "indiceGeral": number,
     "classificacao": "REGULAR" | "ATENÇÃO" | "CRÍTICA",
@@ -78,15 +98,14 @@ export const generateAuditReport = async (auditData: any): Promise<AIAnalysisRes
     "conclusaoExecutiva": string
   }`;
 
-  // Modelos ATUAIS do Google Gemini (2025) - ordenados por velocidade e disponibilidade
-  // Referência: https://ai.google.dev/gemini-api/docs/models
+  // Modelos ATUAIS (Google Gemini, 2025) - ordenados por velocidade e disponibilidade
   const modelEndpoints: Array<{ model: string; version: string }> = [
-    { model: "gemini-2.0-flash",      version: "v1beta" },
-    { model: "gemini-2.0-flash",      version: "v1"     },
-    { model: "gemini-2.0-flash-lite", version: "v1beta" },
-    { model: "gemini-1.5-flash",      version: "v1beta" },
-    { model: "gemini-1.5-flash",      version: "v1"     },
-    { model: "gemini-2.0-flash-exp",  version: "v1beta" },
+    { model: "gemini-2.0-flash",       version: "v1beta" },
+    { model: "gemini-2.0-flash",       version: "v1"     },
+    { model: "gemini-2.0-flash-lite",  version: "v1beta" },
+    { model: "gemini-1.5-flash",       version: "v1beta" },
+    { model: "gemini-1.5-flash",       version: "v1"     },
+    { model: "gemini-2.0-flash-exp",   version: "v1beta" },
   ];
 
   let lastError = "";
@@ -94,12 +113,12 @@ export const generateAuditReport = async (auditData: any): Promise<AIAnalysisRes
 
   for (let keyAttempt = 0; keyAttempt < maxKeyAttempts; keyAttempt++) {
     const apiKey = apiKeys[currentKeyIndex % apiKeys.length];
-    let quotaHit = false;
+    let quotaRotated = false;
 
     for (const { model, version } of modelEndpoints) {
       try {
-        console.log(`[Gemini] Tentando: ${model} via ${version} | Chave #${currentKeyIndex % apiKeys.length}`);
-        
+        console.log(`[Gemini] ${model} (${version}) | Chave #${currentKeyIndex % apiKeys.length}`);
+
         const url = `https://generativelanguage.googleapis.com/${version}/models/${model}:generateContent?key=${apiKey}`;
         const response = await fetch(url, {
           method: 'POST',
@@ -115,45 +134,42 @@ export const generateAuditReport = async (auditData: any): Promise<AIAnalysisRes
         if (!response.ok) {
           const errorMsg = (data.error?.message || "").toLowerCase();
 
-          // Limite de cota → rotaciona chave imediatamente
+          // Cota esgotada → rotaciona para próxima chave
           if (response.status === 429 || errorMsg.includes("quota") || errorMsg.includes("rate limit")) {
             console.warn(`[Gemini] Cota atingida na chave #${currentKeyIndex % apiKeys.length}. Rotacionando...`);
             currentKeyIndex++;
-            quotaHit = true;
-            break; // Sai do loop de endpoints e tenta a próxima chave
+            quotaRotated = true;
+            break;
           }
 
-          // Modelo não encontrado ou não suportado → tenta o próximo endpoint
+          // Modelo não encontrado → tenta o próximo endpoint
           if (response.status === 404 || errorMsg.includes("not found") || errorMsg.includes("not supported")) {
-            console.warn(`[Gemini] ${model} (${version}) não disponível. Tentando próximo...`);
-            lastError = data.error?.message || `${model} não encontrado`;
+            lastError = data.error?.message || `${model} (${version}) indisponível`;
             continue;
           }
 
-          // Outros erros → registra e continua
           lastError = data.error?.message || response.statusText;
           continue;
         }
 
         const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
         if (!text) {
-          lastError = "IA não retornou texto válido.";
+          lastError = "IA retornou resposta vazia.";
           continue;
         }
 
-        console.log(`[Gemini] Sucesso com ${model} (${version})`);
+        console.log(`[Gemini] ✅ Sucesso com ${model} (${version})`);
         return robustJsonParse(text);
 
       } catch (err: any) {
-        lastError = err.message || "Erro de rede.";
+        lastError = err.message || "Erro de rede";
         continue;
       }
     }
 
-    if (!quotaHit) break; // Se saiu do loop sem ser por cota, não tenta outra chave
+    if (!quotaRotated) break;
   }
 
-  // Define a mensagem de erro final para o frontend
   if (lastError.toLowerCase().includes("quota") || lastError.includes("LIMITE_ATINGIDO")) {
     throw new Error("LIMITE_ATINGIDO");
   }
