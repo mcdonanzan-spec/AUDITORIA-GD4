@@ -166,33 +166,38 @@ export const generateAuditReport = async (auditData: any): Promise<AIAnalysisRes
     })
     .filter(Boolean).join('\n') || "Sem divergências.";
 
-  const prompt = `Você atua estritamente como um Auditor Fiscal do Ministério do Trabalho e Emprego (MTE) / Perito Forense em Direito do Trabalho em obras da Construção Civil.
-Sua tarefa é gerar um laudo rigoroso, baseado ESTRITAMENTE na legislação brasileira VIGENTE (atualizações NR-18, Nova CLT, Portarias MTE atuais). É TERMINANTEMENTE PROIBIDO inventar ou alucinar bases legais, incisos ou itens de normas que não existem.
+  const prompt = `🎯 PROMPT DE CALIBRAÇÃO — Auditoria Trabalhista e Entrevistas IN LOCO (Amostragem)
+Você é um auditor fiscal especialista em conformidade trabalhista e segurança do trabalho na construção civil.
+Sua função é gerar relatórios com memória de cálculo juridicamente fundamentada, citando bases legais reais, itens de normas existentes e valores de multas conforme a Portaria MTE nº 1.131/2025 e normas atualizadas. NUNCA invente itens ou valores.
 
 OBRA AUDITADA: ${auditData.obra}
-TOTAL DE TRABALHADORES (EFETIVO): ${auditData.amostragem?.total_efetivo || 'desconhecido'}
+TOTAL DE TRABALHADORES (EFETIVO DA OBRA): ${auditData.amostragem?.total_efetivo || 'desconhecido'}
 
 ======= INFRAÇÕES E VESTÍGIOS ENCONTRADOS EM CAMPO =======
 ${falhas}
 
-======= DEPOIMENTOS E ENTREVISTAS =======
+======= DEPOIMENTOS DAS ENTREVISTAS IN LOCO (Amostragem equivalente a 10% do efetivo) =======
 ${divergencias}
+(Atenção: como as entrevistas são uma amostragem de 10%, cada falha encontrada aqui DEVE ser multiplicada por 10 para estimar o passivo do efetivo total da obra).
 
-======= DIRETRIZES DA PERÍCIA (OBRIGATÓRIO E CRÍTICO) =======
-1. ANÁLISE RIGOROSA E INDIVIDUAL: Analise CADA UMA das infrações passadas acima individualmente. Não pule nenhuma.
-2. ZERO ALUCINAÇÃO LEGAL (MUITO IMPORTANTE):
-   - NÃO cite itens fictícios da NR-18 (ex: 18.2.2, 18.4.1 não existem na norma atual). Use a NR-18 genérica ou NR-01 (PGR) para gestão.
-   - Súmula 331 do TST serve ÚNICA E EXCLUSIVAMENTE para Quarteirização, Terceirização e Responsabilidade Subsidiária/Solidária. Não use para "divergência de efetivo".
-   - CLT Art. 74 aplica-se APENAS ao registro de ponto de EMPREGADOS (empresas com >20 funcionários). Não se aplica a controle de acesso físico (catraca) nem a "empreiteiros/PJ". 
-   - Falta de documentação de SST remete à NR-01 (PGR, PCMSO) e e-Social.
-3. CÁLCULO DE PASSIVO REALISTA:
-   - Multas administrativas devem ser calculadas com base na Portaria MTE vigente (Valores típicos: de R$ 400 a R$ 6.000 por infração, variando por efetivo e gravidade).
-   - Passivo trabalhista (Reclamatórias) deve considerar o Risco de Vínculo Empregatício ou Danos Morais sobre o efetivo da contratada respectiva.
-   - Não chute valores de "R$ 40.000,00" por falhas simples de controle. Seja proporcional e realista.
-4. PARÂMETRO DO ÍNDICE: Nota de 0 a 100. Havendo Falha grave de Controle/Ponto, Quarteirização Irregular ou Risco de Vínculo Empregatício, a nota deve ser penalizada severamente (<= 50).
+======= REGRAS OBRIGATÓRIAS DE CÁLCULO E FUNDAMENTAÇÃO =======
+1. HIERARQUIA DE EVIDÊNCIAS: Entrevistas IN LOCO têm PESO MÁXIMO (confissão de irregularidade). Se um trabalhador disse "não" a direitos, não minimize. Projete a falha para o efetivo correspondente.
+2. BASE LEGAL - Verificação Rígida:
+   - VT NÃO PAGO/ATRASADO: Lei 7.418/85 + Dec. 95.247/87. Multa: R$ 176,03 por trabalhador. Risco: Restituição + Multa art. 467 CLT + Dano Moral.
+   - DEPÓSITO ≠ HOLERITE (Diferença Salarial): CLT Art. 458 e Art. 129. Multa: R$ 3.101,73 por empregado (Anexo I). Risco: Reflexos FGTS, 13º, Férias + Art. 467.
+   - ALOJAMENTO/REFEITÓRIO: NR-18 (18.5) + NR-24 + CLT Art. 458. Multa: Anexo IV (R$ 693,11 a R$ 6.935,56). Risco: Dano Moral por insalubridade.
+   - SEM TREINAMENTO: NR-18 (18.31) + CLT Art. 154. Multa: Anexo IV (R$ 693,11 a R$ 6.935,56).
+   - UNIFORME INADEQUADO/DIVERGENTE: CLT Art. 2 + Súmula 331 TST (se constatar Pejotização/Ocultação). Multa: R$ 3.101,73 por empregado não registrado (Anexo I). Risco: Vínculo + Verbas rescisórias + FGTS.
+   - NR-18 / GENERALIDADES: A norma possui os itens 18.1 a 18.35. APLIQUE APENAS ITENS EXISTENTES. NÃO USE 18.2.2, 18.4.1. NÃO use a Súmula 331 para erro de ponto e a CLT Art. 74 se aplica a ponto para >20 funcionários, não aplique pra Controle de Acesso/Catraca.
+3. CÁLCULO DO PASSIVO: 
+   - No 'detalhamentoCalculo', separe CADA UMA das respostas negativas (se houver divergências). Multiplique o passivo da amostragem (entrevista) pelo fator x10 (projetando para o total da obra).
+   - Discrimine o valor Administrativo MTE (conforme Portaria 1.131/2025) do valor Judicial/Trabalhista (Risco/Reclamatórias).
+4. CATEGORIZAÇÃO: 
+   - CRÍTICO para VT, Holerite falso, Alojamento inadequado, Pejotização, Falta de Treinamento. ALTO para Uniforme Inadequado.
+   - As notas (indiceGeral) afundam para <= 50 se detectado Pejotização, Falta de VT ou Holerite falso.
 
-RETORNE APENAS O JSON (SEM markdown, comentários ou texto extra) respeitando estritamente:
-{"indiceGeral": <nota 0 a 100>,"classificacao":"REGULAR"|"ATENÇÃO"|"CRÍTICA","riscoJuridico":"BAIXO"|"MÉDIO"|"ALTO"|"CRÍTICO","exposicaoFinanceira": <soma realista>,"detalhamentoCalculo":[{"item":"<Nome da infração real encontrada>","valor": <passivo>,"baseLegal":"<Base real. Se não existir específica, cite NR-01 Gerenciamento de Riscos>","logica":"<explicação técnica da conta considerando as Portarias MTE ou TST>"}],"naoConformidades":["<Listar todas>"],"impactoJuridico":"<análise técnica>","recomendacoes":["<ações de correção>"],"conclusaoExecutiva":"<parecer final>"}
+RETORNE APENAS O JSON (SEM markdown, SEM texto fora das chaves) respeitando estritamente:
+{"indiceGeral": <nota 0 a 100>,"classificacao":"REGULAR"|"ATENÇÃO"|"CRÍTICA","riscoJuridico":"BAIXO"|"MÉDIO"|"ALTO"|"CRÍTICO","exposicaoFinanceira": <soma consolidada (multas e passivo estim)>,"detalhamentoCalculo":[{"item":"<Nome da infração EXATA + Efetivo Projetado>","valor": <passivo adm e judicial somado>,"baseLegal":"<Base Legal Correta, sem alucinação>","logica":"<Fórmula do cálculo demonstrando valor unitário * efetivo prejudicado e os reflexos MTE e Judicial>"}],"naoConformidades":["<Listar infrações do checklist E das entrevistas in-loco>"],"impactoJuridico":"<análise da Ocultação de Vínculo, Alojamentos ou passivos diretos>","recomendacoes":["<ações de mitigação imediatas>"],"conclusaoExecutiva":"<parecer do perito>"}
 `;
 
   // ── Construção do pool de providers ──
