@@ -180,29 +180,26 @@ ${falhas}
 ${divergencias}
 (Atenção: como as entrevistas são uma amostragem de 10%, cada falha encontrada aqui DEVE ser multiplicada por 10 para estimar o passivo do efetivo total da obra).
 
-======= REGRAS OBRIGATÓRIAS DE CÁLCULO E FUNDAMENTAÇÃO =======
-1. ANÁLISE INVESTIGATIVA DO CHECKLIST (CAMPO):
-   - Não seja passivo/preguiçoso. Analise CADA falha do "Checklist" minuciosamente e deduza os riscos ocultos.
-   - Exemplo: Controle de acesso falho (catraca) = Risco de invasão, acidentes com terceiros e entrada de trabalhador sem registro ativo no e-Social. 
-   - Exemplo: Divergência de efetivo / Trabalhadores Pendentes = Configura ausência de registro formal (CLT Art. 41) gerando multa de R$ 3.101,73 por cabeça (Anexo I, Portaria 1.131/25) e pesadíssimo risco de vínculo trabalhista.
-   - CADA item que foi respondido como NÃO ou PARCIAL no checklist DEFE gerar um passivo no detalhamento, com multas baseadas nas portarias e projeção do dano.
+======= MÓDULO 1: ANÁLISE INVESTIGATIVA DO CHECKLIST (CAMPO) =======
+Analise CADA item do checklist com reposta "não" ou "parcial". 
+REGRA: NUNCA use CLT Art. 41 para problemas que não sejam "registro formal de empregados".
+- Controle de acesso (catraca manual): NÃO É CLT Art. 41. Base: NR-18 art. 7º + CLT arts. 154-200. Multa = Anexo IV (R$ 6.935,56)
+- Câmeras inoperantes: Risco de invasão/segurança patrimonial e passivo de acidente.
+- Diferença de Efetivo / Trabalhadores Pendentes: AQUI SIM é ausência de registro. Base: CLT Art. 47. Multa Adm = R$ 3.101,73 por trabalhador irregular. Passivo Judicial = Vínculo e Verbas Rescisórias.
+- Ponto de Empreiteiros: Empreiteiros NÃO SÃO EMPREGADOS. Não aplique obrigação de registro de ponto. O risco aqui é PEJOTIZAÇÃO (Vínculo Encoberto). Se constatar, aplique peso judicial de reconhecimento de vínculo, não multa administrativa de falta de ponto.
 
-2. HIERARQUIA DE EVIDÊNCIAS - ENTREVISTAS IN LOCO (Amostragem x10):
-   - Entrevistas IN LOCO têm PESO MÁXIMO (confissão de irregularidade). Se um trabalhador disse "não" a direitos, não minimize. 
-   - A entrevista é uma amostragem de 10%. LOGO, Multiplique CADA passivo/multa encontrado na entrevista da amostragem pelo fator x10, projetando para o total da obra.
+======= MÓDULO 2: ENTREVISTAS IN LOCO (FATOR MULTIPLICADOR x10) =======
+As entrevistas abrangem 10% da obra. O peso é MÁXIMO (confissão de irregularidade).
+REGRA DE OURO MATEMÁTICA: SE UM trabalhador disser "não", significa DEZ prejudicados. Você DEVE efetuar a multiplicação matemática e colocar o VALOR FINAL PROJETADO no JSON, e não o valor unitário.
+- VT NÃO PAGO: Lei 7.418/85. Multa MTE = R$ 176,03 × 10. Judicial: Restituição (R$ 3.600) + Dano Moral.
+- DEPÓSITO ≠ HOLERITE: Atraso = R$ 176,03 × 10. Se salário for menor que mínimo = R$ 3.101,73 × 10. Judicial: Diferenças Salariais + Reflexos FGTS + CLT Art. 467.
+- ALOJAMENTO INADEQUADO: NR-18 18.5 + NR-24. Multa MTE = Anexo IV MÁXIMA (R$ 6.935,56 × 10). Judicial: Insalubridade e Danos Morais Pesados.
+- SEM TREINAMENTO: NR-18 18.31. Multa MTE = R$ 6.935,56. Judicial: Risco de Acidente.
 
-3. BASE LEGAL - Verificação Rígida (Sem Invenções):
-   - VT NÃO PAGO: Lei 7.418/85 + Dec. 95.247/87. Multa: R$ 176,03 por trabalhador. Risco Trabalhista: Restituição + Multa art. 467 CLT + Dano Moral.
-   - DEPÓSITO ≠ HOLERITE (Fraude Salarial): CLT Art. 458 e Art. 129. Multa: R$ 3.101,73/empregado (Anexo I). Risco Trabalhista: Diferenças + Reflexos + Art. 467.
-   - ALOJAMENTO/REFEITÓRIO: NR-18 (18.5) + NR-24. Multa: Anexo IV (R$ 693,11 a R$ 6.935,56). Risco: Dano Moral (R$ 10k/cabeça).
-   - SEM TREINAMENTO: NR-18 (18.31) + CLT Art. 154. Multa: Anexo IV. Risco: Indenização de Acidentes.
-   - UNIFORME DIVERGENTE (Ocultação/Pejotização): Súmula 331 TST + CLT Art. 2. Multa: R$ 3.101,73 não registro. Risco: Vínculo total.
-   - NR-18 / GERAL: APLIQUE APENAS ITENS EXISTENTES. NÃO use 18.2.2, 18.4.1. NÃO use CLT 74 para controle físico (só ponto >20 funcionários).
-
-4. CÁLCULO E CATEGORIZAÇÃO: 
-   - No 'detalhamentoCalculo', separe CADA INFRAÇÃO DO CHECKLIST + CADA INFRAÇÃO DA ENTREVISTA.
-   - Discrimine o valor Administrativo (MTE Portaria 1.131) do Judicial (Reclamatórias).
-   - CRÍTICO: Pejotização, Holerite falso, Alojamento. Nesses casos o 'indiceGeral' AFUNDA severamente para <= 50.
+======= REGRAS ESTRUTURAIS OBRIGATÓRIAS =======
+- PARA CADA ITEM DO RELATÓRIO CALCULE SEPARADAMENTE: (a) Multa Administrativa MTE, e (b) Passivo Trabalhista Judicial. O campo 'valor' deve conter a SOMA PROJETADA DOS DOIS.
+- NUNCA use itens de norma inexistentes (como NR-18 18.2.2 ou 18.4.1).
+- NUNCA use "valor de mercado", mostre a conta explícita no campo 'logica'.
 
 RETORNE APENAS O JSON (SEM markdown, SEM texto fora das chaves) respeitando estritamente:
 {"indiceGeral": <nota 0 a 100>,"classificacao":"REGULAR"|"ATENÇÃO"|"CRÍTICA","riscoJuridico":"BAIXO"|"MÉDIO"|"ALTO"|"CRÍTICO","exposicaoFinanceira": <soma consolidada (multas e passivo estim)>,"detalhamentoCalculo":[{"item":"<Nome da infração EXATA + Efetivo Projetado>","valor": <passivo adm e judicial somado>,"baseLegal":"<Base Legal Correta, sem alucinação>","logica":"<Fórmula do cálculo demonstrando valor unitário * efetivo prejudicado e os reflexos MTE e Judicial>"}],"naoConformidades":["<Listar infrações do checklist E das entrevistas in-loco>"],"impactoJuridico":"<análise da Ocultação de Vínculo, Alojamentos ou passivos diretos>","recomendacoes":["<ações de mitigação imediatas>"],"conclusaoExecutiva":"<parecer do perito>"}
