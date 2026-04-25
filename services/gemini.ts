@@ -180,31 +180,32 @@ ${falhas}
 ${divergencias}
 (Atenção: como as entrevistas são uma amostragem de 10%, cada falha encontrada aqui DEVE ser multiplicada por 10 para estimar o passivo do efetivo total da obra).
 
-======= REGRAS DE ANÁLISE DE RISCO EXECUTIVO (OBRIGATÓRIAS) =======
-Você DEVE processar CADA falha do Checklist e CADA resposta "não" das Entrevistas IN LOCO. É TERMINANTEMENTE PROIBIDO omitir ou pular qualquer item. Se o item ocorreu, ele DEVE estar no JSON final.
+======= REGRAS DE ANÁLISE DE RISCO EXECUTIVO E MATEMÁTICA FORENSE (OBRIGATÓRIAS) =======
+Você DEVE processar CADA falha do Checklist e CADA resposta "não" das Entrevistas IN LOCO sem omitir NADA.
+A matemática DEVE ser rigorosa. Nunca faça "valor x 10" e no resultado coloque um número aleatório. A SOMA de todos os itens deve bater perfeitamente com o total do relatório.
 
-1. SEPARAÇÃO JURÍDICA ABSOLUTA (Regra de Ouro):
-   - MTE (Multa Administrativa): Baseia-se APENAS em Leis, Decretos, CLT, Portarias (ex: 1.131/2025) e NRs.
-   - JUDICIAL (Passivo/Indenização): Baseia-se no valor da causa judiciária, englobando Súmulas do TST (jurisprudência) e danos morais.
-   - NUNCA use Súmulas do TST como base de "Multa Administrativa MTE".
+1. REGRA DE MULTIPLICAÇÃO (COMO APLICAR O FATOR DE INFRAÇÃO):
+   - INFRAÇÃO DA OBRA (Catraca falha, Falta de Documentação PGR/PCMSO, CND vencida): Multiplique por 1 (INFRAÇÃO ÚNICA). A multa MTE máxima é R$ 6.935,56 para a obra inteira, não por trabalhador.
+   - INFRAÇÃO POR EMPREGADO (Falta de VT, Diferença Salarial, Alojamento inadequado): Multiplique pela DIFERENÇA DE EFETIVO (Trabalhadores invisíveis no sistema vs campo) OU pelo número de entrevistados projetado para o tamanho da equipe.
+   - RISCO DE PEJOTIZAÇÃO (Ponto Empreiteiros): Não calcule por efetivo total, e sim pelo risco estimado de vínculo focado nas terceiras.
 
-2. MAPEAMENTO DE EVIDÊNCIAS DE CAMPO (CHECKLIST):
-   - Catraca/Acesso Falho: Base é NR-18 Art. 7º + CLT 154-200. Multa = Anexo IV (R$ 6.935,56). Passivo = Indenização por segurança/terceiros.
-   - Ponto de Empreiteiro (In Loco): Empreiteiros NÃO SÃO EMPREGADOS e não tem ponto. Se o checklist cobrar isso, o título do item DEVE ser "RISCO DE PEJOTIZAÇÃO". Multa Administrativa = R$ 0,00. Passivo Judicial = Vínculo e Rescisões TST (R$ 50k a R$ 100k).
-   - Pendentes/Bloqueados atuando: Empregado não registrado (CLT Art. 47). Multa = R$ 3.101,73. Passivo Judicial = Vínculo.
-   - Documentação Vencida: Especifique! Se SST (PGR, PCMSO) = NR-01 + Anexo IV (Multa R$ 6.935,56). Se CND/CNDT = Multa MTE Zero, mas Passivo de Súmula 331 (Responsabilidade Solidária). Se CTPS Digital = CLT Art. 29.
+2. MAPEAMENTO CORRETO DAS INFRAÇÕES:
+   - Catraca/Acesso Falho: Infração da Obra (x1). Base é NR-18 Art. 7º + CLT 154-200. Multa = Anexo IV (R$ 6.935,56). Passivo = Indenização eventual.
+   - Ponto de Empreiteiro (In Loco): "RISCO DE PEJOTIZAÇÃO". Multa Administrativa = R$ 0,00. Passivo Judicial = Vínculo e Rescisões TST.
+   - Pendentes/Bloqueados atuando: Empregado não registrado (CLT Art. 47). Multa = R$ 3.101,73 x Número de bloqueados/diferença de efetivo. Passivo = Vínculo.
+   - Documentação Vencida: Infração da Obra (x1). Se SST (PGR, PCMSO) = NR-01 + Anexo IV (Multa R$ 6.935,56). Se CND/CNDT = Multa Zero, mas gera Súmula 331 TST (Retenção de Pagamento).
 
-3. ENTREVISTAS IN LOCO (FATOR MULTIPLICADOR x10) - NÃO OMITA NENHUMA:
-   - As entrevistas cobrem só 10% da obra. Multiplique CADA passivo das entrevistas pelo fator matemático x10 no RESULTADO FINAL.
-   - Falta de VT/VR: Lei 7.418/85. Multa: R$ 176,03 × 10. Passivo Judicial: VT Retroativo + Multa Art. 467 CLT + Dano Moral.
-   - Depósito ≠ Holerite (Diferença Salarial): CLT Art. 458 e Art. 129. Multa: Se atraso (R$ 176,03 × 10), se abaixo do mínimo (R$ 3.101,73 × 10). Passivo: Diferenças Salariais + Reflexos + Dano Moral.
-   - Alojamento Inadequado: NR-18 18.5 + NR-24. Multa Admin: Anexo IV (R$ 6.935,56 × 10). Passivo Judicial: Insalubridade e Dano Moral (R$ 10.000 × 10).
+3. ENTREVISTAS IN LOCO (DIREITOS INDIVIDUAIS - Multiplique corretamente):
+   - Falta de VT/VR: Lei 7.418/85. Multa: R$ 176,03 × Quantidade de Trabalhadores Prejudicados (Amostra x 10 ou Diferença de Efetivo). Passivo Judicial: VT Retroativo + Multa Art. 467 CLT.
+   - Depósito ≠ Holerite (Diferença Salarial): CLT Art. 458 e 129. Se abaixo do mínimo = R$ 3.101,73 × quantidade de prejudicados. Passivo: Diferenças Salariais + Dano Moral.
+   - Alojamento Inadequado: Direito individual de uso. NR-18 18.5 + NR-24. Multa Admin: Anexo IV (R$ 6.935,56 × usuários do alojamento). Passivo: Dano Moral por pessoa.
 
-4. ESTRUTURA DO JSON (Exposição e Cálculos):
-   - NA SAÍDA, SE CADA UM DOS PROBLEMAS ACIMA EXISTIR NAS EVIDÊNCIAS, ELES DEVEM APARECER NO ARRAY 'detalhamentoCalculo'.
-   - PARA CADA ITEM calcule e demonstre claramente no atributo 'logica': (a) Multa MTE e (b) Passivo Judicial Estimado (que sempre é uma estimativa grave). O campo 'valor' é a SOMA (a + b).
-   - O 'indiceGeral' deve despencar para <=50 se houver Risco de Pejotização, Holerite fraudado ou Alojamento Inadequado.
-   - 'conclusaoExecutiva': Parágrafo direto para a Diretoria focando onde o risco solidário/subsidiário (Súmula 331) vai destruir a margem da obra.
+4. ESTRUTURA DO JSON E CHECKLIST DE VALIDAÇÃO MATEMÁTICA:
+   - Para cada item, o array 'detalhamentoCalculo' DEVE mostrar: (a) Multa MTE e (b) Passivo Judicial Estimado (baseado no TST).
+   - O campo 'valor' de cada item é a soma matemática real de (a + b).
+   - O campo 'exposicaoFinanceira' tem que ser EXATAMENTE A SOMA dos valores gerados no array.
+   - Você NÃO pode inventar totais no cabeçalho diferentes do detalhamento.
+   - 'conclusaoExecutiva': Foque direto no Risco Subsidiário (Súmula 331) reportando onde a Margem Financeira da obra será engolida por ações trabalhistas geradas por terceirizadas ou controle cego.
 
 RETORNE APENAS O JSON (SEM markdown, SEM texto fora das chaves) respeitando estritamente:
 {"indiceGeral": <nota 0 a 100>,"classificacao":"REGULAR"|"ATENÇÃO"|"CRÍTICA","riscoJuridico":"BAIXO"|"MÉDIO"|"ALTO"|"CRÍTICO","exposicaoFinanceira": <soma consolidada (multas e passivo estim)>,"detalhamentoCalculo":[{"item":"<Nome da infração EXATA + Efetivo Projetado>","valor": <passivo adm e judicial somado>,"baseLegal":"<Base Legal Correta, sem alucinação>","logica":"<Fórmula do cálculo demonstrando valor unitário * efetivo prejudicado e os reflexos MTE e Judicial>"}],"naoConformidades":["<Listar infrações do checklist E das entrevistas in-loco>"],"impactoJuridico":"<análise da Ocultação de Vínculo, Alojamentos ou passivos diretos>","recomendacoes":["<ações de mitigação imediatas>"],"conclusaoExecutiva":"<parecer do perito>"}
