@@ -191,14 +191,16 @@ ATENÇÃO CRÍTICA: Existem três mecanismos que você NÃO PODE confundir:
   - NUNCA aplique CLT Art. 74 a Empreiteiros. Se Empreiteiros marcam ponto para a construtora, gera "Pejotização" (vínculo).
 
 🎤 ENTREVISTA IN LOCO = EVIDÊNCIA PRIMÁRIA (Confissão)
-  - Cada "não" gera uma VULNERABILIDADE CRÍTICA MÁXIMA individual. Confissão de falha é prova definitiva em juízo.
+  - Cada reposta "não" de cada empregado DEVE gerar uma VULNERABILIDADE CRÍTICA MÁXIMA individual no array de vulnerabilidades.
+  - NÃO AGRUPE AS RESPOSTAS! Se 1 trabalhador disse que NÃO tem VT e NÃO tem Alojamento adequado, você deve gerar DUAS vulnerabilidades críticas separadas.
+  - Confissão de falha é prova definitiva em juízo.
 
 SEMPRE diferencie EMPREGADO vs. EMPREITEIRO:
 - Empregado: tem vínculo, tem ponto, tem VT, tem FGTS.
 - Empreiteiro: NÃO tem vínculo, NÃO bate ponto obrigatório, NÃO ganha VT. Risco na terceira é Reclamatória Trabalhista de Vínculo com Súmula 331 TST (Resp. Subsidiária).
 
 RETORNE APENAS O JSON (SEM markdown, SEM texto fora das chaves) respeitando estritamente:
-{"scoreConformidade": <0 a 100>,"status":"REGULAR"|"ATENÇÃO"|"CRÍTICO","resumoVulnerabilidades":["<Vulnerabilidade A - CRÍTICO>"],"vulnerabilidades":[{"nome":"<TÍTULO DA FALHA>","oQueFoiEncontrado":"<O que ocorreu>","fragilidadeDocumental":"<A prova faltante>","riscoTrabalhista":"<Passivo/Processos (ex: Pejotização)>","quemEstaExposto":"<Construtora e Terceira>","gravidade":"CRÍTICA"|"ALTA"|"MÉDIA"|"BAIXA","mitigacao":"<Ação urgente>"}],"analiseEfetivo":"<Discorrer sobre a divergência entre Campo e GD4>","analiseEntrevistas":"<Traçar o perfil das falhas de confissão In-Loco>","conclusaoExecutiva":"<Parecer de impacto de Governança para Diretoria>"}
+{"scoreConformidade": <0 a 100>,"status":"REGULAR"|"ATENÇÃO"|"CRÍTICO","resumoVulnerabilidades":["<Vulnerabilidade A - CRÍTICO>"],"vulnerabilidades":[{"nome":"<TÍTULO DA FALHA>","oQueFoiEncontrado":"<O que ocorreu>","fragilidadeDocumental":"<A prova faltante>","riscoTrabalhista":"<Passivo/Processos (ex: Pejotização)>","quemEstaExposto":"<Construtora e Terceira>","gravidade":"CRÍTICA"|"ALTA"|"MÉDIA"|"BAIXA","mitigacao":"<Ação urgente>"}],"analiseEfetivo":"<Discorrer sobre a divergência entre Campo e GD4>","analiseEntrevistas":"<Análise individual obrigatória: Explicar o impacto jurídico unitário de CADA resposta NÃO colhida>","conclusaoExecutiva":"<Parecer de impacto de Governança para Diretoria>"}
 `;
 
   // ── Construção do pool de providers ──
