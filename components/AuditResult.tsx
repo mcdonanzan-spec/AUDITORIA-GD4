@@ -196,12 +196,12 @@ const AuditResult: React.FC<AuditResultProps> = ({ audit, report, obra, onClose,
 
           <div className="grid grid-cols-1 gap-8">
             {report.vulnerabilidades?.map((vuln, idx) => (
-              <div key={idx} className={`border-l-8 rounded-r-[2rem] p-8 shadow-sm bg-slate-50 break-inside-avoid ${vuln.gravidade === 'CRÍTICA' ? 'border-rose-600' : vuln.gravidade === 'ALTA' ? 'border-[#F05A22]' : vuln.gravidade === 'MÉDIA' ? 'border-amber-500' : 'border-emerald-500'}`}>
+              <div key={idx} className={`border-l-8 rounded-r-[2rem] p-8 shadow-sm bg-slate-50 break-inside-avoid ${vuln.gravidade === 'CRÍTICA' ? 'border-rose-600' : vuln.gravidade === 'ALTA' ? 'border-orange-500' : vuln.gravidade === 'MÉDIA' ? 'border-amber-500' : 'border-emerald-500'}`}>
                  <div className="flex justify-between items-start mb-6">
                    <div>
-                     <span className={`text-[10px] font-black uppercase px-3 py-1 rounded-full text-white ${vuln.gravidade === 'CRÍTICA' ? 'bg-rose-600' : 'bg-[#F05A22]'}`}>Risco {vuln.gravidade}</span>
+                     <span className={`text-[10px] font-black uppercase px-3 py-1 rounded-full text-white ${vuln.gravidade === 'CRÍTICA' ? 'bg-rose-600' : vuln.gravidade === 'ALTA' ? 'bg-orange-500' : vuln.gravidade === 'MÉDIA' ? 'bg-amber-500' : 'bg-emerald-500'}`}>RISCO {vuln.gravidade}</span>
                      <h3 className="text-xl font-black uppercase mt-4 mb-1">{vuln.nome}</h3>
-                     <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest px-1">Exposição: {vuln.quemEstaExposto}</p>
+                     <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest px-1">Exposição: {vuln.exposicao}</p>
                    </div>
                  </div>
 
@@ -230,11 +230,52 @@ const AuditResult: React.FC<AuditResultProps> = ({ audit, report, obra, onClose,
           </div>
         </div>
 
+        {/* SEÇÃO ESPECIAL: ENTREVISTAS IN LOCO */}
+        {report.secaoEntrevistasInLoco && report.secaoEntrevistasInLoco.totalEntrevistados > 0 && (
+          <div className="rounded-[2rem] border-4 border-amber-400 overflow-hidden break-inside-avoid">
+            <div className="bg-amber-500 px-8 py-5 flex items-center gap-4">
+              <span className="text-3xl">🎤</span>
+              <div>
+                <h3 className="text-white font-black uppercase tracking-tighter text-lg leading-none">Entrevistas IN LOCO — Análise Estatística</h3>
+                <p className="text-amber-100 text-[9px] font-black uppercase tracking-widest mt-1">
+                  {report.secaoEntrevistasInLoco.totalEntrevistados} trabalhadores entrevistados ({report.secaoEntrevistasInLoco.percentualDoEfetivo}% do efetivo)
+                </p>
+              </div>
+            </div>
+            <div className="bg-amber-50 p-8 space-y-5">
+              <div className="bg-white border-2 border-amber-300 rounded-2xl p-5">
+                <p className="text-[9px] font-black text-amber-700 uppercase tracking-widest mb-2">⚠️ ALERTA JURÍDICO</p>
+                <p className="text-xs font-bold text-slate-700 leading-relaxed">{report.secaoEntrevistasInLoco.alertaJuridico}</p>
+              </div>
+              <div className="space-y-3">
+                {report.secaoEntrevistasInLoco.agregacaoPorPergunta?.map((item, i) => (
+                  <div key={i} className={`bg-white rounded-2xl p-5 border-l-4 ${item.totalNao > 0 ? (item.gravidade === 'CRÍTICA' ? 'border-rose-500' : item.gravidade === 'ALTA' ? 'border-orange-500' : 'border-amber-400') : 'border-emerald-400'}`}>
+                    <div className="flex justify-between items-start gap-4 mb-2">
+                      <p className="text-[10px] font-black text-slate-700 uppercase leading-tight flex-1">{item.pergunta}</p>
+                      <div className="flex items-center gap-2 shrink-0">
+                        {item.totalNao > 0 && (
+                          <span className={`text-[9px] font-black uppercase px-2 py-1 rounded-full text-white ${item.gravidade === 'CRÍTICA' ? 'bg-rose-600' : item.gravidade === 'ALTA' ? 'bg-orange-500' : 'bg-amber-500'}`}>{item.gravidade}</span>
+                        )}
+                        <span className={`text-[10px] font-black ${item.totalNao > 0 ? 'text-rose-600' : 'text-emerald-600'}`}>{item.totalNao} NÃO ({item.percentualNao}%)</span>
+                      </div>
+                    </div>
+                    {item.totalNao > 0 && <p className="text-[10px] font-bold text-slate-500 leading-relaxed border-t border-slate-100 pt-2">{item.analiseJuridica}</p>}
+                  </div>
+                ))}
+              </div>
+              <div className="bg-amber-100 border-2 border-amber-300 rounded-2xl p-5">
+                <p className="text-[9px] font-black text-amber-800 uppercase tracking-widest mb-2">📊 PROJEÇÃO CONSERVADORA</p>
+                <p className="text-xs font-bold text-amber-900 leading-relaxed">{report.secaoEntrevistasInLoco.projecaoConservadora}</p>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* EVIDÊNCIAS DO CHECKLIST */}
         <div className="space-y-6 break-inside-avoid">
           <h3 className="text-xl font-black uppercase border-l-8 border-[#F05A22] pl-4 tracking-tighter">Evidências do Checklist (Campo)</h3>
           <div className="space-y-3">
-            {audit.respostas.map((r, i) => {
+            {audit.respostas?.map((r, i) => {
               const q = QUESTIONS.find(qi => qi.id === r.pergunta_id);
               if (!q) return null;
               return (
@@ -294,8 +335,53 @@ const AuditResult: React.FC<AuditResultProps> = ({ audit, report, obra, onClose,
               <FileText className="text-[#F05A22]" size={32} />
               <h3 className="text-2xl font-black uppercase tracking-tighter">Conclusão Executiva</h3>
            </div>
-           <p className="text-lg font-bold italic text-slate-800 leading-relaxed text-center px-10">"{report.conclusaoExecutiva}"</p>
-           
+           {(() => {
+             const c = report.conclusaoExecutiva as any;
+             if (!c || typeof c === 'string') {
+               return <p className="text-lg font-bold italic text-slate-800 leading-relaxed text-center px-10">"{c}"</p>;
+             }
+             return (
+               <div className="space-y-6">
+                 <p className="text-xl font-black text-slate-900 leading-relaxed text-center px-4">{c.resumoNumerico}</p>
+                 {c.destaquEntrevistas && (
+                   <p className="text-sm font-bold text-amber-700 text-center leading-relaxed border-y border-amber-100 py-4">{c.destaquEntrevistas}</p>
+                 )}
+                 {c.principaisAmeacas?.length > 0 && (
+                   <div className="space-y-2">
+                     <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">⚠️ Principais Ameaças</p>
+                     {c.principaisAmeacas.map((a: string, i: number) => (
+                       <div key={i} className="bg-rose-50 border border-rose-200 rounded-xl p-4">
+                         <p className="text-xs font-bold text-rose-800 leading-relaxed">{a}</p>
+                       </div>
+                     ))}
+                   </div>
+                 )}
+                 {c.acoesPrioritarias?.length > 0 && (
+                   <div className="space-y-2">
+                     <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">🔴 Ações Prioritárias</p>
+                     {c.acoesPrioritarias.map((a: any, i: number) => (
+                       <div key={i} className="flex items-start gap-3">
+                         <span className="text-rose-600 font-black text-base mt-0.5">□</span>
+                         <p className="text-xs font-bold text-slate-800 flex-1">{a.acao} <span className="text-rose-600 font-black">— Prazo: {a.prazo}</span></p>
+                       </div>
+                     ))}
+                   </div>
+                 )}
+                 {c.acoesSecundarias?.length > 0 && (
+                   <div className="space-y-2">
+                     <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">🟡 Ações Secundárias</p>
+                     {c.acoesSecundarias.map((a: any, i: number) => (
+                       <div key={i} className="flex items-start gap-3">
+                         <span className="text-amber-500 font-black text-base mt-0.5">□</span>
+                         <p className="text-xs font-bold text-slate-700 flex-1">{a.acao} <span className="text-amber-600 font-black">— Prazo: {a.prazo}</span></p>
+                       </div>
+                     ))}
+                   </div>
+                 )}
+               </div>
+             );
+           })()}
+
            <div className="grid grid-cols-2 gap-20 pt-10">
               <div className="text-center space-y-2">
                   {audit.assinatura_auditor ? (

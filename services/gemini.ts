@@ -1,7 +1,7 @@
 
 import { AIAnalysisResult } from "../types";
 
-// v4.0.0 - Multi-Provider: Gemini (Google) + Groq (Llama) com fallback automático
+// v5.0.0 — Prompt Profissional Definitivo: Auditor Forense Sênior de Riscos Trabalhistas
 
 const robustJsonParse = (text: string): any => {
   const cleaned = text
@@ -19,7 +19,7 @@ const robustJsonParse = (text: string): any => {
   }
 };
 
-// ── Leitura de variáveis de ambiente ──────────────────────────────────────────
+// ── Leitura de variáveis de ambiente ─────────────────────────────────────────
 const readEnv = (key: string): string => {
   try { const v = (import.meta.env as any)[key]; if (v) return v; } catch (_) {}
   try { const v = (process as any).env?.[key]; if (v) return v; } catch (_) {}
@@ -27,7 +27,7 @@ const readEnv = (key: string): string => {
 };
 
 const parseKeys = (raw: string): string[] =>
-  String(raw).replace(/["'`]/g, "").split(/[,\s]+/).map(k => k.trim()).filter(k => k.length > 10);
+  String(raw).replace(/[\"'`]/g, "").split(/[,\s]+/).map(k => k.trim()).filter(k => k.length > 10);
 
 const getGeminiKeys = (): string[] => parseKeys(readEnv("VITE_GEMINI_API_KEY") || readEnv("GEMINI_API_KEY"));
 const getGroqKeys   = (): string[] => parseKeys(readEnv("VITE_GROQ_API_KEY")   || readEnv("GROQ_API_KEY"));
@@ -36,7 +36,7 @@ const getGroqKeys   = (): string[] => parseKeys(readEnv("VITE_GROQ_API_KEY")   |
 
 interface Provider {
   name: string;
-  call: (prompt: string) => Promise<string>; // retorna o texto da resposta
+  call: (prompt: string) => Promise<string>;
 }
 
 const buildGeminiProvider = (apiKey: string, keyIdx: number, total: number): Provider => ({
@@ -56,7 +56,7 @@ const buildGeminiProvider = (apiKey: string, keyIdx: number, total: number): Pro
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           contents: [{ parts: [{ text: prompt }] }],
-          generationConfig: { temperature: 0.2, maxOutputTokens: 2048, responseMimeType: "application/json" }
+          generationConfig: { temperature: 0.2, maxOutputTokens: 4096, responseMimeType: "application/json" }
         })
       });
       const json = await res.json();
@@ -83,7 +83,6 @@ const buildGeminiProvider = (apiKey: string, keyIdx: number, total: number): Pro
 const buildGroqProvider = (apiKey: string, keyIdx: number, total: number): Provider => ({
   name: `Groq/Llama [chave ${keyIdx + 1}/${total}]`,
   call: async (prompt: string) => {
-    // Modelos disponíveis no Groq (2025) - em ordem de qualidade/disponibilidade
     const groqModels = [
       "llama-3.3-70b-versatile",
       "llama-3.1-70b-versatile",
@@ -106,12 +105,12 @@ const buildGroqProvider = (apiKey: string, keyIdx: number, total: number): Provi
             messages: [
               {
                 role: "system",
-                content: "Você é um auditor forense especialista em Direito do Trabalho na construção civil brasileira. Responda APENAS com JSON válido, sem markdown, sem texto antes ou depois."
+                content: "Você é um auditor forense sênior especialista em Direito do Trabalho e Governança de Terceiros na construção civil brasileira. Responda APENAS com JSON válido, sem markdown, sem texto antes ou depois."
               },
               { role: "user", content: prompt }
             ],
             temperature: 0.2,
-            max_tokens: 2048,
+            max_tokens: 4096,
             response_format: { type: "json_object" }
           })
         });
@@ -123,7 +122,6 @@ const buildGroqProvider = (apiKey: string, keyIdx: number, total: number): Provi
           if (res.status === 429 || lower.includes("quota") || lower.includes("rate_limit") || lower.includes("rate limit")) {
             throw new Error("QUOTA");
           }
-          // Modelo não encontrado → tenta próximo
           if (res.status === 404 || lower.includes("does not exist") || lower.includes("decommissioned")) {
             console.warn(`[Groq] Modelo ${model} indisponível, tentando próximo...`);
             lastError = `${model}: indisponível`;
@@ -139,7 +137,7 @@ const buildGroqProvider = (apiKey: string, keyIdx: number, total: number): Provi
         return text;
 
       } catch (err: any) {
-        if (err.message === "QUOTA") throw err; // propaga para o pool externo
+        if (err.message === "QUOTA") throw err;
         lastError = err.message;
         continue;
       }
@@ -148,60 +146,131 @@ const buildGroqProvider = (apiKey: string, keyIdx: number, total: number): Provi
   }
 });
 
-// ── Exportação principal ───────────────────────────────────────────────────────
+// ── Exportação principal ──────────────────────────────────────────────────────
 
 export const generateAuditReport = async (auditData: any): Promise<AIAnalysisResult> => {
 
-  // ── Construção do prompt ──
+  // ── Pré-processamento: falhas do checklist ──
   const falhas = auditData.respostas_check
     ?.filter((r: any) => r.resposta === 'nao' || r.resposta === 'parcial')
-    ?.map((r: any) => `• ${r.pergunta}: ${r.resposta.toUpperCase()} — Obs: ${r.obs || 'nenhuma'}`)
-    .join('\n') || "Nenhuma falha crítica.";
+    ?.map((r: any) => `• ${r.pergunta}: ${r.resposta.toUpperCase()}${r.obs ? ` — Obs: ${r.obs}` : ''}`)
+    .join('\n') || "Nenhuma falha identificada no checklist.";
 
-  const divergencias = auditData.entrevistas
-    ?.map((e: any) => {
-      const f = e.respostas?.filter((r: any) => r.resposta === 'nao');
-      if (!f?.length) return null;
-      return `• ${e.funcao} (${e.empresa}): NÃO tem → ${f.map((x: any) => x.pergunta).join(', ')}`;
-    })
-    .filter(Boolean).join('\n') || "Sem divergências.";
+  // ── Pré-processamento: agregação estatística das entrevistas por pergunta ──
+  const totalEntrevistados: number = auditData.entrevistas?.length || 0;
+  const efetivoCampo: number = auditData.amostragem?.total_efetivo || 0;
+  const percentualAmostra: number = efetivoCampo > 0 ? Math.round((totalEntrevistados / efetivoCampo) * 100) : 0;
 
-  const prompt = `🎯 PROMPT DE CALIBRAÇÃO REFINADO — Relatório de Vulnerabilidades Trabalhistas
-VOCÊ É UM AUDITOR ESPECIALISTA EM RISCOS TRABALHISTAS E GOVERNANÇA DE TERCEIROS. Sua função é gerar relatórios que MAPEIAM VULNERABILIDADES, EXPOEM FRAGILIDADES DOCUMENTAIS e DEMONSTRAM RISCOS EM AÇÕES TRABALHISTAS.
-NUNCA calcule valores de multas administrativas do MTE. O foco não é "quanto o MTE vai multar", mas "como um advogado trabalhista vai usar essa falha contra a empresa em juízo".
+  // Obtém lista única de perguntas a partir da primeira entrevista
+  const perguntasUnicas: string[] = (auditData.entrevistas?.[0]?.respostas || [])
+    .map((r: any) => r.pergunta)
+    .filter(Boolean);
 
-OBRA AUDITADA: ${auditData.obra}
-Efetivo real no campo: ${auditData.equipe_campo}
-Efetivo no sistema (GD4): ${auditData.equipe_gd4}
+  // Agrega respostas por pergunta
+  const agregacaoEntrevistas = perguntasUnicas.map((pergunta: string) => {
+    const totalNao = (auditData.entrevistas || []).filter((e: any) =>
+      e.respostas?.find((r: any) => r.pergunta === pergunta && r.resposta === 'nao')
+    ).length;
+    const percentNao = totalEntrevistados > 0 ? Math.round((totalNao / totalEntrevistados) * 100) : 0;
+    const alerta = totalNao > 0 ? ' ⚠️ NÃO CONFORMIDADE' : ' ✅ Conforme';
+    return `• "${pergunta}": ${totalEntrevistados - totalNao} SIM / ${totalNao} NÃO (${percentNao}%${alerta})`;
+  }).join('\n');
 
-======= INFRAÇÕES E VESTÍGIOS ENCONTRADOS EM CAMPO =======
+  const resumoEntrevistas = totalEntrevistados === 0
+    ? "Nenhuma entrevista IN LOCO registrada."
+    : `${totalEntrevistados} trabalhadores entrevistados (${percentualAmostra}% do efetivo de ${efetivoCampo}):\n${agregacaoEntrevistas}`;
+
+  // ── Construção do prompt definitivo ──
+  const prompt = `VOCÊ É UM AUDITOR SÊNIOR ESPECIALISTA EM RISCOS TRABALHISTAS, SEGURANÇA DO TRABALHO E GOVERNANÇA DE TERCEIROS. Sua função é gerar relatórios técnicos que MAPEIAM VULNERABILIDADES, EXPÕEM FRAGILIDADES DOCUMENTAIS e DEMONSTRAM RISCOS EM AÇÕES TRABALHISTAS.
+
+=== REGRAS ABSOLUTAS (violação invalida o relatório) ===
+1. NUNCA calcule multas administrativas do MTE. O foco é "como um advogado usará essa falha em juízo".
+2. NUNCA use "alguns", "vários", "muitos". Use SEMPRE números exatos.
+3. NUNCA use "Reclamatória Trabalhista" como única descrição de risco. Explique: qual ação, como a prova é usada, base legal, resultado provável, quem responde.
+4. SEMPRE citar artigo/súmula/lei com número exato (ex: "CLT Art. 458, §1º" não "segundo a CLT").
+5. SEMPRE incluir projeção conservadora da amostra para o efetivo total.
+6. SEMPRE numerar ações de mitigação com prazo e responsável.
+
+=== DISTINÇÕES CRÍTICAS ===
+🔒 CATRACA = Controle de acesso patrimonial (NR-18.7). Risco = intrusos, trabalhadores fantasmas, furtos. NÃO registra jornada. NUNCA aplicar Súmula 338 TST para catraca.
+⏰ RELÓGIO DE PONTO = Registro de jornada (CLT Art. 74). Aplica-se APENAS a EMPREGADOS com >20 funcionários. Ponto manual gera inversão do ônus (Súmula 338, III, TST). NUNCA aplicar CLT Art. 74 a empreiteiros.
+🎤 ENTREVISTAS IN LOCO = Evidência primária de peso máximo. Analise por PERGUNTA (estatística agregada), nunca por trabalhador individualmente.
+👷 EMPREITEIRO ≠ EMPREGADO: empreiteiro não tem vínculo CLT. Risco é pejotização/reclassificação (Súmula 331, I, TST), não multa de ponto.
+
+=== DADOS DA AUDITORIA ===
+OBRA: ${auditData.obra}
+Efetivo real em campo: ${efetivoCampo} pessoas
+Efetivo no sistema GD4: ${auditData.amostragem?.efetivo_gd4 || 0} pessoas
+Divergência: ${Math.abs(efetivoCampo - (auditData.amostragem?.efetivo_gd4 || 0))} pessoa(s)
+
+=== FALHAS DO CHECKLIST DE CAMPO ===
 ${falhas}
 
-======= DEPOIMENTOS DAS ENTREVISTAS IN LOCO =======
-${divergencias}
+=== RESUMO ESTATÍSTICO DAS ENTREVISTAS IN LOCO ===
+${resumoEntrevistas}
 
-ATENÇÃO CRÍTICA: Existem três mecanismos que você NÃO PODE confundir:
-🔒 CATRACA = CONTROLE DE LIBERAÇÃO DE ACESSO (Segurança Física)
-  - NÃO registra jornada. Se a catraca falha/liberada à mão, o risco é de intrusos e controle patrimonial (NR-18.7), NÃO HÁ RISCO DE HORAS EXTRAS. 
-  - NUNCA aplique Súmula 338 TST para "Catracas".
+=== INSTRUÇÃO PARA GERAÇÃO DAS VULNERABILIDADES ===
+Gere UMA vulnerabilidade por:
+- Cada item do checklist com resposta NÃO ou PARCIAL
+- Cada PERGUNTA da entrevista com pelo menos 1 resposta NÃO (nunca por trabalhador individual)
+- Divergência de efetivo ≥ 1 pessoa
+- Quarteirização irregular identificada
 
-⏰ RELÓGIO DE PONTO = REGISTRO DE JORNADA (CLT Art. 74)
-  - Obrigatório para empresas com >20 empregados (Lei 13.874/2019).
-  - Ponto Britânico/Ausência gera Inversão do ônus (Súmula 338, III, TST).
-  - NUNCA aplique CLT Art. 74 a Empreiteiros. Se Empreiteiros marcam ponto para a construtora, gera "Pejotização" (vínculo).
+Gravidade das vulnerabilidades de entrevista:
+- Direito fundamental (VT, salário, alojamento, treinamento) → CRÍTICA (mesmo que 1 trabalhador)
+- Uniforme/logomarca divergente → MÉDIA
 
-🎤 ENTREVISTA IN LOCO = EVIDÊNCIA PRIMÁRIA (Confissão)
-  - Cada reposta "não" de cada empregado DEVE gerar uma VULNERABILIDADE CRÍTICA MÁXIMA individual no array de vulnerabilidades.
-  - NÃO AGRUPE AS RESPOSTAS! Se 1 trabalhador disse que NÃO tem VT e NÃO tem Alojamento adequado, você deve gerar DUAS vulnerabilidades críticas separadas.
-  - Confissão de falha é prova definitiva em juízo.
+No campo "oQueFoiEncontrado" de vulnerabilidades de entrevista, SEMPRE iniciar com:
+"DECLARAÇÃO IN LOCO: X de Y trabalhadores (Z%) declararam..."
 
-SEMPRE diferencie EMPREGADO vs. EMPREITEIRO:
-- Empregado: tem vínculo, tem ponto, tem VT, tem FGTS.
-- Empreiteiro: NÃO tem vínculo, NÃO bate ponto obrigatório, NÃO ganha VT. Risco na terceira é Reclamatória Trabalhista de Vínculo com Súmula 331 TST (Resp. Subsidiária).
-
-RETORNE APENAS O JSON (SEM markdown, SEM texto fora das chaves) respeitando estritamente:
-{"scoreConformidade": <0 a 100>,"status":"REGULAR"|"ATENÇÃO"|"CRÍTICO","resumoVulnerabilidades":["<Vulnerabilidade A - CRÍTICO>"],"vulnerabilidades":[{"nome":"<TÍTULO DA FALHA>","oQueFoiEncontrado":"<O que ocorreu>","fragilidadeDocumental":"<A prova faltante>","riscoTrabalhista":"<Passivo/Processos (ex: Pejotização)>","quemEstaExposto":"<Construtora e Terceira>","gravidade":"CRÍTICA"|"ALTA"|"MÉDIA"|"BAIXA","mitigacao":"<Ação urgente>"}],"analiseEfetivo":"<Discorrer sobre a divergência entre Campo e GD4>","analiseEntrevistas":"<Análise individual obrigatória: Explicar o impacto jurídico unitário de CADA resposta NÃO colhida>","conclusaoExecutiva":"<Parecer de impacto de Governança para Diretoria>"}
-`;
+RETORNE APENAS JSON VÁLIDO sem markdown:
+{
+  "scoreConformidade": <0-100, inversamente proporcional à quantidade e gravidade das falhas>,
+  "status": "CRÍTICO" | "ALTO" | "MÉDIO" | "BAIXO",
+  "resumoVulnerabilidades": ["<texto curto de cada vulnerabilidade>"],
+  "vulnerabilidades": [
+    {
+      "nome": "<TÍTULO EM MAIÚSCULAS>",
+      "gravidade": "CRÍTICA" | "ALTA" | "MÉDIA" | "BAIXA",
+      "exposicao": "<Construtora | Terceirizada | Ambas>",
+      "oQueFoiEncontrado": "<Fato objetivo com números. Entrevista: iniciar com DECLARAÇÃO IN LOCO: X de Y (Z%) declararam...>",
+      "fragilidadeDocumental": "<Documento ESPECÍFICO faltante ou inconsistente, data se houver, por que prejudica a defesa em juízo>",
+      "riscoTrabalhista": "<1.Qual ação pode ser ajuizada. 2.Como a falha vira prova. 3.Base legal exata (art/súmula/lei). 4.Resultado provável. 5.Quem responde (direto e solidário)>",
+      "mitigacao": "<(1) Ação - Prazo - Responsável - Norma. (2) Ação - Prazo...>"
+    }
+  ],
+  "analiseEfetivo": "<Análise objetiva da divergência campo vs GD4 com implicações jurídicas e base legal>",
+  "secaoEntrevistasInLoco": {
+    "totalEntrevistados": <número>,
+    "percentualDoEfetivo": <número>,
+    "alertaJuridico": "<Texto sobre o peso probatório máximo das declarações IN LOCO em ação trabalhista>",
+    "agregacaoPorPergunta": [
+      {
+        "pergunta": "<texto da pergunta>",
+        "totalNao": <número>,
+        "percentualNao": <número>,
+        "gravidade": "CRÍTICA" | "ALTA" | "MÉDIA" | "BAIXA",
+        "analiseJuridica": "<impacto jurídico desta pergunta com base legal exata>"
+      }
+    ],
+    "projecaoConservadora": "<Se X de Y entrevistados (Z%) declararam [problema], estima-se que aproximadamente N trabalhadores do efetivo total (${efetivoCampo}) possam estar na mesma situação. Recomenda-se verificação imediata.>"
+  },
+  "conclusaoExecutiva": {
+    "resumoNumerico": "<A obra apresenta X vulnerabilidades: A CRÍTICAS, B ALTAS, C MÉDIAS, D BAIXAS.>",
+    "destaquEntrevistas": "<X de Y trabalhadores entrevistados (Z%) declararam não conformidade em [temas críticos]. Essas declarações têm peso probatório máximo em juízo.>",
+    "principaisAmeacas": [
+      "RISCO CRIMINAL: <descrição com base legal>",
+      "RISCO DE RESPONSABILIDADE SOLIDÁRIA: <descrição com Súmula 331 TST>",
+      "RISCO DE AÇÕES EM MASSA: <descrição com projeção>"
+    ],
+    "acoesPrioritarias": [
+      {"acao": "<texto da ação>", "prazo": "<ex: 24h | 48h | 7 dias>"}
+    ],
+    "acoesSecundarias": [
+      {"acao": "<texto da ação>", "prazo": "<ex: 15 dias | 30 dias>"}
+    ]
+  }
+}`;
 
   // ── Construção do pool de providers ──
   const geminiKeys = getGeminiKeys();
@@ -232,7 +301,7 @@ RETORNE APENAS O JSON (SEM markdown, SEM texto fora das chaves) respeitando estr
       if (msg === "QUOTA") {
         console.warn(`[AI] Cota esgotada: ${provider.name}. Tentando próximo...`);
         errors.push(`${provider.name}: cota esgotada`);
-        continue; // tenta próximo provider
+        continue;
       }
       console.warn(`[AI] Falhou: ${provider.name} — ${msg}`);
       errors.push(`${provider.name}: ${msg}`);
@@ -240,7 +309,6 @@ RETORNE APENAS O JSON (SEM markdown, SEM texto fora das chaves) respeitando estr
     }
   }
 
-  // Todos falharam — define mensagem de erro adequada
   const allQuota = errors.every(e => e.includes("cota esgotada"));
   console.error("[AI] Todos os providers falharam:", errors);
 

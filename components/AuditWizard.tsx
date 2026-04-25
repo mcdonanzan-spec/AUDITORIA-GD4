@@ -329,22 +329,22 @@ const AuditWizard: React.FC<AuditWizardProps> = ({ obras, currentUser, onAuditCo
       const result = await generateAuditReport(auditPayload);
 
       // 4. SALVAR NO SUPABASE COM AS URLs DAS FOTOS
-      // Mapeamento de texto para número (Evita erro 22P02 do Supabase)
-      const mapRiscoToNumber = (text: string): number => {
-        const t = String(text).toUpperCase();
-        if (t.includes('CRÍTICO') || t.includes('CRITICO')) return 4;
-        if (t.includes('ALTO') || t.includes('ATENÇÃO') || t.includes('ATENCAO')) return 3;
-        if (t.includes('MÉDIO') || t.includes('MEDIO') || t.includes('REGULAR')) return 2;
-        return 1; // Baixo
+      // Mapeia o status textual para número para o banco
+      const mapStatusToNumber = (status: string): number => {
+        const s = String(status).toUpperCase();
+        if (s.includes('CRÍTICO') || s.includes('CRITICO')) return 4;
+        if (s.includes('ALTO')) return 3;
+        if (s.includes('MÉDIO') || s.includes('MEDIO')) return 2;
+        return 1;
       };
 
       const auditData = {
         obra_id: selectedObra,
         auditor_id: currentUser.id,
         tipo: auditType,
-        indice_geral: Number(result.indiceGeral) || 0,
-        risco_juridico: mapRiscoToNumber(result.riscoJuridico),
-        classificacao: mapRiscoToNumber(result.classificacao),
+        indice_geral: Number(result.scoreConformidade) || 0,
+        risco_juridico: mapStatusToNumber(result.status),
+        classificacao: mapStatusToNumber(result.status),
         equipe_campo: Number(totalEfetivo) || 0,
         equipe_gd4: Number(equipeGd4) || 0,
         subcontratacao_identificada: subcontratacaoRegular === false,
@@ -355,7 +355,6 @@ const AuditWizard: React.FC<AuditWizardProps> = ({ obras, currentUser, onAuditCo
           equipe_campo_raw: totalEfetivo,
           equipe_gd4_raw: Number(equipeGd4),
           subcontratacao_identificada_raw: subcontratacaoRegular === false,
-          classificacao_raw: result.classificacao
         }),
         created_at: new Date().toISOString()
       };
@@ -364,13 +363,13 @@ const AuditWizard: React.FC<AuditWizardProps> = ({ obras, currentUser, onAuditCo
       
       const hydratedAudit = {
         ...savedAudit,
-        classificacao: result.classificacao,
         respostas: respostasComUrls,
         entrevistas,
         equipe_campo: totalEfetivo,
         equipe_gd4: Number(equipeGd4),
         subcontratacao_identificada: subcontratacaoRegular === false
       };
+
 
       clearDraft();
       onAuditComplete(hydratedAudit, result);

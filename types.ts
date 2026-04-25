@@ -78,22 +78,55 @@ export interface Audit {
   assinatura_engenheiro?: Signature;
 }
 
+// ── Vulnerabilidade (card individual no relatório) ─────────────────────────────
 export interface Vulnerabilidade {
   nome: string;
+  gravidade: 'CRÍTICA' | 'ALTA' | 'MÉDIA' | 'BAIXA';
+  exposicao: string; // 'Construtora' | 'Terceirizada' | 'Ambas'
   oQueFoiEncontrado: string;
   fragilidadeDocumental: string;
   riscoTrabalhista: string;
-  quemEstaExposto: string;
-  gravidade: 'CRÍTICA' | 'ALTA' | 'MÉDIA' | 'BAIXA';
   mitigacao: string;
 }
 
+// ── Seção agregada de Entrevistas IN LOCO ────────────────────────────────────
+export interface NaoConformidadePorPergunta {
+  pergunta: string;
+  totalNao: number;
+  percentualNao: number;
+  gravidade: 'CRÍTICA' | 'ALTA' | 'MÉDIA' | 'BAIXA';
+  analiseJuridica: string;
+}
+
+export interface SecaoEntrevistasInLoco {
+  totalEntrevistados: number;
+  percentualDoEfetivo: number;
+  alertaJuridico: string;
+  agregacaoPorPergunta: NaoConformidadePorPergunta[];
+  projecaoConservadora: string;
+}
+
+// ── Conclusão Executiva estruturada ──────────────────────────────────────────
+export interface AcaoComPrazo {
+  acao: string;
+  prazo: string;
+}
+
+export interface ConclusaoExecutiva {
+  resumoNumerico: string;
+  destaquEntrevistas: string;
+  principaisAmeacas: string[];
+  acoesPrioritarias: AcaoComPrazo[];
+  acoesSecundarias: AcaoComPrazo[];
+}
+
+// ── Resultado completo da IA ──────────────────────────────────────────────────
 export interface AIAnalysisResult {
   scoreConformidade: number;
   status: string;
   resumoVulnerabilidades: string[];
   vulnerabilidades: Vulnerabilidade[];
   analiseEfetivo: string;
-  analiseEntrevistas: string;
-  conclusaoExecutiva: string;
+  secaoEntrevistasInLoco: SecaoEntrevistasInLoco;
+  conclusaoExecutiva: ConclusaoExecutiva;
 }
