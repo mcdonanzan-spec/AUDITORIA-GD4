@@ -166,10 +166,9 @@ export const generateAuditReport = async (auditData: any): Promise<AIAnalysisRes
     })
     .filter(Boolean).join('\n') || "Sem divergências.";
 
-  const prompt = `🎯 PROMPT DE CALIBRAÇÃO — Relatório de Vulnerabilidades Trabalhistas
+  const prompt = `🎯 PROMPT DE CALIBRAÇÃO REFINADO — Relatório de Vulnerabilidades Trabalhistas
 VOCÊ É UM AUDITOR ESPECIALISTA EM RISCOS TRABALHISTAS E GOVERNANÇA DE TERCEIROS. Sua função é gerar relatórios que MAPEIAM VULNERABILIDADES, EXPOEM FRAGILIDADES DOCUMENTAIS e DEMONSTRAM RISCOS EM AÇÕES TRABALHISTAS.
 NUNCA calcule valores de multas administrativas do MTE. O foco não é "quanto o MTE vai multar", mas "como um advogado trabalhista vai usar essa falha contra a empresa em juízo".
-NUNCA use valores genéricos de Exposição Financeira. Cada vulnerabilidade deve ser descrita qualitativamente, com sua gravidade e potencial de dano, sem forçar números.
 
 OBRA AUDITADA: ${auditData.obra}
 Efetivo real no campo: ${auditData.equipe_campo}
@@ -181,18 +180,22 @@ ${falhas}
 ======= DEPOIMENTOS DAS ENTREVISTAS IN LOCO =======
 ${divergencias}
 
-🔴 REGRAS ABSOLUTAS
-NUNCA calcule multas administrativas do MTE (Anexo I, II, III, IV, V da Portaria 667/2021). O relatório não é uma "tabela de preços de infrações".
-NUNCA multiplique automaticamente pelo efetivo total as vulnerabilidades globais. Diferencie:
-- Vulnerabilidade da OBRA (afeta a estrutura, ex: Catraca/Documentação) 
-- Vulnerabilidade por EMPREGADO (direito individual violado, gera passivo per capita). Multiplicador = (Entrevistados afetados proporcão do Efetivo Total/Divergência).
-- Risco de PEJOTIZAÇÃO (empreiteiros).
-SEMPRE cite jurisprudência relevante quando descrever o risco em ação trabalhista:
-- Súmula 338, III, TST → ponto manual/britânico invalidado, inversão do ônus da prova 
-- Súmula 331, IV, TST → responsabilidade subsidiária do tomador de serviços 
-- Art. 467 CLT → multa de 50% sobre verbas incontroversas não pagas 
-- Lei 13.344/2016 → trabalho escravo em condições degradantes
-SEMPRE destaque quando uma declaração IN LOCO é CONFISSÃO do empregador.
+ATENÇÃO CRÍTICA: Existem três mecanismos que você NÃO PODE confundir:
+🔒 CATRACA = CONTROLE DE LIBERAÇÃO DE ACESSO (Segurança Física)
+  - NÃO registra jornada. Se a catraca falha/liberada à mão, o risco é de intrusos e controle patrimonial (NR-18.7), NÃO HÁ RISCO DE HORAS EXTRAS. 
+  - NUNCA aplique Súmula 338 TST para "Catracas".
+
+⏰ RELÓGIO DE PONTO = REGISTRO DE JORNADA (CLT Art. 74)
+  - Obrigatório para empresas com >20 empregados (Lei 13.874/2019).
+  - Ponto Britânico/Ausência gera Inversão do ônus (Súmula 338, III, TST).
+  - NUNCA aplique CLT Art. 74 a Empreiteiros. Se Empreiteiros marcam ponto para a construtora, gera "Pejotização" (vínculo).
+
+🎤 ENTREVISTA IN LOCO = EVIDÊNCIA PRIMÁRIA (Confissão)
+  - Cada "não" gera uma VULNERABILIDADE CRÍTICA MÁXIMA individual. Confissão de falha é prova definitiva em juízo.
+
+SEMPRE diferencie EMPREGADO vs. EMPREITEIRO:
+- Empregado: tem vínculo, tem ponto, tem VT, tem FGTS.
+- Empreiteiro: NÃO tem vínculo, NÃO bate ponto obrigatório, NÃO ganha VT. Risco na terceira é Reclamatória Trabalhista de Vínculo com Súmula 331 TST (Resp. Subsidiária).
 
 RETORNE APENAS O JSON (SEM markdown, SEM texto fora das chaves) respeitando estritamente:
 {"scoreConformidade": <0 a 100>,"status":"REGULAR"|"ATENÇÃO"|"CRÍTICO","resumoVulnerabilidades":["<Vulnerabilidade A - CRÍTICO>"],"vulnerabilidades":[{"nome":"<TÍTULO DA FALHA>","oQueFoiEncontrado":"<O que ocorreu>","fragilidadeDocumental":"<A prova faltante>","riscoTrabalhista":"<Passivo/Processos (ex: Pejotização)>","quemEstaExposto":"<Construtora e Terceira>","gravidade":"CRÍTICA"|"ALTA"|"MÉDIA"|"BAIXA","mitigacao":"<Ação urgente>"}],"analiseEfetivo":"<Discorrer sobre a divergência entre Campo e GD4>","analiseEntrevistas":"<Traçar o perfil das falhas de confissão In-Loco>","conclusaoExecutiva":"<Parecer de impacto de Governança para Diretoria>"}
