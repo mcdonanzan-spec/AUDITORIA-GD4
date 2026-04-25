@@ -199,7 +199,9 @@ const AuditResult: React.FC<AuditResultProps> = ({ audit, report, obra, onClose,
               <div key={idx} className={`border-l-8 rounded-r-[2rem] p-8 shadow-sm bg-slate-50 break-inside-avoid ${vuln.gravidade === 'CRÍTICA' ? 'border-rose-600' : vuln.gravidade === 'ALTA' ? 'border-orange-500' : vuln.gravidade === 'MÉDIA' ? 'border-amber-500' : 'border-emerald-500'}`}>
                  <div className="flex justify-between items-start mb-6">
                    <div>
-                     <span className={`text-[10px] font-black uppercase px-3 py-1 rounded-full text-white ${vuln.gravidade === 'CRÍTICA' ? 'bg-rose-600' : vuln.gravidade === 'ALTA' ? 'bg-orange-500' : vuln.gravidade === 'MÉDIA' ? 'bg-amber-500' : 'bg-emerald-500'}`}>RISCO {vuln.gravidade}</span>
+                     <span className={`text-[10px] font-black uppercase px-3 py-1 rounded-full text-white ${vuln.gravidade === 'CRÍTICA' ? 'bg-rose-600' : vuln.gravidade === 'ALTA' ? 'bg-orange-500' : vuln.gravidade === 'MÉDIA' ? 'bg-amber-500' : 'bg-emerald-500'}`}>
+                       {({'CRÍTICA':'CRÍTICO','ALTA':'ALTO','MÉDIA':'MÉDIO','BAIXA':'BAIXO'} as Record<string,string>)[vuln.gravidade] || vuln.gravidade} — RISCO
+                     </span>
                      <h3 className="text-xl font-black uppercase mt-4 mb-1">{vuln.nome}</h3>
                      <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest px-1">Exposição: {vuln.exposicao}</p>
                    </div>
@@ -448,8 +450,11 @@ const AuditResult: React.FC<AuditResultProps> = ({ audit, report, obra, onClose,
            </div>
         </div>
 
-        <div className="text-center text-[9px] font-black text-slate-200 uppercase tracking-[0.6em] pt-10">
-           Documento Confidencial - Uso Interno
+        <div className="text-center text-[9px] font-black text-slate-200 uppercase tracking-[0.6em] pt-10 space-y-2">
+           <p>Documento Confidencial — Uso Interno</p>
+           <p className="text-[8px] font-bold text-slate-300 normal-case tracking-normal max-w-2xl mx-auto leading-relaxed">
+             ⚠️ Este relatório de auditoria é de caráter informativo e não substitui parecer jurídico. As vulnerabilidades identificadas requerem análise por profissional habilitado antes de qualquer decisão legal ou rescisão contratual.
+           </p>
         </div>
       </div>
     </motion.div>

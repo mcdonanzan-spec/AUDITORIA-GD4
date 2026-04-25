@@ -150,11 +150,17 @@ const buildGroqProvider = (apiKey: string, keyIdx: number, total: number): Provi
 
 export const generateAuditReport = async (auditData: any): Promise<AIAnalysisResult> => {
 
-  // ── Pré-processamento: falhas do checklist ──
+  // ── Pré-processamento: falhas do checklist (NÃO e PARCIAL) ──
   const falhas = auditData.respostas_check
     ?.filter((r: any) => r.resposta === 'nao' || r.resposta === 'parcial')
     ?.map((r: any) => `• ${r.pergunta}: ${r.resposta.toUpperCase()}${r.obs ? ` — Obs: ${r.obs}` : ''}`)
     .join('\n') || "Nenhuma falha identificada no checklist.";
+
+  // ── Pré-processamento: itens N/A (lacunas de auditoria) ──
+  const itensNaoAvaliados = auditData.respostas_check
+    ?.filter((r: any) => r.resposta === 'n_a')
+    ?.map((r: any) => `• ${r.pergunta}`)
+    .join('\n') || null;
 
   // ── Pré-processamento: agregação estatística das entrevistas por pergunta ──
   const totalEntrevistados: number = auditData.entrevistas?.length || 0;
@@ -188,14 +194,16 @@ export const generateAuditReport = async (auditData: any): Promise<AIAnalysisRes
 2. NUNCA use "alguns", "vários", "muitos". Use SEMPRE números exatos.
 3. NUNCA use "Reclamatória Trabalhista" como única descrição de risco. Explique: qual ação, como a prova é usada, base legal, resultado provável, quem responde.
 4. SEMPRE citar artigo/súmula/lei com número exato (ex: "CLT Art. 458, §1º" não "segundo a CLT").
-5. SEMPRE incluir projeção conservadora da amostra para o efetivo total.
-6. SEMPRE numerar ações de mitigação com prazo e responsável.
+5. SEMPRE numerar ações de mitigação com prazo e responsável.
+6. NUNCA classifique algo como "Risco Criminal" sem que haja evidência clara de dolo (intenção fraudulenta documentada). Divergência de efetivo e ponto fora da obra são infrações trabalhistas/administrativas, NÃO crimes. Use "Risco de Responsabilidade Subsidiária" (Súmula 331, IV, TST) em vez de risco criminal quando não há evidência de fraude intencional.
+7. PROJEÇÃO ESTATÍSTICA HONESTA: Se a amostra tiver menos de 3 trabalhadores entrevistados, NÃO use linguagem de cálculo estatístico. Use: "Dado o tamanho reduzido da amostra (N=[X]), não é possível fazer projeção estatística confiável. Recomenda-se verificação imediata com todos os [N_total] trabalhadores da obra."
 
 === DISTINÇÕES CRÍTICAS ===
 🔒 CATRACA = Controle de acesso patrimonial (NR-18.7). Risco = intrusos, trabalhadores fantasmas, furtos. NÃO registra jornada. NUNCA aplicar Súmula 338 TST para catraca.
 ⏰ RELÓGIO DE PONTO = Registro de jornada (CLT Art. 74). Aplica-se APENAS a EMPREGADOS com >20 funcionários. Ponto manual gera inversão do ônus (Súmula 338, III, TST). NUNCA aplicar CLT Art. 74 a empreiteiros.
 🎤 ENTREVISTAS IN LOCO = Evidência primária de peso máximo. Analise por PERGUNTA (estatística agregada), nunca por trabalhador individualmente.
 👷 EMPREITEIRO ≠ EMPREGADO: empreiteiro não tem vínculo CLT. Risco é pejotização/reclassificação (Súmula 331, I, TST), não multa de ponto.
+🔗 CRUZAMENTO OBRIGATÓRIO: Se o checklist registrar trabalhadores com status 'BLOQUEADO' ou 'PENDENTE' atuando na obra E houver divergência entre efetivo de campo e GD4, esses dois fatos devem ser analisados NA MESMA VULNERABILIDADE como causa e efeito — a liberação manual da catraca é o mecanismo que permite o acesso irregular.
 
 === DADOS DA AUDITORIA ===
 OBRA: ${auditData.obra}
@@ -206,6 +214,9 @@ Divergência: ${Math.abs(efetivoCampo - (auditData.amostragem?.efetivo_gd4 || 0)
 === FALHAS DO CHECKLIST DE CAMPO ===
 ${falhas}
 
+=== ITENS NÃO AVALIADOS (N/A) — LACUNAS DE AUDITORIA ===
+${itensNaoAvaliados ? itensNaoAvaliados : "Nenhum item marcado como N/A."}
+
 === RESUMO ESTATÍSTICO DAS ENTREVISTAS IN LOCO ===
 ${resumoEntrevistas}
 
@@ -215,6 +226,7 @@ Gere UMA vulnerabilidade por:
 - Cada PERGUNTA da entrevista com pelo menos 1 resposta NÃO (nunca por trabalhador individual)
 - Divergência de efetivo ≥ 1 pessoa
 - Quarteirização irregular identificada
+- Se houver itens N/A: gerar UMA vulnerabilidade de "LACUNA DE AUDITORIA" com gravidade ALTA, explicando que itens não avaliados não significam conformidade — significam risco não quantificado. Liste os itens N/A e recomende auditoria complementar imediata.
 
 Gravidade das vulnerabilidades de entrevista:
 - Direito fundamental (VT, salário, alojamento, treinamento) → CRÍTICA (mesmo que 1 trabalhador)
@@ -253,7 +265,7 @@ RETORNE APENAS JSON VÁLIDO sem markdown:
         "analiseJuridica": "<impacto jurídico desta pergunta com base legal exata>"
       }
     ],
-    "projecaoConservadora": "<Se X de Y entrevistados (Z%) declararam [problema], estima-se que aproximadamente N trabalhadores do efetivo total (${efetivoCampo}) possam estar na mesma situação. Recomenda-se verificação imediata.>"
+    "projecaoConservadora": "<REGRA: Se totalEntrevistados < 3: usar 'Dado o tamanho reduzido da amostra (N=[X] trabalhadores), não é possível fazer projeção estatística confiável. Recomenda-se verificação imediata com todos os [efetivo_total] trabalhadores da obra.' Se totalEntrevistados >= 3: usar 'X de Y entrevistados (Z%) declararam [problema]. Projetando essa proporção para o efetivo total de [N] trabalhadores, estima-se que até [N_projetado] trabalhadores possam estar na mesma situação. Recomenda-se verificação imediata com todo o efetivo.'>"
   },
   "conclusaoExecutiva": {
     "resumoNumerico": "<A obra apresenta X vulnerabilidades: A CRÍTICAS, B ALTAS, C MÉDIAS, D BAIXAS.>",
