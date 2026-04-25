@@ -166,49 +166,36 @@ export const generateAuditReport = async (auditData: any): Promise<AIAnalysisRes
     })
     .filter(Boolean).join('\n') || "Sem divergências.";
 
-  const prompt = `🎯 PROMPT DE CALIBRAÇÃO — Auditoria Trabalhista e Entrevistas IN LOCO (Amostragem)
-Você é um auditor fiscal especialista em conformidade trabalhista e segurança do trabalho na construção civil.
-Sua função é gerar relatórios com memória de cálculo juridicamente fundamentada, citando bases legais reais, itens de normas existentes e valores de multas conforme a Portaria MTE nº 1.131/2025 e normas atualizadas. NUNCA invente itens ou valores.
+  const prompt = `🎯 PROMPT DE CALIBRAÇÃO — Relatório de Vulnerabilidades Trabalhistas
+VOCÊ É UM AUDITOR ESPECIALISTA EM RISCOS TRABALHISTAS E GOVERNANÇA DE TERCEIROS. Sua função é gerar relatórios que MAPEIAM VULNERABILIDADES, EXPOEM FRAGILIDADES DOCUMENTAIS e DEMONSTRAM RISCOS EM AÇÕES TRABALHISTAS.
+NUNCA calcule valores de multas administrativas do MTE. O foco não é "quanto o MTE vai multar", mas "como um advogado trabalhista vai usar essa falha contra a empresa em juízo".
+NUNCA use valores genéricos de Exposição Financeira. Cada vulnerabilidade deve ser descrita qualitativamente, com sua gravidade e potencial de dano, sem forçar números.
 
 OBRA AUDITADA: ${auditData.obra}
-TOTAL DE TRABALHADORES (EFETIVO DA OBRA): ${auditData.amostragem?.total_efetivo || 'desconhecido'}
+Efetivo real no campo: ${auditData.equipe_campo}
+Efetivo no sistema (GD4): ${auditData.equipe_gd4}
 
 ======= INFRAÇÕES E VESTÍGIOS ENCONTRADOS EM CAMPO =======
 ${falhas}
 
-======= DEPOIMENTOS DAS ENTREVISTAS IN LOCO (Amostragem equivalente a 10% do efetivo) =======
+======= DEPOIMENTOS DAS ENTREVISTAS IN LOCO =======
 ${divergencias}
-(Atenção: como as entrevistas são uma amostragem de 10%, cada falha encontrada aqui DEVE ser multiplicada por 10 para estimar o passivo do efetivo total da obra).
 
-======= REGRAS DE ANÁLISE DE RISCO EXECUTIVO E MATEMÁTICA FORENSE (OBRIGATÓRIAS) =======
-Você DEVE processar CADA falha do Checklist e CADA resposta "não" das Entrevistas IN LOCO sem omitir NADA.
-A matemática DEVE ser rigorosa. Nunca faça "valor x 10" e no resultado coloque um número aleatório. A SOMA de todos os itens deve bater perfeitamente com o total do relatório.
-
-1. REGRA DE MULTIPLICAÇÃO (COMO APLICAR O FATOR DE INFRAÇÃO):
-   - INFRAÇÃO DA OBRA (Catraca falha, Falta de Documentação PGR/PCMSO, CND vencida): Multiplique por 1 (INFRAÇÃO ÚNICA). A multa MTE máxima é R$ 6.935,56 para a obra inteira, não por trabalhador.
-   - INFRAÇÃO POR EMPREGADO (Falta de VT, Diferença Salarial, Alojamento inadequado): Multiplique pela DIFERENÇA DE EFETIVO (Trabalhadores invisíveis no sistema vs campo) OU pelo número de entrevistados projetado para o tamanho da equipe.
-   - RISCO DE PEJOTIZAÇÃO (Ponto Empreiteiros): Não calcule por efetivo total, e sim pelo risco estimado de vínculo focado nas terceiras.
-
-2. MAPEAMENTO CORRETO DAS INFRAÇÕES:
-   - Catraca/Acesso Falho: Infração da Obra (x1). Base é NR-18 Art. 7º + CLT 154-200. Multa = Anexo IV (R$ 6.935,56). Passivo = Indenização eventual.
-   - Ponto de Empreiteiro (In Loco): "RISCO DE PEJOTIZAÇÃO". Multa Administrativa = R$ 0,00. Passivo Judicial = Vínculo e Rescisões TST.
-   - Pendentes/Bloqueados atuando: Empregado não registrado (CLT Art. 47). Multa = R$ 3.101,73 x Número de bloqueados/diferença de efetivo. Passivo = Vínculo.
-   - Documentação Vencida: Infração da Obra (x1). Se SST (PGR, PCMSO) = NR-01 + Anexo IV (Multa R$ 6.935,56). Se CND/CNDT = Multa Zero, mas gera Súmula 331 TST (Retenção de Pagamento).
-
-3. ENTREVISTAS IN LOCO (DIREITOS INDIVIDUAIS - Multiplique corretamente):
-   - Falta de VT/VR: Lei 7.418/85. Multa: R$ 176,03 × Quantidade de Trabalhadores Prejudicados (Amostra x 10 ou Diferença de Efetivo). Passivo Judicial: VT Retroativo + Multa Art. 467 CLT.
-   - Depósito ≠ Holerite (Diferença Salarial): CLT Art. 458 e 129. Se abaixo do mínimo = R$ 3.101,73 × quantidade de prejudicados. Passivo: Diferenças Salariais + Dano Moral.
-   - Alojamento Inadequado: Direito individual de uso. NR-18 18.5 + NR-24. Multa Admin: Anexo IV (R$ 6.935,56 × usuários do alojamento). Passivo: Dano Moral por pessoa.
-
-4. ESTRUTURA DO JSON E CHECKLIST DE VALIDAÇÃO MATEMÁTICA:
-   - Para cada item, o array 'detalhamentoCalculo' DEVE mostrar: (a) Multa MTE e (b) Passivo Judicial Estimado (baseado no TST).
-   - O campo 'valor' de cada item é a soma matemática real de (a + b).
-   - O campo 'exposicaoFinanceira' tem que ser EXATAMENTE A SOMA dos valores gerados no array.
-   - Você NÃO pode inventar totais no cabeçalho diferentes do detalhamento.
-   - 'conclusaoExecutiva': Foque direto no Risco Subsidiário (Súmula 331) reportando onde a Margem Financeira da obra será engolida por ações trabalhistas geradas por terceirizadas ou controle cego.
+🔴 REGRAS ABSOLUTAS
+NUNCA calcule multas administrativas do MTE (Anexo I, II, III, IV, V da Portaria 667/2021). O relatório não é uma "tabela de preços de infrações".
+NUNCA multiplique automaticamente pelo efetivo total as vulnerabilidades globais. Diferencie:
+- Vulnerabilidade da OBRA (afeta a estrutura, ex: Catraca/Documentação) 
+- Vulnerabilidade por EMPREGADO (direito individual violado, gera passivo per capita). Multiplicador = (Entrevistados afetados proporcão do Efetivo Total/Divergência).
+- Risco de PEJOTIZAÇÃO (empreiteiros).
+SEMPRE cite jurisprudência relevante quando descrever o risco em ação trabalhista:
+- Súmula 338, III, TST → ponto manual/britânico invalidado, inversão do ônus da prova 
+- Súmula 331, IV, TST → responsabilidade subsidiária do tomador de serviços 
+- Art. 467 CLT → multa de 50% sobre verbas incontroversas não pagas 
+- Lei 13.344/2016 → trabalho escravo em condições degradantes
+SEMPRE destaque quando uma declaração IN LOCO é CONFISSÃO do empregador.
 
 RETORNE APENAS O JSON (SEM markdown, SEM texto fora das chaves) respeitando estritamente:
-{"indiceGeral": <nota 0 a 100>,"classificacao":"REGULAR"|"ATENÇÃO"|"CRÍTICA","riscoJuridico":"BAIXO"|"MÉDIO"|"ALTO"|"CRÍTICO","exposicaoFinanceira": <soma consolidada (multas e passivo estim)>,"detalhamentoCalculo":[{"item":"<Nome da infração EXATA + Efetivo Projetado>","valor": <passivo adm e judicial somado>,"baseLegal":"<Base Legal Correta, sem alucinação>","logica":"<Fórmula do cálculo demonstrando valor unitário * efetivo prejudicado e os reflexos MTE e Judicial>"}],"naoConformidades":["<Listar infrações do checklist E das entrevistas in-loco>"],"impactoJuridico":"<análise da Ocultação de Vínculo, Alojamentos ou passivos diretos>","recomendacoes":["<ações de mitigação imediatas>"],"conclusaoExecutiva":"<parecer do perito>"}
+{"scoreConformidade": <0 a 100>,"status":"REGULAR"|"ATENÇÃO"|"CRÍTICO","resumoVulnerabilidades":["<Vulnerabilidade A - CRÍTICO>"],"vulnerabilidades":[{"nome":"<TÍTULO DA FALHA>","oQueFoiEncontrado":"<O que ocorreu>","fragilidadeDocumental":"<A prova faltante>","riscoTrabalhista":"<Passivo/Processos (ex: Pejotização)>","quemEstaExposto":"<Construtora e Terceira>","gravidade":"CRÍTICA"|"ALTA"|"MÉDIA"|"BAIXA","mitigacao":"<Ação urgente>"}],"analiseEfetivo":"<Discorrer sobre a divergência entre Campo e GD4>","analiseEntrevistas":"<Traçar o perfil das falhas de confissão In-Loco>","conclusaoExecutiva":"<Parecer de impacto de Governança para Diretoria>"}
 `;
 
   // ── Construção do pool de providers ──

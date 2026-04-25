@@ -151,11 +151,11 @@ const AuditResult: React.FC<AuditResultProps> = ({ audit, report, obra, onClose,
           </div>
           <div className="bg-amber-500 text-white p-6 rounded-[2rem] text-center space-y-1 shadow-lg shadow-amber-200">
             <p className="text-[8px] font-black opacity-80 uppercase">Score Conformidade</p>
-            <p className="text-3xl font-black">{report.indiceGeral}%</p>
+            <p className="text-3xl font-black">{report.scoreConformidade}%</p>
           </div>
           <div className="bg-[#F05A22] text-white p-6 rounded-[2rem] text-center space-y-1 shadow-lg shadow-orange-200">
             <p className="text-[8px] font-black opacity-80 uppercase">Status Final</p>
-            <p className="text-xl font-black uppercase tracking-tighter">{report.classificacao}</p>
+            <p className="text-xl font-black uppercase tracking-tighter">{report.status}</p>
           </div>
         </div>
 
@@ -187,47 +187,46 @@ const AuditResult: React.FC<AuditResultProps> = ({ audit, report, obra, onClose,
           </div>
         </div>
 
-        {/* EXPOSIÇÃO FINANCEIRA POTENCIAL */}
-        <div className="bg-slate-900 rounded-[3rem] p-10 text-white space-y-8 break-inside-avoid">
-          <div className="flex justify-between items-center border-b border-slate-700 pb-6">
-            <div className="flex items-center gap-4">
-              <div className="p-3 bg-[#F05A22] rounded-2xl border border-slate-700"><Scale size={24} /></div>
-              <div>
-                <p className="text-[10px] font-black uppercase tracking-widest text-[#F05A22]">Exposição Financeira Potencial</p>
-                <p className="text-[8px] opacity-50 uppercase">Cálculo de risco projetado sobre efetivo total</p>
-              </div>
-            </div>
-            <div className="bg-white text-slate-900 px-6 py-3 rounded-2xl flex items-center gap-3 border-2 border-slate-900 shadow-sm">
-              <AlertTriangle size={20} className="text-amber-500" />
-              <div className="text-right">
-                <p className="text-[8px] font-black uppercase opacity-50 leading-none">Matriz de Risco</p>
-                <p className="text-sm font-black uppercase leading-none">{report.riscoJuridico}</p>
-              </div>
-            </div>
+        {/* MAPEAMENTO DE VULNERABILIDADES (CARDS QUALITATIVOS) */}
+        <div className="space-y-6">
+          <div className="flex items-center gap-4 border-b-4 border-slate-900 pb-4">
+            <ShieldCheck className="text-[#F05A22]" size={36} />
+            <h2 className="text-3xl font-black tracking-tighter uppercase">Mapeamento de Vulnerabilidades Trabalhistas</h2>
           </div>
 
-          <div className="flex items-baseline gap-4">
-            <h2 className="text-6xl font-black tracking-tighter">{formatCurrency(report.exposicaoFinanceira)}</h2>
-            <p className="text-[10px] font-bold text-slate-500 uppercase">Passivo Trabalhista e Previdenciário Estimado</p>
-          </div>
-
-          {/* MEMÓRIA DE CÁLCULO REFINADA */}
-          <div className="space-y-4 bg-slate-800/40 p-8 rounded-[2.5rem] border border-slate-700/50">
-             <p className="text-[10px] font-black uppercase tracking-[0.2em] flex items-center gap-2 mb-4 text-slate-400"><FileText size={14} className="text-[#F05A22]" /> Memória de Cálculo e Base Legal</p>
-             <div className="grid grid-cols-1 gap-4">
-               {report.detalhamentoCalculo.map((item, idx) => (
-                 <div key={idx} className="flex justify-between items-start text-xs border-b border-slate-700/50 pb-4 last:border-0 last:pb-0">
-                    <div className="space-y-1.5 flex-1 pr-10">
-                      <p className="font-black uppercase text-slate-100 tracking-tight leading-snug">{item.item}</p>
-                      <div className="flex items-center gap-2 opacity-60">
-                         <Scale size={10} className="text-[#F05A22]" />
-                         <p className="text-[9px] font-bold uppercase tracking-widest">{item.baseLegal} {item.logica ? `| ${item.logica}` : ''}</p>
-                      </div>
-                    </div>
-                    <p className="font-black text-[#F05A22] text-sm shrink-0">{formatCurrency(item.valor)}</p>
+          <div className="grid grid-cols-1 gap-8">
+            {report.vulnerabilidades?.map((vuln, idx) => (
+              <div key={idx} className={`border-l-8 rounded-r-[2rem] p-8 shadow-sm bg-slate-50 break-inside-avoid ${vuln.gravidade === 'CRÍTICA' ? 'border-rose-600' : vuln.gravidade === 'ALTA' ? 'border-[#F05A22]' : vuln.gravidade === 'MÉDIA' ? 'border-amber-500' : 'border-emerald-500'}`}>
+                 <div className="flex justify-between items-start mb-6">
+                   <div>
+                     <span className={`text-[10px] font-black uppercase px-3 py-1 rounded-full text-white ${vuln.gravidade === 'CRÍTICA' ? 'bg-rose-600' : 'bg-[#F05A22]'}`}>Risco {vuln.gravidade}</span>
+                     <h3 className="text-xl font-black uppercase mt-4 mb-1">{vuln.nome}</h3>
+                     <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest px-1">Exposição: {vuln.quemEstaExposto}</p>
+                   </div>
                  </div>
-               ))}
-             </div>
+
+                 <div className="grid grid-cols-2 gap-6 mt-6">
+                    <div className="space-y-2 bg-white p-4 rounded-2xl border border-slate-200">
+                      <p className="text-[10px] font-black text-[#F05A22] uppercase tracking-widest flex items-center gap-2"><CheckCircle2 size={12}/> O que foi Encontrado?</p>
+                      <p className="text-xs font-bold text-slate-700 leading-relaxed">{vuln.oQueFoiEncontrado}</p>
+                    </div>
+                    <div className="space-y-2 bg-white p-4 rounded-2xl border border-slate-200">
+                      <p className="text-[10px] font-black text-rose-600 uppercase tracking-widest flex items-center gap-2"><FileText size={12}/> Fragilidade Documental</p>
+                      <p className="text-xs font-bold text-slate-700 leading-relaxed">{vuln.fragilidadeDocumental}</p>
+                    </div>
+                 </div>
+
+                 <div className="bg-slate-900 text-white rounded-2xl p-6 mt-6 space-y-3">
+                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2"><Scale size={14}/> Risco em Ação Trabalhista (Consequência Judicial)</p>
+                    <p className="text-sm font-bold text-slate-100 leading-relaxed">{vuln.riscoTrabalhista}</p>
+                 </div>
+
+                 <div className="bg-emerald-50 text-emerald-900 rounded-2xl p-6 mt-6 border border-emerald-200">
+                    <p className="text-[10px] font-black uppercase tracking-widest mb-2 flex items-center gap-2 text-emerald-700"><CheckCircle2 size={14}/> Mitigação Recomendada</p>
+                    <p className="text-xs font-bold">{vuln.mitigacao}</p>
+                 </div>
+              </div>
+            ))}
           </div>
         </div>
 

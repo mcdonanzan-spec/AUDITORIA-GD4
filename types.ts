@@ -78,19 +78,22 @@ export interface Audit {
   assinatura_engenheiro?: Signature;
 }
 
+export interface Vulnerabilidade {
+  nome: string;
+  oQueFoiEncontrado: string;
+  fragilidadeDocumental: string;
+  riscoTrabalhista: string;
+  quemEstaExposto: string;
+  gravidade: 'CRÍTICA' | 'ALTA' | 'MÉDIA' | 'BAIXA';
+  mitigacao: string;
+}
+
 export interface AIAnalysisResult {
-  indiceGeral: number;
-  classificacao: string;
-  riscoJuridico: string;
-  exposicaoFinanceira: number; 
-  naoConformidades: string[];
-  impactoJuridico: string;
-  recomendacoes: string[];
+  scoreConformidade: number;
+  status: string;
+  resumoVulnerabilidades: string[];
+  vulnerabilidades: Vulnerabilidade[];
+  analiseEfetivo: string;
+  analiseEntrevistas: string;
   conclusaoExecutiva: string;
-  detalhamentoCalculo: {
-    item: string;
-    valor: number;
-    baseLegal: string;
-    logica: string;
-  }[];
 }
