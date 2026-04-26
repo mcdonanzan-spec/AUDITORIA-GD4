@@ -276,7 +276,7 @@ Gravidade das vulnerabilidades de entrevista:
 
 RETORNE APENAS JSON VÁLIDO sem markdown:
 {
-  "scoreConformidade": <0-100>,
+  "scoreConformidade": <0-100. ATENÇÃO: Itens N/A (Limitação Metodológica) NÃO devem ter peso negativo no score. Apenas respostas NÃO ou PARCIAL penalizam a nota>,
   "status": "CRÍTICO" | "ALTO" | "MÉDIO" | "BAIXO",
   "resumoVulnerabilidades": ["<texto curto de cada vulnerabilidade>"],
   "vulnerabilidades": [
