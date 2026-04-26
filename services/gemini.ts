@@ -204,11 +204,12 @@ LISTA DE CITAÇÕES APROVADAS (única fonte permitida):
 ✅ Súmula 331, IV, TST → responsabilidade SUBSIDIÁRIA do tomador (nunca solidária)
 ✅ Súmula 331, V, TST → exige culpa in vigilando para a subsidiária
 ✅ Súmula 338, III, TST → inversão do ônus do ponto (APENAS para empregados com >20 funcionários, NUNCA para empreiteiros)
-✅ NR-18 → condições de trabalho na construção civil (alojamento, acesso, higiene, treinamentos)
+✅ NR-18 e NR-24 → condições de trabalho na construção civil, higiene, conforto e alojamento
 ✅ Lei 7.418/1985 → vale-transporte (use esta, NUNCA CLT Art. 458 para VT)
 ✅ CLT Art. 3º → definição de empregado / reconhecimento de vínculo
 ✅ CLT Art. 443/444 → fraude ao contrato de trabalho / pejotização
 ✅ Portaria MTE 671/2021 → registro eletrônico de ponto / eSocial
+✅ CP Art. 149 → redução a condição análoga à de escravo (apenas para casos graves de alojamento/refeitório)
 
 PROIBIDO citar: CLT Art. 7º (qualquer inciso), Art. 9º, Art. 2º, Art. 74, Art. 154, Art. 458 ou qualquer outro artigo fora da lista acima.
 
@@ -247,7 +248,10 @@ REGRAS DE QUALIDADE DESCRITIVA:
 - "riscoTrabalhista": iniciar com "Tipo: [Trabalhista / Segurança do Trabalho / Compliance / Administrativo]" e "Área a acionar: [Jurídico / RH-DP / Segurança do Trabalho / TI-Sistemas / Financeiro]". Depois descrever o risco em linguagem clara e acessível para o gestor.
 
 REGRA ESPECIAL — PONTO DE EMPREITEIROS:
-Se o checklist indicar que empreiteiros não registram ponto diretamente na obra, o risco NÃO é "falta de registro de ponto CLT". Empreiteiro não tem vínculo CLT e não deve bater ponto como empregado. O risco real é: se a empresa controla o ponto do empreiteiro como se fosse empregado, isso configura SUBORDINAÇÃO e pode levar ao reconhecimento de vínculo empregatício (pejotização). A mitigação CORRETA é formalizar contrato de empreitada autônoma, NÃO implementar registro de ponto CLT para empreiteiros.
+Se o checklist indicar que empreiteiros não registram ponto diretamente na obra, o risco NÃO é pejotização (pois já possuem contrato assinado). O risco real é: FALTA DE RASTREABILIDADE DA JORNADA REAL. A auditoria verifica o ponto para garantir que as horas trabalhadas e apontadas são condizentes com a realidade do canteiro. Sem o ponto na obra, a empresa não consegue controlar jornada exaustiva, não audita se os faturamentos correspondem à presença real e perde o controle de acesso e segurança. A mitigação é garantir que o registro (seja via GD4 ou outro sistema da obra) reflita a entrada e saída real do trabalhador no canteiro.
+
+REGRA ESPECIAL — ALOJAMENTO INADEQUADO:
+Se a entrevista apontar condições indignas ou inadequadas de alojamento ou refeitório, este é o risco MAIS GRAVE possível da auditoria. Você DEVE classificar como CRÍTICO e apontar o risco de "Trabalho Análogo à Escravidão" (Art. 149 do Código Penal) e "Interdição Imediata do Canteiro pelo MTE" (NR-18 e NR-24). A mitigação deve exigir intervenção IMEDIATA, suspensão do uso do alojamento irregular e acionamento da diretoria de obras.
 
 REGRA ESPECIAL — ITENS N/A (LACUNAS):
 Items N/A NÃO são riscos operacionais — são LIMITAÇÕES METODOLÓGICAS. Se houver itens N/A, gerar UMA card com:
