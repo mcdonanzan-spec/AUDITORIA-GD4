@@ -82,7 +82,9 @@ export interface Audit {
 export interface Vulnerabilidade {
   nome: string;
   gravidade: 'CRÍTICA' | 'ALTA' | 'MÉDIA' | 'BAIXA';
-  exposicao: string; // 'Construtora' | 'Terceirizada' | 'Ambas'
+  exposicao: string;
+  tipoRisco?: string;   // ex: 'Trabalhista' | 'Segurança do Trabalho' | 'Compliance' | 'Limitação Metodológica'
+  areaAcionar?: string; // ex: 'Jurídico' | 'RH / DP' | 'Segurança do Trabalho' | 'TI / Sistemas' | 'Financeiro'
   oQueFoiEncontrado: string;
   fragilidadeDocumental: string;
   riscoTrabalhista: string;

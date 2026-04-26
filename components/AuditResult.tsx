@@ -178,11 +178,13 @@ const AuditResult: React.FC<AuditResultProps> = ({ audit, report, obra, onClose,
               </div>
             </div>
           </div>
-          <div className="border-4 border-emerald-500 bg-emerald-50 p-8 rounded-[2.5rem] flex flex-col items-center justify-center text-center space-y-4">
-            <Scale size={48} className="text-emerald-500" />
+          <div className={`border-4 ${audit.subcontratacao_identificada ? 'border-rose-500 bg-rose-50' : 'border-emerald-500 bg-emerald-50'} p-8 rounded-[2.5rem] flex flex-col items-center justify-center text-center space-y-4`}>
+            <Scale size={48} className={audit.subcontratacao_identificada ? 'text-rose-500' : 'text-emerald-500'} />
             <div>
-              <p className="text-[8px] font-black text-emerald-800 uppercase tracking-widest">Quarteirização</p>
-              <p className="text-xs font-black text-emerald-900 uppercase">Totalmente Regularizada</p>
+              <p className={`text-[8px] font-black uppercase tracking-widest ${audit.subcontratacao_identificada ? 'text-rose-800' : 'text-emerald-800'}`}>Quarteirização</p>
+              <p className={`text-xs font-black uppercase ${audit.subcontratacao_identificada ? 'text-rose-900' : 'text-emerald-900'}`}>
+                {audit.subcontratacao_identificada ? 'Irregular Identificada' : 'Regularizada'}
+              </p>
             </div>
           </div>
         </div>
@@ -195,15 +197,32 @@ const AuditResult: React.FC<AuditResultProps> = ({ audit, report, obra, onClose,
           </div>
 
           <div className="grid grid-cols-1 gap-8">
-            {report.vulnerabilidades?.map((vuln, idx) => (
-              <div key={idx} className={`border-l-8 rounded-r-[2rem] p-8 shadow-sm bg-slate-50 break-inside-avoid ${vuln.gravidade === 'CRÍTICA' ? 'border-rose-600' : vuln.gravidade === 'ALTA' ? 'border-orange-500' : vuln.gravidade === 'MÉDIA' ? 'border-amber-500' : 'border-emerald-500'}`}>
-                 <div className="flex justify-between items-start mb-6">
-                   <div>
-                     <span className={`text-[10px] font-black uppercase px-3 py-1 rounded-full text-white ${vuln.gravidade === 'CRÍTICA' ? 'bg-rose-600' : vuln.gravidade === 'ALTA' ? 'bg-orange-500' : vuln.gravidade === 'MÉDIA' ? 'bg-amber-500' : 'bg-emerald-500'}`}>
-                       {({'CRÍTICA':'CRÍTICO','ALTA':'ALTO','MÉDIA':'MÉDIO','BAIXA':'BAIXO'} as Record<string,string>)[vuln.gravidade] || vuln.gravidade} — RISCO
-                     </span>
-                     <h3 className="text-xl font-black uppercase mt-4 mb-1">{vuln.nome}</h3>
-                     <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest px-1">Exposição: {vuln.exposicao}</p>
+            {report.vulnerabilidades?.map((vuln, idx) => {
+                const isLimitacao = vuln.tipoRisco === 'Limitação Metodológica' || vuln.nome?.includes('NÃO AVALIADOS');
+                return (
+              <div key={idx} className={`border-l-8 rounded-r-[2rem] p-8 shadow-sm break-inside-avoid ${
+                isLimitacao
+                  ? 'border-slate-400 bg-slate-50'
+                  : vuln.gravidade === 'CRÍTICA' ? 'border-rose-600 bg-slate-50'
+                  : vuln.gravidade === 'ALTA' ? 'border-orange-500 bg-slate-50'
+                  : vuln.gravidade === 'MÉDIA' ? 'border-amber-500 bg-slate-50'
+                  : 'border-emerald-500 bg-slate-50'
+              }`}>
+                 <div className="flex justify-between items-start mb-4">
+                   <div className="space-y-2">
+                     {isLimitacao ? (
+                       <span className="text-[10px] font-black uppercase px-3 py-1.5 rounded-full bg-slate-500 text-white tracking-widest">PENDENTE — VERIFICAÇÃO</span>
+                     ) : (
+                       <span className={`text-[10px] font-black uppercase px-3 py-1.5 rounded-full text-white tracking-widest ${vuln.gravidade === 'CRÍTICA' ? 'bg-rose-600' : vuln.gravidade === 'ALTA' ? 'bg-orange-500' : vuln.gravidade === 'MÉDIA' ? 'bg-amber-500' : 'bg-emerald-500'}`}>
+                         {({'CRÍTICA':'CRÍTICO','ALTA':'ALTO','MÉDIA':'MÉDIO','BAIXA':'BAIXO'} as Record<string,string>)[vuln.gravidade] || vuln.gravidade} — RISCO
+                       </span>
+                     )}
+                     <div className="flex flex-wrap gap-2 pt-1">
+                       {vuln.tipoRisco && <span className="text-[9px] font-black uppercase px-2 py-1 rounded-lg bg-slate-200 text-slate-700 tracking-wide">{vuln.tipoRisco}</span>}
+                       {vuln.areaAcionar && <span className="text-[9px] font-black uppercase px-2 py-1 rounded-lg bg-blue-100 text-blue-800 tracking-wide">📍 {vuln.areaAcionar}</span>}
+                     </div>
+                     <h3 className="text-xl font-black uppercase mt-2 mb-1">{vuln.nome}</h3>
+                     <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">{vuln.exposicao}</p>
                    </div>
                  </div>
 
@@ -231,7 +250,8 @@ const AuditResult: React.FC<AuditResultProps> = ({ audit, report, obra, onClose,
                     <p className="text-xs font-bold">{vuln.mitigacao}</p>
                  </div>
               </div>
-            ))}
+                );
+              })}
           </div>
         </div>
 

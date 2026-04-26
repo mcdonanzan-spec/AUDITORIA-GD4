@@ -238,34 +238,52 @@ ${itensNaoAvaliados ? itensNaoAvaliados : "Nenhum item marcado como N/A."}
 ${resumoEntrevistas}
 
 === INSTRUÇÃO PARA GERAÇÃO DAS VULNERABILIDADES ===
+
+REGRAS DE QUALIDADE DESCRITIVA:
+- "oQueFoiEncontrado": descrever O QUÊ ESPECIFICAMENTE foi encontrado. Não "documentos vencidos" — mas "Certificados de NR-35 de 3 trabalhadores vencidos desde [data]". Não "falta de VT" — mas "Trabalhador declarou não receber VT e VR nos últimos [período]".
+- "fragilidadeDocumental": nomear OS DOCUMENTOS ESPECÍFICOS ausentes/vencidos e explicar por que a falta DESTE documento é problema (ex: "Sem comprovante de pagamento de VT, a empresa não consegue provar que cumpriu a obrigação em eventual ação de cobrança").
+- "mitigacao": ações ESPECÍFICAS com documentos e sistemas nomeados. Não "atualizar o GD4" — mas "(1) Inserir no GD4 os [nome dos documentos] dos trabalhadores identificados em campo, prazo 24h, responsável: DP". Não "comprovar pagamento" — mas "(1) Reunir holerites e extratos dos últimos 3 meses, confrontar com declaração do trabalhador, prazo 24h, responsável: Financeiro/DP".
+- "exposicao": NUNCA usar apenas "Ambas". Usar: "Construtora (tomadora dos serviços) + Terceirizada (empregadora direta)" ou "Construtora (responsável pelo canteiro)" ou "Terceirizada (empregadora direta)".
+- "riscoTrabalhista": iniciar com "Tipo: [Trabalhista / Segurança do Trabalho / Compliance / Administrativo]" e "Área a acionar: [Jurídico / RH-DP / Segurança do Trabalho / TI-Sistemas / Financeiro]". Depois descrever o risco em linguagem clara e acessível para o gestor.
+
+REGRA ESPECIAL — PONTO DE EMPREITEIROS:
+Se o checklist indicar que empreiteiros não registram ponto diretamente na obra, o risco NÃO é "falta de registro de ponto CLT". Empreiteiro não tem vínculo CLT e não deve bater ponto como empregado. O risco real é: se a empresa controla o ponto do empreiteiro como se fosse empregado, isso configura SUBORDINAÇÃO e pode levar ao reconhecimento de vínculo empregatício (pejotização). A mitigação CORRETA é formalizar contrato de empreitada autônoma, NÃO implementar registro de ponto CLT para empreiteiros.
+
+REGRA ESPECIAL — ITENS N/A (LACUNAS):
+Items N/A NÃO são riscos operacionais — são LIMITAÇÕES METODOLÓGICAS. Se houver itens N/A, gerar UMA card com:
+- gravidade: "MÉDIA"
+- tipoRisco: "Limitação Metodológica"
+- nome: "ITENS NÃO AVALIADOS NESTA AUDITORIA"
+- oQueFoiEncontrado: listar objetivamente os itens que não foram auditados
+- riscoTrabalhista: "Tipo: Compliance | Área a acionar: Auditoria Interna. Itens não avaliados não significam conformidade — significam que o risco é desconhecido. Sem verificação, a empresa não pode afirmar que está em conformidade com esses requisitos."
+- mitigacao: agendamento de auditoria complementar focada nos itens pendentes
+
 Gere UMA vulnerabilidade por:
 - Cada item do checklist com resposta NÃO ou PARCIAL
-- Cada PERGUNTA da entrevista com pelo menos 1 resposta NÃO (nunca por trabalhador individual)
-- Divergência de efetivo ≥ 1 pessoa
-- Quarteirização irregular identificada
-- Se houver itens N/A: gerar UMA vulnerabilidade de "LACUNA DE AUDITORIA" com gravidade ALTA, explicando que itens não avaliados não significam conformidade — significam risco não quantificado. Liste os itens N/A e recomende auditoria complementar imediata.
+- Cada PERGUNTA da entrevista com pelo menos 1 resposta NÃO
+- Divergência de efetivo ≥ 1 pessoa (cruzar com bloqueados/pendentes se houver)
+- Se houver itens N/A: UMA card de "ITENS NÃO AVALIADOS" (MÉDIA, Limitação Metodológica)
 
 Gravidade das vulnerabilidades de entrevista:
-- Direito fundamental (VT, salário, alojamento, treinamento) → CRÍTICA (mesmo que 1 trabalhador)
-- Uniforme/logomarca divergente → MÉDIA
-
-No campo "oQueFoiEncontrado" de vulnerabilidades de entrevista, SEMPRE iniciar com:
-"DECLARAÇÃO IN LOCO: X de Y trabalhadores (Z%) declararam..."
+- Direito fundamental (VT, salário, alojamento, treinamento) → CRÍTICA
+- Uniforme/logomarca → MÉDIA
 
 RETORNE APENAS JSON VÁLIDO sem markdown:
 {
-  "scoreConformidade": <0-100, inversamente proporcional à quantidade e gravidade das falhas>,
+  "scoreConformidade": <0-100>,
   "status": "CRÍTICO" | "ALTO" | "MÉDIO" | "BAIXO",
   "resumoVulnerabilidades": ["<texto curto de cada vulnerabilidade>"],
   "vulnerabilidades": [
     {
       "nome": "<TÍTULO EM MAIÚSCULAS>",
       "gravidade": "CRÍTICA" | "ALTA" | "MÉDIA" | "BAIXA",
-      "exposicao": "<Construtora | Terceirizada | Ambas>",
-      "oQueFoiEncontrado": "<Fato objetivo com números. Entrevista: iniciar com DECLARAÇÃO IN LOCO: X de Y (Z%) declararam...>",
-      "fragilidadeDocumental": "<Documento ESPECÍFICO faltante ou inconsistente, data se houver, por que prejudica a defesa em juízo>",
-      "riscoTrabalhista": "<1.Qual ação pode ser ajuizada. 2.Como a falha vira prova. 3.Base legal exata (art/súmula/lei). 4.Resultado provável. 5.Quem responde (direto e solidário)>",
-      "mitigacao": "<(1) Ação - Prazo - Responsável - Norma. (2) Ação - Prazo...>"
+      "exposicao": "<Construtora (tomadora) | Terceirizada (empregadora direta) | Construtora (tomadora) + Terceirizada (empregadora direta)>",
+      "tipoRisco": "<Trabalhista | Segurança do Trabalho | Compliance | Administrativo | Limitação Metodológica>",
+      "areaAcionar": "<Jurídico | RH / DP | Segurança do Trabalho | TI / Sistemas | Financeiro | Auditoria Interna>",
+      "oQueFoiEncontrado": "<Fato ESPECÍFICO com números e nomes. Entrevista: 'DECLARAÇÃO IN LOCO: X de Y trabalhadores (Z%) declararam [fato específico]'>",
+      "fragilidadeDocumental": "<Nome ESPECÍFICO dos documentos ausentes/vencidos e por que a ausência prejudica a empresa em caso de questionamento>",
+      "riscoTrabalhista": "<Iniciar com 'Tipo: [categoria] | Área a acionar: [área]'. Descrever o que pode acontecer em linguagem clara para o gestor. Se base legal da lista aprovada se aplicar, citar. Caso contrário, terminar com '— Análise jurídica específica: a ser verificada pelo jurídico responsável.'>",
+      "mitigacao": "<(1) Ação ESPECÍFICA com documentos nomeados - Prazo - Responsável. (2) Ação...>"
     }
   ],
   "analiseEfetivo": "<Análise objetiva da divergência campo vs GD4 com implicações jurídicas e base legal>",
