@@ -269,6 +269,7 @@ Você é ESTRITAMENTE PROIBIDO de omitir qualquer falha ou agrupar perguntas dif
 3. Divergência de efetivo ≥ 1 pessoa (cruzar com bloqueados/pendentes se houver).
 4. Quarteirização irregular identificada.
 5. Se houver itens N/A no checklist: UMA card de "ITENS NÃO AVALIADOS" (MÉDIA, Limitação Metodológica).
+ATENÇÃO: "Amostra insuficiente para projeção estatística" NÃO É UMA VULNERABILIDADE. NUNCA crie um card de vulnerabilidade para isso. Essa informação vai APENAS no campo "projecaoConservadora".
 
 Gravidade das vulnerabilidades de entrevista:
 - Direito fundamental (VT, salário, alojamento, treinamento) → CRÍTICA
@@ -276,7 +277,7 @@ Gravidade das vulnerabilidades de entrevista:
 
 RETORNE APENAS JSON VÁLIDO sem markdown:
 {
-  "scoreConformidade": <0-100. ATENÇÃO: Itens N/A (Limitação Metodológica) NÃO devem ter peso negativo no score. Apenas respostas NÃO ou PARCIAL penalizam a nota>,
+  "scoreConformidade": <0-100. ATENÇÃO MÁXIMA: Se não houver itens NÃO/PARCIAL, nem divergência de efetivo, nem quarteirização irregular, o score DEVE SER EXATAMENTE 100. Itens N/A e Amostra Insuficiente NÃO reduzem a nota>,
   "status": "CRÍTICO" | "ALTO" | "MÉDIO" | "BAIXO",
   "resumoVulnerabilidades": ["<texto curto de cada vulnerabilidade>"],
   "vulnerabilidades": [
