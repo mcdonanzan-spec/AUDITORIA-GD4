@@ -258,11 +258,13 @@ Items N/A NÃO são riscos operacionais — são LIMITAÇÕES METODOLÓGICAS. Se
 - riscoTrabalhista: "Tipo: Compliance | Área a acionar: Auditoria Interna. Itens não avaliados não significam conformidade — significam que o risco é desconhecido. Sem verificação, a empresa não pode afirmar que está em conformidade com esses requisitos."
 - mitigacao: agendamento de auditoria complementar focada nos itens pendentes
 
-Gere UMA vulnerabilidade por:
-- Cada item do checklist com resposta NÃO ou PARCIAL
-- Cada PERGUNTA da entrevista com pelo menos 1 resposta NÃO
-- Divergência de efetivo ≥ 1 pessoa (cruzar com bloqueados/pendentes se houver)
-- Se houver itens N/A: UMA card de "ITENS NÃO AVALIADOS" (MÉDIA, Limitação Metodológica)
+REGRA DE OURO — COMPLETUDE E PROIBIÇÃO DE OMISSÃO:
+Você é ESTRITAMENTE PROIBIDO de omitir qualquer falha ou agrupar perguntas diferentes. Você DEVE gerar na matriz "vulnerabilidades" um objeto DISTINTO para:
+1. CADA item individual do checklist com resposta NÃO ou PARCIAL.
+2. CADA pergunta individual da entrevista com pelo menos 1 resposta NÃO. Exemplo: se 3 perguntas da entrevista tiveram respostas NÃO, você DEVE gerar 3 cards de vulnerabilidade separados, um para cada tema (ex: um para VT/VR, outro para Alojamento, outro para Holerite). NUNCA agrupe problemas de entrevista em um único card.
+3. Divergência de efetivo ≥ 1 pessoa (cruzar com bloqueados/pendentes se houver).
+4. Quarteirização irregular identificada.
+5. Se houver itens N/A no checklist: UMA card de "ITENS NÃO AVALIADOS" (MÉDIA, Limitação Metodológica).
 
 Gravidade das vulnerabilidades de entrevista:
 - Direito fundamental (VT, salário, alojamento, treinamento) → CRÍTICA
