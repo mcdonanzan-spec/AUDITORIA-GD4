@@ -219,7 +219,10 @@ const AuditResult: React.FC<AuditResultProps> = ({ audit, report, obra, onClose,
                  </div>
 
                  <div className="bg-slate-900 text-white rounded-2xl p-6 mt-6 space-y-3">
-                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2"><Scale size={14}/> Risco em Ação Trabalhista (Consequência Judicial)</p>
+                    <div className="flex items-center justify-between">
+                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2"><Scale size={14}/> Risco Identificado</p>
+                      <span className="text-[8px] font-black uppercase bg-amber-500 text-white px-2 py-1 rounded-full tracking-wider">⚖️ Análise jurídica pendente</span>
+                    </div>
                     <p className="text-sm font-bold text-slate-100 leading-relaxed">{vuln.riscoTrabalhista}</p>
                  </div>
 
