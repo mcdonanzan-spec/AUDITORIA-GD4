@@ -1,7 +1,7 @@
 
 import { AIAnalysisResult } from "../types";
 
-// v5.3.0 — Prompt Profissional Definitivo: Auditor Forense Sênior de Riscos Trabalhistas (Matriz de Penalidades Rígida)
+// v5.4.0 — Prompt Profissional Definitivo: Auditor Forense Sênior de Riscos Trabalhistas (Matemática Estrita)
 
 const robustJsonParse = (text: string): any => {
   const cleaned = text
@@ -150,9 +150,9 @@ const buildGroqProvider = (apiKey: string, keyIdx: number, total: number): Provi
 
 export const generateAuditReport = async (auditData: any): Promise<AIAnalysisResult> => {
 
-  // ── Pré-processamento: falhas do checklist (NÃO e PARCIAL) ──
+  // ── Pré-processamento: falhas do checklist (considerando o marcador isNonCompliant) ──
   const falhas = auditData.respostas_check
-    ?.filter((r: any) => r.resposta === 'nao' || r.resposta === 'parcial')
+    ?.filter((r: any) => r.isNonCompliant)
     ?.map((r: any) => `• ${r.pergunta}: ${r.resposta.toUpperCase()}${r.obs ? ` — Obs: ${r.obs}` : ''}`)
     .join('\n') || "Nenhuma falha identificada no checklist.";
 
@@ -174,12 +174,18 @@ export const generateAuditReport = async (auditData: any): Promise<AIAnalysisRes
 
   // Agrega respostas por pergunta
   const agregacaoEntrevistas = perguntasUnicas.map((pergunta: string) => {
-    const totalNao = (auditData.entrevistas || []).filter((e: any) =>
-      e.respostas?.find((r: any) => r.pergunta === pergunta && r.resposta === 'nao')
-    ).length;
-    const percentNao = totalEntrevistados > 0 ? Math.round((totalNao / totalEntrevistados) * 100) : 0;
+    const respostasParaEstaPergunta = (auditData.entrevistas || []).map((e: any) => 
+      e.respostas?.find((r: any) => r.pergunta === pergunta)
+    ).filter(Boolean);
+
+    const totalNao = respostasParaEstaPergunta.filter((r: any) => r.resposta === 'nao').length;
+    const totalSim = respostasParaEstaPergunta.filter((r: any) => r.resposta === 'sim').length;
+    const totalNA = respostasParaEstaPergunta.filter((r: any) => r.resposta === 'n_a').length;
+
+    const percentNao = totalEntrevistados > totalNA ? Math.round((totalNao / (totalEntrevistados - totalNA)) * 100) : 0;
     const alerta = totalNao > 0 ? ' ⚠️ NÃO CONFORMIDADE' : ' ✅ Conforme';
-    return `• "${pergunta}": ${totalEntrevistados - totalNao} SIM / ${totalNao} NÃO (${percentNao}%${alerta})`;
+    
+    return `• "${pergunta}": ${totalSim} SIM / ${totalNao} NÃO / ${totalNA} N/A (${percentNao}% de falha${alerta})`;
   }).join('\n');
 
   const resumoEntrevistas = totalEntrevistados === 0
@@ -278,13 +284,14 @@ Gravidade das vulnerabilidades de entrevista:
 RETORNE APENAS JSON VÁLIDO sem markdown:
 {
   "scoreConformidade": <Número de 0 a 100. 
-  REGRA DE CÁLCULO (MANDATÓRIA): 
-  - Início: 100 pontos.
-  - Penalidades Checklist: Cada item "NÃO" retira 15 pontos. Cada item "PARCIAL" retira 7 pontos.
-  - Penalidades Entrevistas: Se houver qualquer "NÃO" em Salário, VT/VR ou Alojamento, o score máximo permitido é 70 (independente de outros acertos). Se houver "NÃO" em outros itens de entrevista, cada um retira 5 pontos.
+  REGRA DE CÁLCULO MATEMÁTICO (OBRIGATÓRIO): 
+  - Base: 100 pontos.
+  - Penalidades Checklist: Cada item "NÃO" retira 15 pontos. Cada item "PARCIAL" retira 7 pontos. Use os pesos fornecidos se disponíveis para ajustar a gravidade.
+  - Penalidades Entrevistas: Cada item com mais de 10% de respostas "NÃO" retira 5 pontos.
+  - REGRA DE TETO (CRÍTICA): Se houver qualquer "NÃO" nos temas de SALÁRIO, VALE-TRANSPORTE/REFEIÇÃO ou ALOJAMENTO, o score FINAL não pode ultrapassar 70%.
   - Divergência de Efetivo: Cada 1% de divergência entre Campo e Sistema retira 1 ponto (limitado a 30 pontos de redução).
-  - Itens N/A: NUNCA reduzem a nota.
-  - Se não houver nenhuma falha/divergência, o score deve ser exatamente 100.>,
+  - Itens N/A: Itens marcados como N_A no checklist ou N/A nas entrevistas NÃO reduzem a nota.
+  - O score final deve ser a soma exata: 100 - (todas as penalidades). Se o resultado for menor que o teto de 70% quando aplicável, prevalece o menor valor.>,
   "status": "CRÍTICO" | "ALTO" | "MÉDIO" | "BAIXO",
   "resumoVulnerabilidades": ["<texto curto de cada vulnerabilidade>"],
   "vulnerabilidades": [

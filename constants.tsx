@@ -27,7 +27,7 @@ export const QUESTIONS: Question[] = [
 export const INTERVIEW_QUESTIONS: Question[] = [
   { id: 'g1', bloco: 'G', texto: 'Recebeu vale-transporte e vale-refeição integralmente e na data correta?', peso: 15 },
   { id: 'g2', bloco: 'G', texto: 'O valor depositado na conta bancária corresponde ao holerite assinado?', peso: 15 },
-  { id: 'g3', bloco: 'G', texto: 'As condições de alojamento e refeitório são adequadas?', peso: 10 },
+
   { id: 'g4', bloco: 'G', texto: 'Realizou treinamento de integração de segurança antes de iniciar as atividades?', peso: 10 },
   { id: 'g5', bloco: 'G', texto: 'Está usando uniforme padrão com logomarca visível e em boas condições?', peso: 25 },
   { id: 'g6', bloco: 'G', texto: 'A logomarca no uniforme corresponde à empresa contratante informada?', peso: 25 },

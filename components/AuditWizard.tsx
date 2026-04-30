@@ -212,7 +212,7 @@ const AuditWizard: React.FC<AuditWizardProps> = ({ obras, currentUser, onAuditCo
       id: `ent-${Date.now()}`,
       funcao: '',
       empresa: '',
-      respostas: INTERVIEW_QUESTIONS.map(q => ({ pergunta_id: q.id, resposta: 'sim' }))
+      respostas: INTERVIEW_QUESTIONS.map(q => ({ pergunta_id: q.id, resposta: 'sim' as ResponseValue }))
     };
     setEntrevistas(prev => [...prev, novo]);
   };
@@ -310,18 +310,29 @@ const AuditWizard: React.FC<AuditWizardProps> = ({ obras, currentUser, onAuditCo
           entrevistados: entrevistas.length,
           cobertura: `${coveragePercent}%`,
         },
-        respostas_check: respostasComUrls.map(r => ({
-           pergunta: QUESTIONS.find(q => q.id === r.pergunta_id)?.texto,
-           resposta: r.resposta,
-           obs: r.observacao || ''
-        })),
+        respostas_check: respostasComUrls.map(r => {
+           const q = QUESTIONS.find(qi => qi.id === r.pergunta_id);
+           const isNonCompliant = q?.inverted ? r.resposta === 'sim' : (r.resposta === 'nao' || r.resposta === 'parcial');
+           return {
+             pergunta: q?.texto,
+             resposta: r.resposta,
+             isNonCompliant,
+             peso: q?.peso,
+             obs: r.observacao || ''
+           };
+        }),
         entrevistas: entrevistas.map(e => ({
            funcao: e.funcao,
            empresa: e.empresa,
-           respostas: e.respostas.map(er => ({
-             pergunta: INTERVIEW_QUESTIONS.find(iq => iq.id === er.pergunta_id)?.texto,
-             resposta: er.resposta
-           }))
+           respostas: e.respostas.map(er => {
+             const q = INTERVIEW_QUESTIONS.find(iq => iq.id === er.pergunta_id);
+             return {
+               pergunta: q?.texto,
+               resposta: er.resposta,
+               isNonCompliant: er.resposta === 'nao',
+               peso: q?.peso
+             };
+           })
         }))
       };
 
@@ -765,9 +776,21 @@ const AuditWizard: React.FC<AuditWizardProps> = ({ obras, currentUser, onAuditCo
                       <div key={q.id} className="space-y-2">
                          <p className="text-[10px] font-black uppercase text-slate-500">{q.texto}</p>
                          <div className="flex gap-2">
-                           {['sim', 'nao'].map(v => (
-                             <button key={v} onClick={() => updateEntrevista(ent.id, q.id, v as any)} className={`flex-1 py-3 rounded-xl font-black text-[10px] border-4 transition-all ${ent.respostas.find(r => r.pergunta_id === q.id)?.resposta === v ? (v === 'sim' ? 'bg-emerald-500 text-white border-slate-900 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]' : 'bg-rose-500 text-white border-slate-900 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]') : 'bg-white text-slate-400 border-slate-100'}`}>{v.toUpperCase()}</button>
-                           ))}
+                            {['sim', 'nao', 'n_a'].map(v => (
+                              <button 
+                                key={v} 
+                                onClick={() => updateEntrevista(ent.id, q.id, v as any)} 
+                                className={`flex-1 py-3 rounded-xl font-black text-[10px] border-4 transition-all ${
+                                  ent.respostas.find(r => r.pergunta_id === q.id)?.resposta === v 
+                                    ? (v === 'sim' ? 'bg-emerald-500 text-white border-slate-900 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]' 
+                                      : v === 'nao' ? 'bg-rose-500 text-white border-slate-900 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]'
+                                      : 'bg-slate-400 text-white border-slate-900 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]') 
+                                    : 'bg-white text-slate-400 border-slate-100'
+                                }`}
+                              >
+                                {v === 'n_a' ? 'N/A' : v.toUpperCase()}
+                              </button>
+                            ))}
                          </div>
                       </div>
                     ))}
