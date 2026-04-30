@@ -131,4 +131,5 @@ export interface AIAnalysisResult {
   analiseEfetivo: string;
   secaoEntrevistasInLoco: SecaoEntrevistasInLoco;
   conclusaoExecutiva: ConclusaoExecutiva;
+  detalhamentoCalculo: string[];
 }

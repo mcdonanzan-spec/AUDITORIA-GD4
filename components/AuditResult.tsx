@@ -189,6 +189,31 @@ const AuditResult: React.FC<AuditResultProps> = ({ audit, report, obra, onClose,
           </div>
         </div>
 
+        {/* DETALHAMENTO DO CÁLCULO DO SCORE */}
+        {report.detalhamentoCalculo && report.detalhamentoCalculo.length > 0 && (
+          <div className="bg-slate-900 border-4 border-slate-900 rounded-[2.5rem] overflow-hidden break-inside-avoid">
+            <div className="bg-[#F05A22] px-8 py-3 border-b-4 border-slate-900">
+               <h3 className="text-white font-black uppercase tracking-widest text-[10px] flex items-center gap-2">
+                 <Scale size={14} /> Memória de Cálculo da Pontuação
+               </h3>
+            </div>
+            <div className="p-8 grid grid-cols-1 md:grid-cols-2 gap-4">
+              {report.detalhamentoCalculo.map((item, idx) => (
+                <div key={idx} className="flex items-start gap-3 group">
+                   <div className="w-1.5 h-1.5 rounded-full bg-[#F05A22] mt-1.5 shrink-0 shadow-[0_0_8px_rgba(240,90,34,0.5)]"></div>
+                   <p className="text-[10px] font-bold text-slate-300 uppercase tracking-tight leading-tight group-hover:text-white transition-colors">
+                     {item}
+                   </p>
+                </div>
+              ))}
+            </div>
+            <div className="bg-slate-800 px-8 py-4 flex justify-between items-center border-t-2 border-slate-700">
+               <span className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em]">Resultado Final Aplicado</span>
+               <span className="text-xl font-black text-[#F05A22]">{report.scoreConformidade}%</span>
+            </div>
+          </div>
+        )}
+
         {/* MAPEAMENTO DE VULNERABILIDADES (CARDS QUALITATIVOS) */}
         <div className="space-y-6">
           <div className="flex items-center gap-4 border-b-4 border-slate-900 pb-4">

@@ -330,7 +330,14 @@ RETORNE APENAS JSON VÁLIDO sem markdown:
     "acoesSecundarias": [
       {"acao": "<texto da ação>", "prazo": "<ex: 15 dias | 30 dias>"}
     ]
-  }
+  },
+  "detalhamentoCalculo": [
+    "Item Checklist: [Nome da Pergunta] -> RESPOSTA: [NÃO/PARCIAL] -> PENALIDADE: [-X pontos]",
+    "Item Entrevista: [Tema] -> OCORRÊNCIA: [X de Y] -> PENALIDADE: [-X pontos]",
+    "Divergência de Efetivo: [X%] -> PENALIDADE: [-X pontos]",
+    "Bônus de Conformidade: Todas as respostas SIM -> PONTUAÇÃO: 100",
+    "REGRA DE TETO: Aplicação de teto de 70% por falha crítica em [Tema]"
+  ]
 }`;
 
   // ── Construção do pool de providers ──
