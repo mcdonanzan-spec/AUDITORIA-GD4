@@ -1,7 +1,7 @@
 
 import { AIAnalysisResult } from "../types";
 
-// v5.0.0 — Prompt Profissional Definitivo: Auditor Forense Sênior de Riscos Trabalhistas
+// v5.3.0 — Prompt Profissional Definitivo: Auditor Forense Sênior de Riscos Trabalhistas (Matriz de Penalidades Rígida)
 
 const robustJsonParse = (text: string): any => {
   const cleaned = text
@@ -277,7 +277,14 @@ Gravidade das vulnerabilidades de entrevista:
 
 RETORNE APENAS JSON VÁLIDO sem markdown:
 {
-  "scoreConformidade": <0-100. ATENÇÃO MÁXIMA: Se não houver itens NÃO/PARCIAL, nem divergência de efetivo, nem quarteirização irregular, o score DEVE SER EXATAMENTE 100. Itens N/A e Amostra Insuficiente NÃO reduzem a nota>,
+  "scoreConformidade": <Número de 0 a 100. 
+  REGRA DE CÁLCULO (MANDATÓRIA): 
+  - Início: 100 pontos.
+  - Penalidades Checklist: Cada item "NÃO" retira 15 pontos. Cada item "PARCIAL" retira 7 pontos.
+  - Penalidades Entrevistas: Se houver qualquer "NÃO" em Salário, VT/VR ou Alojamento, o score máximo permitido é 70 (independente de outros acertos). Se houver "NÃO" em outros itens de entrevista, cada um retira 5 pontos.
+  - Divergência de Efetivo: Cada 1% de divergência entre Campo e Sistema retira 1 ponto (limitado a 30 pontos de redução).
+  - Itens N/A: NUNCA reduzem a nota.
+  - Se não houver nenhuma falha/divergência, o score deve ser exatamente 100.>,
   "status": "CRÍTICO" | "ALTO" | "MÉDIO" | "BAIXO",
   "resumoVulnerabilidades": ["<texto curto de cada vulnerabilidade>"],
   "vulnerabilidades": [
