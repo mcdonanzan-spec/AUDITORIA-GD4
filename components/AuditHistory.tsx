@@ -1,16 +1,19 @@
 
 import React from 'react';
 import { Audit, Obra } from '../types';
-import { Search, Filter, Calendar, Building2, ChevronRight, FileSearch, LayoutDashboard } from 'lucide-react';
+import { Search, Filter, Calendar, Building2, ChevronRight, FileSearch, LayoutDashboard, Trash2 } from 'lucide-react';
+import { User } from '../types';
 
 interface AuditHistoryProps {
   audits: Audit[];
   obras: Obra[];
   onSelectAudit: (audit: Audit) => void;
+  onDeleteAudit?: (auditId: string) => void;
   onNavigate: (page: string) => void;
+  currentUser?: User;
 }
 
-const AuditHistory: React.FC<AuditHistoryProps> = ({ audits, obras, onSelectAudit, onNavigate }) => {
+const AuditHistory: React.FC<AuditHistoryProps> = ({ audits, obras, onSelectAudit, onDeleteAudit, onNavigate, currentUser }) => {
   const [searchTerm, setSearchTerm] = React.useState('');
 
   const filteredAudits = audits.filter(a => {
@@ -117,9 +120,23 @@ const AuditHistory: React.FC<AuditHistoryProps> = ({ audits, obras, onSelectAudi
                         </span>
                       </td>
                       <td className="px-8 py-6 text-right">
-                        <button className="bg-slate-100 text-slate-400 p-2 rounded-xl group-hover:bg-orange-600 group-hover:text-white transition-all shadow-sm border-2 border-transparent group-hover:border-orange-900">
-                          <FileSearch size={22} />
-                        </button>
+                        <div className="flex items-center justify-end gap-2">
+                          {currentUser?.perfil === 'admin' && onDeleteAudit && (
+                            <button 
+                              onClick={(e) => { e.stopPropagation(); onDeleteAudit(audit.id); }}
+                              className="bg-slate-100 text-rose-400 p-2 rounded-xl hover:bg-rose-600 hover:text-white transition-all shadow-sm border-2 border-transparent hover:border-rose-900"
+                              title="Excluir Auditoria"
+                            >
+                              <Trash2 size={22} />
+                            </button>
+                          )}
+                          <button 
+                            onClick={(e) => { e.stopPropagation(); onSelectAudit(audit); }}
+                            className="bg-slate-100 text-slate-400 p-2 rounded-xl hover:bg-orange-600 hover:text-white transition-all shadow-sm border-2 border-transparent hover:border-orange-900"
+                          >
+                            <FileSearch size={22} />
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   );

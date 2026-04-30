@@ -108,6 +108,18 @@ export const saveAudit = async (audit: any): Promise<Audit> => {
   }
 };
 
+export const deleteAudit = async (auditId: string): Promise<void> => {
+  const { error } = await supabase
+    .from('audits')
+    .delete()
+    .eq('id', auditId);
+  
+  if (error) {
+    console.error('Erro ao deletar auditoria:', error);
+    throw error;
+  }
+};
+
 export const signAudit = async (auditId: string, signature: any, type: 'auditor' | 'engenheiro'): Promise<void> => {
   const field = type === 'auditor' ? 'assinatura_auditor' : 'assinatura_engenheiro';
   const { error } = await supabase

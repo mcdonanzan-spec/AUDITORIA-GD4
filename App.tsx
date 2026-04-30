@@ -10,7 +10,7 @@ import ObrasManagement from './components/ObrasManagement';
 import UserManagement from './components/UserManagement';
 import UserGuide from './components/UserGuide';
 import { User, Audit, Obra, AIAnalysisResult, UserRole } from './types';
-import { getAudits, getObras, saveAudit, getUsers } from './services/supabase';
+import { getAudits, getObras, saveAudit, getUsers, deleteAudit } from './services/supabase';
 
 import { Routes, Route, useNavigate, useLocation } from 'react-router-dom';
 
@@ -110,6 +110,23 @@ const App: React.FC = () => {
     setObras(prev => [obra, ...prev]);
   };
 
+  const handleDeleteAudit = async (auditId: string) => {
+    if (user?.perfil !== 'admin') return;
+    if (window.confirm('Tem certeza que deseja excluir esta auditoria? Esta ação não pode ser desfeita.')) {
+      try {
+        await deleteAudit(auditId);
+        setAudits(prev => prev.filter(a => a.id !== auditId));
+        alert('Auditoria excluída com sucesso!');
+        if (viewingAudit?.audit.id === auditId) {
+          setViewingAudit(null);
+          navigate('/history');
+        }
+      } catch (err) {
+        alert('Erro ao excluir auditoria.');
+      }
+    }
+  };
+
   if (!user) {
     return <Login onLogin={handleLogin} />;
   }
@@ -178,8 +195,8 @@ const App: React.FC = () => {
             onRefresh={fetchData}
           />
         ) : <Dashboard audits={filteredAudits} obras={allObras} onNavigate={(p) => navigate(`/${p}`)} user={user} />} />
-        <Route path="/history" element={<AuditHistory audits={filteredAudits} obras={allObras} onSelectAudit={handleViewAudit} onNavigate={(p) => navigate(`/${p}`)} />} />
-        <Route path="/historico" element={<AuditHistory audits={filteredAudits} obras={allObras} onSelectAudit={handleViewAudit} onNavigate={(p) => navigate(`/${p}`)} />} />
+        <Route path="/history" element={<AuditHistory audits={filteredAudits} obras={allObras} onSelectAudit={handleViewAudit} onDeleteAudit={handleDeleteAudit} currentUser={user} onNavigate={(p) => navigate(`/${p}`)} />} />
+        <Route path="/historico" element={<AuditHistory audits={filteredAudits} obras={allObras} onSelectAudit={handleViewAudit} onDeleteAudit={handleDeleteAudit} currentUser={user} onNavigate={(p) => navigate(`/${p}`)} />} />
         <Route path="/access" element={<UserManagement obras={obras} onNavigate={(p) => navigate(`/${p}`)} />} />
         <Route path="/usuarios" element={<UserManagement obras={obras} onNavigate={(p) => navigate(`/${p}`)} />} />
         <Route path="/guide" element={<UserGuide onNavigate={(p) => navigate(`/${p}`)} />} />
